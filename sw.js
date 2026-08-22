@@ -1,4 +1,4 @@
-const CACHE="forge-v14-30-shell-v1";
+const CACHE="forge-v14-32-shell-v1";
 const APP_SHELL=[
   "/","/index.html","/styles.css","/app.js","/manifest.webmanifest",
   "/assets/pwa/icon-192.png","/assets/pwa/icon-512.png",

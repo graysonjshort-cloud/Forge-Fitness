@@ -5,6 +5,9 @@ import hashlib
 import hmac
 import secrets
 import sqlite3
+import os
+import tempfile
+import threading
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -13,8 +16,110 @@ from typing import Any, Iterator
 DEFAULT_DB_PATH = Path(__file__).with_name("fitness_app_initial_database.sqlite")
 SCHEMA_VERSION = 1
 
+# v14.32 free persistence bridge:
+# Forge keeps its mature SQLite data layer locally, while a consistent SQLite
+# snapshot is persisted in Supabase Postgres after successful write transactions.
+# On a fresh Render instance the snapshot is restored before the first DB access.
+SUPABASE_DB_URL = os.getenv("SUPABASE_DB_URL", "").strip()
+PERSISTENCE_KEY = os.getenv("FORGE_PERSISTENCE_KEY", "forge-production").strip() or "forge-production"
+_persist_lock = threading.RLock()
+_persist_restore_attempted = False
+_persist_syncing = False
+
+def _pg_connect():
+    if not SUPABASE_DB_URL:
+        return None
+    import psycopg
+    return psycopg.connect(SUPABASE_DB_URL, connect_timeout=10)
+
+def _ensure_remote_store(pg) -> None:
+    with pg.cursor() as cur:
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS forge_persistence_snapshots (
+                app_key TEXT PRIMARY KEY,
+                sqlite_blob BYTEA NOT NULL,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        ''')
+    pg.commit()
+
+def restore_remote_snapshot(db_path=DEFAULT_DB_PATH) -> bool:
+    """Restore the latest durable DB snapshot once per process, if configured."""
+    global _persist_restore_attempted
+    if not SUPABASE_DB_URL:
+        return False
+    with _persist_lock:
+        if _persist_restore_attempted:
+            return False
+        _persist_restore_attempted = True
+        pg = _pg_connect()
+        if pg is None:
+            return False
+        try:
+            _ensure_remote_store(pg)
+            with pg.cursor() as cur:
+                cur.execute("SELECT sqlite_blob FROM forge_persistence_snapshots WHERE app_key=%s", (PERSISTENCE_KEY,))
+                row = cur.fetchone()
+            if not row:
+                return False
+            path = Path(db_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            # The stored object is a complete SQLite backup, so replacing the
+            # ephemeral Render copy is safe before the first application DB use.
+            path.write_bytes(bytes(row[0]))
+            for suffix in ("-wal", "-shm"):
+                Path(str(path)+suffix).unlink(missing_ok=True)
+            return True
+        finally:
+            pg.close()
+
+def sync_remote_snapshot(db_path=DEFAULT_DB_PATH) -> bool:
+    """Persist a transaction-consistent SQLite snapshot to Supabase Postgres."""
+    global _persist_syncing
+    if not SUPABASE_DB_URL or _persist_syncing:
+        return False
+    with _persist_lock:
+        _persist_syncing = True
+        tmp_name = None
+        try:
+            path = Path(db_path)
+            if not path.exists():
+                return False
+            fd, tmp_name = tempfile.mkstemp(prefix="forge-snapshot-", suffix=".sqlite")
+            os.close(fd)
+            source = sqlite3.connect(path)
+            target = sqlite3.connect(tmp_name)
+            try:
+                source.backup(target)
+            finally:
+                target.close()
+                source.close()
+            payload = Path(tmp_name).read_bytes()
+            pg = _pg_connect()
+            if pg is None:
+                return False
+            try:
+                _ensure_remote_store(pg)
+                with pg.cursor() as cur:
+                    cur.execute('''
+                        INSERT INTO forge_persistence_snapshots(app_key, sqlite_blob, updated_at)
+                        VALUES (%s, %s, NOW())
+                        ON CONFLICT(app_key) DO UPDATE
+                        SET sqlite_blob=EXCLUDED.sqlite_blob, updated_at=NOW()
+                    ''', (PERSISTENCE_KEY, payload))
+                pg.commit()
+                return True
+            finally:
+                pg.close()
+        finally:
+            if tmp_name:
+                Path(tmp_name).unlink(missing_ok=True)
+            _persist_syncing = False
+
+
 
 def connect(db_path: str | Path = DEFAULT_DB_PATH) -> sqlite3.Connection:
+    restore_remote_snapshot(db_path)
     path = Path(db_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(path)
@@ -30,6 +135,7 @@ def session(db_path: str | Path = DEFAULT_DB_PATH) -> Iterator[sqlite3.Connectio
     try:
         yield con
         con.commit()
+        sync_remote_snapshot(db_path)
     except Exception:
         con.rollback()
         raise

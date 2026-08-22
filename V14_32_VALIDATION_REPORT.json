@@ -1,0 +1,22 @@
+{
+  "version": "v14.32",
+  "status": "passed",
+  "persistence": {
+    "render_paid_disk_required": false,
+    "provider": "Supabase Postgres",
+    "strategy": "transaction-consistent SQLite snapshot bridge",
+    "restore_on_boot": true,
+    "sync_after_commits": true,
+    "secret_env": "SUPABASE_DB_URL"
+  },
+  "pwa": {
+    "cache_bumped": true,
+    "frontend_cache_busting": true,
+    "android_apple_v14_31_features_retained": true
+  },
+  "tests": [
+    "Python compile",
+    "JavaScript syntax",
+    "SQLite schema/account/auth smoke test"
+  ]
+}

@@ -7,6 +7,10 @@ services:
     startCommand: uvicorn fitness_backend_api_v2_connected:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
+      - key: SUPABASE_DB_URL
+        sync: false
+      - key: FORGE_PERSISTENCE_KEY
+        value: forge-production
       - key: FORGE_DEPLOYMENT
         value: render
       - key: PYTHON_VERSION

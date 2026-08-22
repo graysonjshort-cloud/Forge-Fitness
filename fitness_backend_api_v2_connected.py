@@ -2101,6 +2101,14 @@ def forge_service_worker():
         },
     )
 
+@app.get("/persistence/status")
+def persistence_status():
+    return {
+        "mode": "supabase-postgres-snapshot" if database.SUPABASE_DB_URL else "local-sqlite-ephemeral",
+        "persistent": bool(database.SUPABASE_DB_URL),
+        "key": database.PERSISTENCE_KEY,
+    }
+
 # ---------------------------------------------------------
 # Forge PWA frontend
 # Keep this mount last so API routes above take precedence.
