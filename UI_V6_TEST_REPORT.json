@@ -1,0 +1,20 @@
+{
+  "ui_issues_addressed": 11,
+  "static_ui_tests": "passed",
+  "javascript_syntax": "passed",
+  "api_regression": "passed",
+  "changes": [
+    "responsive desktop layout",
+    "ARIA labels/focus states",
+    "explicit Weight/Reps/RPE labels",
+    "dedicated Workout Complete screen",
+    "Start Workout opens current exercise",
+    "date-aware next scheduled workout selection",
+    "rich Progress tabs/charts/muscle volume",
+    "8-week adaptive Plan view with future weeks locked",
+    "editable display name",
+    "Reset User moved to Developer Settings with confirmation",
+    "persisted workout status shown in UI",
+    "animated rest timer ring"
+  ]
+}

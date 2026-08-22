@@ -1,0 +1,30 @@
+{
+  "version": "v14.12-calendar-time",
+  "implemented": [
+    "device IANA timezone detection",
+    "live local clock",
+    "default workout time",
+    "Google OAuth connection flow",
+    "Forge-to-Google workout event creation and updates",
+    "Google-to-Forge workout day/time sync",
+    "automatic 2-minute sync while app is open",
+    "manual Sync Now",
+    "sync on startup/Home/Plan",
+    "Google freebusy availability checks",
+    "AI Coach calendar warnings and nearby available time suggestions",
+    "Coach-applied schedule changes sync back to Google Calendar"
+  ],
+  "validation": [
+    "Python syntax",
+    "JavaScript syntax",
+    "FastAPI startup",
+    "timezone persistence",
+    "calendar status when OAuth is not configured",
+    "mock Forge-to-Google event creation",
+    "mock Google-to-Forge reschedule",
+    "mock Forge-to-Google reschedule",
+    "mock freebusy conflict detection",
+    "nearest alternate time search"
+  ],
+  "note": "Real Google OAuth requires user-provided Google Cloud OAuth credentials."
+}

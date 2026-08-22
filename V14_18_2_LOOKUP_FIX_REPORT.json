@@ -1,0 +1,11 @@
+{
+  "version": "v14.18.2",
+  "fixes": [
+    "fluid ounce / mL / liter parsing",
+    "progressive USDA fallback queries",
+    "diet/zero-sugar query normalization",
+    "zero-calorie results accepted",
+    "generic zero-sugar beverage fallback"
+  ],
+  "validated_prompt": "12 fl oz zero sugar root beer"
+}

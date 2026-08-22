@@ -1,0 +1,28 @@
+{
+  "version": "v14.33",
+  "status": "passed",
+  "position": "current final iteration",
+  "validation": {
+    "javascript_syntax": "passed",
+    "python_syntax": "passed",
+    "fastapi_health": "passed",
+    "pwa_root": "passed",
+    "manifest": "passed",
+    "service_worker_scope": "passed",
+    "equipment_assets": 107,
+    "missing_equipment_assets": 0,
+    "android_apple_icons": "passed"
+  },
+  "polish": [
+    "account/settings bottom sheet",
+    "offline/online UX",
+    "PWA update prompt",
+    "network error clarity",
+    "workout completion next steps",
+    "training settings status card",
+    "mock Google login removed",
+    "equipment settings return navigation",
+    "reduced motion support",
+    "Supabase snapshot writes only after database changes"
+  ]
+}

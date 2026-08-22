@@ -1,2 +1,2 @@
-Forge Fitness v14.32
-Free persistent Supabase-backed storage + PWA cache reliability
+Forge Fitness v14.33
+Final polish release

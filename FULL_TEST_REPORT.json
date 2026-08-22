@@ -1,0 +1,17 @@
+{
+  "tests_run": 19,
+  "tests_passed": 19,
+  "issues_fixed": [
+    "resumeActiveSession was called but undefined",
+    "active-workout endpoint 500 due to nonexistent workout_sessions.user_id",
+    "progress endpoint 500 from the same active-session query",
+    "weight field accepted by UI/API but not persisted by database.record_performance",
+    "exercise-history query referenced nonexistent exercise_performance.user_id",
+    "duplicate workout starts could create multiple active sessions",
+    "preferences form field names did not match profile API fields",
+    "equipment/recovery values were hardcoded during profile save",
+    "saved preferences did not hydrate reliably",
+    "rest timer lifecycle and programmed rest duration were revalidated",
+    "startup remains graceful when API is offline"
+  ]
+}

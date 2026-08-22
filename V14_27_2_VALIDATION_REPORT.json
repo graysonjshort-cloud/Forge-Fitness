@@ -1,0 +1,12 @@
+{
+  "version": "v14.27.2",
+  "changes": [
+    "correct Google OAuth callback in START_BACKEND.bat",
+    "placeholder-aware Google configuration detection",
+    "Calendar Settings shows exact missing credentials",
+    "correct redirect URI shown in UI",
+    "Recheck Google Setup button",
+    "safer Connect Google Calendar error handling"
+  ],
+  "status": "passed"
+}

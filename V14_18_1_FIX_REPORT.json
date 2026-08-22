@@ -1,0 +1,20 @@
+{
+  "version": "v14.18.1",
+  "fix": "Expanded Smart Food Logging intent recognition",
+  "passed_examples": [
+    "log a zero sugar root beer",
+    "add a sandwich",
+    "track my protein shake",
+    "I drank a Coke Zero",
+    "I got a chicken bowl from Chipotle"
+  ],
+  "excluded_training_examples": [
+    "log my workout",
+    "track my reps",
+    "record my bench press"
+  ],
+  "checks": [
+    "Python syntax",
+    "intent detector unit tests"
+  ]
+}

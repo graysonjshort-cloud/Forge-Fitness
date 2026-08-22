@@ -1,0 +1,27 @@
+{
+  "version": "v14.11-core-frequency",
+  "tests": [
+    "profile persists core frequency",
+    "2 core add-ons on 4-day plan",
+    "no standalone Core workout",
+    "0 frequency produces no direct core add-ons",
+    "JavaScript syntax",
+    "Python syntax"
+  ],
+  "core_days_example": [
+    {
+      "workout": "Lower Body",
+      "core_exercises": [
+        "Ab Wheel Rollout",
+        "Pallof Press"
+      ]
+    },
+    {
+      "workout": "Lower Body",
+      "core_exercises": [
+        "Ab Wheel Rollout",
+        "Pallof Press"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "version": "v14.18-smart-food-logging",
+  "features": [
+    "restaurant/source parsing from natural language",
+    "brand-aware USDA FoodData Central search",
+    "OpenFoodFacts branded-food fallback",
+    "size-sensitive restaurant clarification",
+    "follow-up correction flow",
+    "multi-item restaurant meal aggregation",
+    "source/provider shown before confirmation",
+    "source provenance stored with nutrition log",
+    "packaged branded food lookup",
+    "graceful external-provider failure handling"
+  ],
+  "validated_examples": [
+    "New York Style sub + zero sugar root beer from Nutrition Hub -> asks size -> accepts Large -> estimates and logs",
+    "Fairlife Core Power 26g shake -> branded lookup and estimate"
+  ]
+}

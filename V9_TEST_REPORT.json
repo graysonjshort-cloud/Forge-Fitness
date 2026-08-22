@@ -1,0 +1,16 @@
+{
+  "version": "v9-history-prs",
+  "tests_run": 11,
+  "tests_passed": 11,
+  "features": [
+    "authenticated workout history endpoint",
+    "per-session total sets and volume",
+    "exercise-specific history",
+    "PR aggregation",
+    "estimated 1RM calculation",
+    "basic next-target progression suggestion",
+    "History UI",
+    "PR UI",
+    "Exercise History UI"
+  ]
+}

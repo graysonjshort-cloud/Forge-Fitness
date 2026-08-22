@@ -1,0 +1,30 @@
+{
+  "version": "v14.28",
+  "status": "passed",
+  "pwa": {
+    "manifest": true,
+    "service_worker": true,
+    "install_prompt": true,
+    "ios_add_to_home_screen_guidance": true,
+    "standalone_display": true,
+    "safe_area_support": true,
+    "icons": [
+      "192",
+      "512",
+      "192 maskable",
+      "512 maskable",
+      "180 apple"
+    ],
+    "shortcuts": [
+      "Workout",
+      "Nutrition",
+      "Coach"
+    ]
+  },
+  "validation": [
+    "JavaScript syntax",
+    "Python syntax",
+    "manifest icons present",
+    "PWA hooks present"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "version": "v14.27.3",
+  "status": "passed",
+  "changes": [
+    "one-click Continue with Google UI",
+    "developer OAuth details hidden from end users",
+    "automatic calendar sync enable after OAuth",
+    "automatic first sync after connection",
+    "automatic return to Calendar Settings",
+    "connected status confirmation",
+    "end-user friendly unavailable state"
+  ],
+  "validation": [
+    "JavaScript syntax",
+    "Python syntax"
+  ]
+}

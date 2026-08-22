@@ -1,0 +1,13 @@
+{
+  "version": "v11.3",
+  "change": "Replaced user-facing RPE number entry with five plain-language effort choices.",
+  "mapping": {
+    "Easy": 6,
+    "Moderate": 7,
+    "Hard": 8,
+    "Very Hard": 9,
+    "Max Effort": 10
+  },
+  "storage": "Existing hidden rpe field is retained, so backend/API/programming-engine behavior remains compatible.",
+  "default": "Moderate / RPE 7"
+}

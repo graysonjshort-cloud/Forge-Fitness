@@ -1,0 +1,30 @@
+FORGE v14.30 — RENDER ENVIRONMENT SETUP
+
+IMPORTANT
+Render does NOT run START_BACKEND.bat. BAT files are Windows-only local-development helpers.
+The hosted Forge service gets API keys and OAuth settings from Render Environment Variables.
+
+In Render:
+Forge service -> Environment -> Add Environment Variable
+
+Add these private values:
+OPENAI_API_KEY = your OpenAI API key
+FDC_API_KEY = your USDA FoodData Central key
+GOOGLE_CLIENT_ID = your Google OAuth web-client ID
+GOOGLE_CLIENT_SECRET = your Google OAuth client secret
+
+Add these hosted values:
+FORGE_LLM_ENABLED = 1
+FORGE_LLM_MODEL = gpt-4o-mini
+NUTRITION_LOOKUP_ENABLED = 1
+OPENFOODFACTS_ENABLED = 1
+FORGE_APP_URL = https://forge-fitness-cwdb.onrender.com
+GOOGLE_REDIRECT_URI = https://forge-fitness-cwdb.onrender.com/me/calendar/google/callback
+
+Then choose Save, rebuild, and deploy.
+
+GOOGLE CLOUD
+Add this exact Authorized redirect URI to the Forge OAuth Web Client:
+https://forge-fitness-cwdb.onrender.com/me/calendar/google/callback
+
+Do not put real secrets in render.yaml, GitHub, START_BACKEND.bat in the repository, or screenshots.

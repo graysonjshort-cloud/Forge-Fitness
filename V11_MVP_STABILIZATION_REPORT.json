@@ -1,0 +1,32 @@
+{
+  "version": "v11-mvp-stabilized",
+  "tests_run": 32,
+  "tests_passed": 32,
+  "session_reliability": [
+    "exact exercise/set resume",
+    "idempotent set logging",
+    "persistent rest timers",
+    "persistent workout feedback",
+    "feedback-to-fatigue integration",
+    "abandon/restart",
+    "resume after logout/login",
+    "invalid request rejection"
+  ],
+  "regression_pass": [
+    "auth",
+    "profiles/plans",
+    "workouts",
+    "history/PRs",
+    "coach",
+    "substitutions"
+  ],
+  "remaining_preproduction": [
+    "HTTPS",
+    "rate limiting",
+    "email verification",
+    "password reset",
+    "hosted database",
+    "logging/monitoring",
+    "real-browser E2E tests"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "version": "v14.30",
+  "status": "passed",
+  "android_pwa": {
+    "manifest_id": "/",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "manifest_content_type": "application/manifest+json",
+    "service_worker_scope": "/",
+    "service_worker_allowed_header": "/",
+    "icons_verified": true
+  },
+  "render": {
+    "bat_files_used": false,
+    "configuration_source": "Render Environment Variables",
+    "render_yaml_secret_placeholders": true
+  }
+}

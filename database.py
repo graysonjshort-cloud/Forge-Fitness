@@ -132,10 +132,14 @@ def connect(db_path: str | Path = DEFAULT_DB_PATH) -> sqlite3.Connection:
 @contextmanager
 def session(db_path: str | Path = DEFAULT_DB_PATH) -> Iterator[sqlite3.Connection]:
     con = connect(db_path)
+    start_changes = con.total_changes
     try:
         yield con
         con.commit()
-        sync_remote_snapshot(db_path)
+        # Reads no longer upload a full database snapshot. Only transactions
+        # that actually changed SQLite trigger the durable Supabase snapshot.
+        if con.total_changes > start_changes:
+            sync_remote_snapshot(db_path)
     except Exception:
         con.rollback()
         raise

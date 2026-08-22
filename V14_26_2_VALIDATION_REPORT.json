@@ -1,0 +1,13 @@
+{
+  "version": "v14.26.2",
+  "active_equipment_items": 107,
+  "unique_equipment_drawings": 107,
+  "svg_assets": 108,
+  "rendering": "standalone SVG assets",
+  "status": "passed",
+  "validation": [
+    "107/107 equipment assets present",
+    "JavaScript syntax",
+    "Python syntax"
+  ]
+}

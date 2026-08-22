@@ -1,6 +1,6 @@
-const CACHE="forge-v14-32-shell-v1";
+const CACHE="forge-v14-33-final-v1";
 const APP_SHELL=[
-  "/","/index.html","/styles.css","/app.js","/manifest.webmanifest",
+  "/","/index.html","/styles.css?v=14.33","/app.js?v=14.33","/manifest.webmanifest",
   "/assets/pwa/icon-192.png","/assets/pwa/icon-512.png",
   "/assets/pwa/icon-maskable-192.png","/assets/pwa/icon-maskable-512.png",
   "/assets/pwa/apple-touch-icon.png"

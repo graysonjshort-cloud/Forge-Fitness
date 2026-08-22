@@ -1,0 +1,24 @@
+FORGE v14.30 — ANDROID PWA CHECKLIST
+
+After deploying ALL v14.30 files to GitHub/Render:
+
+1. Open https://forge-fitness-cwdb.onrender.com on Android Chrome.
+2. Refresh the page once.
+3. If an old Forge shortcut exists, remove it from the home screen.
+4. Chrome menu -> Install app / Install Forge.
+5. Launch the newly installed Forge icon.
+
+v14.30 explicitly provides:
+- manifest id=/, start_url=/, scope=/
+- display=standalone
+- 192x192 and 512x512 icons
+- maskable icons
+- root-scoped service worker
+- application/manifest+json manifest response
+- Service-Worker-Allowed: / header
+- no-cache service worker updates
+- HTTPS same-origin PWA + API architecture
+
+IMPORTANT:
+Upload the entire extracted v14.30 project to GitHub, including assets/pwa/.
+Missing PWA icon files can prevent the intended installation experience.

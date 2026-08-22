@@ -1,0 +1,19 @@
+{
+  "version": "v14.6-expanded-exercise-directory",
+  "exercise_count": 142,
+  "substitution_links": 715,
+  "tests_run": 10,
+  "tests_passed": 10,
+  "features": [
+    "expanded exercise database across all major muscle groups",
+    "searchable Exercise Directory UI",
+    "muscle and difficulty filters",
+    "My Equipment compatibility filter",
+    "exercise detail screen",
+    "sets/reps/rest/progression metadata",
+    "automatic substitution graph for new exercises",
+    "directory accessible from Plan Overview",
+    "onboarding avoid-exercise picker can use the expanded directory",
+    "idempotent migration that preserves existing exercises"
+  ]
+}

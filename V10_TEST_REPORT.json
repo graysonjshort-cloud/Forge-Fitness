@@ -1,0 +1,15 @@
+{
+  "version": "v10-substitutions-coach",
+  "tests_run": 9,
+  "tests_passed": 9,
+  "features": [
+    "equipment-filtered exercise substitutions",
+    "persistent workout exercise swaps",
+    "swap audit events",
+    "coach context from history/training state",
+    "coach time-constraint recommendations",
+    "actionable/persistent shortened workouts",
+    "real AI Coach UI messaging"
+  ],
+  "note": "Coach reasoning is currently a deterministic Forge rules engine, not a hosted generative AI model."
+}
