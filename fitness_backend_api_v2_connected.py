@@ -637,7 +637,7 @@ def _profile_from_db(user_id: int) -> UserProfile:
     )
 
 
-def _generate_and_save(user_id: int, profile: UserProfile, state: Optional[WeeklyProgramState] = None) -> dict:
+def _generate_and_save(user_id: int, profile: UserProfile, state: Optional[WeeklyProgramState] = None, replace_active: bool = False) -> dict:
     generator = PlanGenerator(DB_PATH)
     plan = generator.generate_plan(profile)
     controller = WeeklyProgramController(generator)
@@ -657,7 +657,7 @@ def _generate_and_save(user_id: int, profile: UserProfile, state: Optional[Weekl
         plan["weekly_volume"] = {"targets": [asdict(r) for r in records]}
         plan = volume.apply_next_week_volume(plan, records)
 
-    database.save_program(user_id, plan, DB_PATH)
+    database.save_program(user_id, plan, DB_PATH, replace_active=replace_active)
     return plan
 
 
@@ -766,7 +766,7 @@ def _hydrate_plan_workout_ids(user_id: int, plan: dict) -> dict:
             FROM workouts w
             JOIN program_weeks pw ON pw.id = w.program_week_id
             JOIN programs p ON p.id = pw.program_id
-            WHERE p.user_id = ?
+            WHERE p.user_id = ? AND p.status='active'
             ORDER BY pw.week_number DESC, w.workout_index ASC
             """,
             (user_id,),
@@ -1466,27 +1466,57 @@ def me_update_exercise_sets(workout_id: int, request: ExerciseSetsRequest, autho
 @app.post("/me/plan/reconfigure")
 def me_reconfigure_plan(request: PlanReconfigureRequest, authorization: Optional[str]=Header(None)):
     user=_current_account(authorization); uid=user["user_id"]
-    current=database.get_profile(uid,DB_PATH)
-    if not current: raise HTTPException(404,"Profile not found")
-    current["days_per_week"]=request.days_per_week; current["minutes_per_workout"]=request.minutes_per_workout
-    current["core_workouts_per_week"]=min(int(current.get("core_workouts_per_week",2)),request.days_per_week)
-    current["cardio_workouts_per_week"]=min(int(current.get("cardio_workouts_per_week",2)),request.days_per_week)
-    database.upsert_profile(uid,current,DB_PATH)
-    plan=_hydrate_plan_workout_ids(uid,_generate_and_save(uid,_profile_from_db(uid)))
+    previous=database.get_profile(uid,DB_PATH)
+    if not previous:
+        raise HTTPException(404,"Profile not found")
+
+    # Validate preferred days before changing anything.
     days=[]
-    for d in request.preferred_days:
-        d=int(d)
-        if 0<=d<=6 and d not in days: days.append(d)
-    if len(days)>=request.days_per_week:
+    for raw in request.preferred_days:
+        d=int(raw)
+        if 0<=d<=6 and d not in days:
+            days.append(d)
+    if len(days) != request.days_per_week:
+        raise HTTPException(400,f"Choose exactly {request.days_per_week} unique training days")
+
+    updated=dict(previous)
+    updated["days_per_week"]=request.days_per_week
+    updated["minutes_per_workout"]=request.minutes_per_workout
+    updated["core_workouts_per_week"]=min(int(updated.get("core_workouts_per_week",2)),request.days_per_week)
+    updated["cardio_workouts_per_week"]=min(int(updated.get("cardio_workouts_per_week",2)),request.days_per_week)
+
+    try:
+        # The generator reads the stored profile. If generation fails, restore the
+        # previous profile so a failed rebuild never leaves settings half changed.
+        database.upsert_profile(uid,updated,DB_PATH)
+        generated=_generate_and_save(uid,_profile_from_db(uid),replace_active=True)
+        plan=_hydrate_plan_workout_ids(uid,generated)
+
+        # Apply the user's exact preferred schedule to the freshly created plan.
         schedule=database.get_workout_schedule(uid,DB_PATH)
-        for item,target in zip(sorted(schedule,key=lambda x:x["workout_index"]),days[:request.days_per_week]):
-            try: database.move_workout_day(uid,item["workout_id"],target,DB_PATH)
-            except ValueError:
-                # Fresh plans can collide with default days; update directly after validating ownership.
-                with database.session(DB_PATH) as con:
-                    con.execute("UPDATE workout_schedule SET scheduled_day=?,updated_at=CURRENT_TIMESTAMP WHERE workout_id=?",(target,item["workout_id"]))
+        ordered=sorted(schedule,key=lambda x:x["workout_index"])
+        if len(ordered) < request.days_per_week:
+            raise RuntimeError("Rebuilt plan did not contain the requested number of workouts")
+
+        # Fresh workouts can initially share/default days. Direct assignment is
+        # safe here because all workout IDs belong to the new active program.
+        with database.session(DB_PATH) as con:
+            for item,target in zip(ordered[:request.days_per_week],days):
+                con.execute(
+                    "UPDATE workout_schedule SET scheduled_day=?, original_day=?, "
+                    "updated_at=CURRENT_TIMESTAMP WHERE workout_id=?",
+                    (target,target,item["workout_id"]),
+                )
+
         plan=_hydrate_plan_workout_ids(uid,database.get_current_plan(uid,DB_PATH))
-    return {"status":"reconfigured","plan":plan,"profile":database.get_profile(uid,DB_PATH)}
+        return {"status":"reconfigured","plan":plan,"profile":database.get_profile(uid,DB_PATH)}
+    except HTTPException:
+        database.upsert_profile(uid,previous,DB_PATH)
+        raise
+    except Exception as exc:
+        database.upsert_profile(uid,previous,DB_PATH)
+        print(f"[forge-plan] Rebuild failed safely for user {uid}: {type(exc).__name__}: {exc}")
+        raise HTTPException(500,f"Forge could not rebuild the plan: {exc}")
 
 
 @app.get("/me/schedule")

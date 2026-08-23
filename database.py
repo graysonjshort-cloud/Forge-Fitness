@@ -311,17 +311,29 @@ def get_training_state(user_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
     return d
 
 
-def save_program(user_id: int, plan: dict[str, Any], db_path=DEFAULT_DB_PATH) -> int:
+def save_program(user_id: int, plan: dict[str, Any], db_path=DEFAULT_DB_PATH, replace_active: bool = False) -> int:
     with session(db_path) as con:
-        program = con.execute(
-            "SELECT id FROM programs WHERE user_id=? AND status='active' ORDER BY id DESC LIMIT 1",
-            (user_id,),
-        ).fetchone()
-        if program:
-            program_id = int(program["id"])
-        else:
+        if replace_active:
+            # Keep the old program/workouts/sessions for history and PRs, but make
+            # the rebuilt program the single active plan. This avoids the v14.34
+            # duplicate "week 1" collision without deleting training history.
+            con.execute(
+                "UPDATE programs SET status='replaced', updated_at=CURRENT_TIMESTAMP "
+                "WHERE user_id=? AND status='active'",
+                (user_id,),
+            )
             cur = con.execute("INSERT INTO programs(user_id, status) VALUES (?, 'active')", (user_id,))
             program_id = int(cur.lastrowid)
+        else:
+            program = con.execute(
+                "SELECT id FROM programs WHERE user_id=? AND status='active' ORDER BY id DESC LIMIT 1",
+                (user_id,),
+            ).fetchone()
+            if program:
+                program_id = int(program["id"])
+            else:
+                cur = con.execute("INSERT INTO programs(user_id, status) VALUES (?, 'active')", (user_id,))
+                program_id = int(cur.lastrowid)
 
         wc = plan.get("weekly_controller", {})
         week = int(wc.get("week_number", 1))
@@ -367,7 +379,8 @@ def get_current_plan(user_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any] | 
         row = con.execute(
             """SELECT pw.plan_json FROM programs p
                JOIN program_weeks pw ON pw.program_id=p.id
-               WHERE p.user_id=? ORDER BY pw.week_number DESC, pw.id DESC LIMIT 1""",
+               WHERE p.user_id=? AND p.status='active'
+               ORDER BY pw.week_number DESC, pw.id DESC LIMIT 1""",
             (user_id,),
         ).fetchone()
     return json.loads(row["plan_json"]) if row else None
@@ -1259,10 +1272,10 @@ def ensure_workout_schedule(user_id: int, db_path=DEFAULT_DB_PATH) -> None:
                FROM workouts w
                JOIN program_weeks pw ON pw.id=w.program_week_id
                JOIN programs p ON p.id=pw.program_id
-               WHERE p.user_id=? AND pw.week_number=(
+               WHERE p.user_id=? AND p.status='active' AND pw.week_number=(
                  SELECT MAX(pw2.week_number)
                  FROM program_weeks pw2 JOIN programs p2 ON p2.id=pw2.program_id
-                 WHERE p2.user_id=?
+                 WHERE p2.user_id=? AND p2.status='active'
                )
                ORDER BY w.workout_index""",
             (user_id,user_id),
@@ -1287,10 +1300,10 @@ def get_workout_schedule(user_id: int, db_path=DEFAULT_DB_PATH) -> list[dict[str
                JOIN workout_schedule ws ON ws.workout_id=w.id
                JOIN program_weeks pw ON pw.id=w.program_week_id
                JOIN programs p ON p.id=pw.program_id
-               WHERE p.user_id=? AND pw.week_number=(
+               WHERE p.user_id=? AND p.status='active' AND pw.week_number=(
                  SELECT MAX(pw2.week_number)
                  FROM program_weeks pw2 JOIN programs p2 ON p2.id=pw2.program_id
-                 WHERE p2.user_id=?
+                 WHERE p2.user_id=? AND p2.status='active'
                )
                ORDER BY ws.scheduled_day,w.workout_index""",
             (user_id,user_id),

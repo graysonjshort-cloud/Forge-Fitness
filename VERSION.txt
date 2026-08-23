@@ -1,2 +1,2 @@
-Forge Fitness v14.34.1
-PWA cache refresh patch for v14.34
+Forge Fitness v14.34.2
+Plan rebuild collision fix + mobile PWA update delivery
