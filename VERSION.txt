@@ -1,2 +1,2 @@
-Forge Fitness v14.34
-Workout customization + AI Coach context improvements
+Forge Fitness v14.34.1
+PWA cache refresh patch for v14.34
