@@ -1396,6 +1396,141 @@ def get_workout_schedule(user_id: int, db_path=DEFAULT_DB_PATH) -> list[dict[str
         out.append(d)
     return out
 
+
+def get_current_module(user_id: int, workout_id: int, module_type: str, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    if module_type not in {"core","cardio"}:
+        raise ValueError("Invalid module type")
+    with session(db_path) as con:
+        row=con.execute(
+            """SELECT w.workout_index,pw.plan_json
+               FROM workouts w
+               JOIN program_weeks pw ON pw.id=w.program_week_id
+               JOIN programs p ON p.id=pw.program_id
+               WHERE w.id=? AND p.user_id=? AND p.status='active'
+               ORDER BY pw.week_number DESC LIMIT 1""",
+            (workout_id,user_id),
+        ).fetchone()
+    if not row:
+        raise ValueError("Workout not found")
+    plan=json.loads(row["plan_json"])
+    idx=int(row["workout_index"])
+    workouts=plan.get("workouts",[])
+    if idx<0 or idx>=len(workouts):
+        raise ValueError("Workout is not in the active plan")
+    module=workouts[idx].get(f"{module_type}_module")
+    if not module:
+        raise ValueError(f"No {module_type} module is scheduled with this workout")
+    return module
+
+
+def start_training_module(user_id: int, workout_id: int, module_type: str, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    module=get_current_module(user_id,workout_id,module_type,db_path)
+    with session(db_path) as con:
+        existing=con.execute(
+            """SELECT * FROM training_module_sessions
+               WHERE user_id=? AND workout_id=? AND module_type=? AND status='active'
+               ORDER BY id DESC LIMIT 1""",(user_id,workout_id,module_type)
+        ).fetchone()
+        if existing:
+            return dict(existing)
+        planned=int(module.get("estimated_minutes") or module.get("minutes") or 0)
+        cur=con.execute(
+            """INSERT INTO training_module_sessions
+               (user_id,workout_id,module_type,module_name,status,planned_minutes)
+               VALUES (?,?,?,?, 'active', ?)""",
+            (user_id,workout_id,module_type,module.get("name") or module_type.title(),planned),
+        )
+        sid=int(cur.lastrowid)
+        row=con.execute("SELECT * FROM training_module_sessions WHERE id=?",(sid,)).fetchone()
+        return dict(row)
+
+
+def log_core_module_exercise(user_id: int, module_session_id: int, exercise_id: int,
+                             sets_completed: int, reps: list[int] | None = None,
+                             duration_seconds: int | None = None, weight: float | None = None,
+                             load_mode: str = "bodyweight", rpe: float | None = None,
+                             db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    with session(db_path) as con:
+        ms=con.execute(
+            """SELECT * FROM training_module_sessions
+               WHERE id=? AND user_id=? AND module_type='core' AND status='active'""",
+            (module_session_id,user_id),
+        ).fetchone()
+        if not ms: raise ValueError("Active core module session not found")
+        cur=con.execute(
+            """INSERT INTO training_module_exercise_logs
+               (module_session_id,exercise_id,sets_completed,reps_json,duration_seconds,weight,load_mode,rpe)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (module_session_id,exercise_id,max(1,int(sets_completed)),_json(reps or []),
+             duration_seconds,weight,load_mode,rpe),
+        )
+        return {"id":int(cur.lastrowid),"module_session_id":module_session_id,"exercise_id":exercise_id}
+
+
+def complete_training_module(user_id: int, module_session_id: int,
+                             completed_minutes: float | None = None, distance: float | None = None,
+                             pace: str | None = None, rpe: float | None = None,
+                             notes: str | None = None, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    with session(db_path) as con:
+        row=con.execute(
+            "SELECT * FROM training_module_sessions WHERE id=? AND user_id=?",
+            (module_session_id,user_id),
+        ).fetchone()
+        if not row: raise ValueError("Module session not found")
+        con.execute(
+            """UPDATE training_module_sessions
+               SET status='completed',completed_minutes=?,distance=?,pace=?,rpe=?,notes=?,
+                   completed_at=CURRENT_TIMESTAMP WHERE id=?""",
+            (completed_minutes,distance,pace,rpe,notes,module_session_id),
+        )
+        result=con.execute("SELECT * FROM training_module_sessions WHERE id=?",(module_session_id,)).fetchone()
+        return dict(result)
+
+
+def get_module_tracking_summary(user_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    with session(db_path) as con:
+        sessions=[dict(r) for r in con.execute(
+            """SELECT * FROM training_module_sessions WHERE user_id=?
+               ORDER BY started_at DESC,id DESC""",(user_id,)
+        ).fetchall()]
+        logs=[dict(r) for r in con.execute(
+            """SELECT l.*,e.name,e.movement_pattern
+               FROM training_module_exercise_logs l
+               JOIN training_module_sessions s ON s.id=l.module_session_id
+               JOIN exercises e ON e.id=l.exercise_id
+               WHERE s.user_id=? ORDER BY l.recorded_at DESC,l.id DESC""",(user_id,)
+        ).fetchall()]
+    completed_core=[x for x in sessions if x["module_type"]=="core" and x["status"]=="completed"]
+    completed_cardio=[x for x in sessions if x["module_type"]=="cardio" and x["status"]=="completed"]
+    total_cardio_minutes=sum(float(x.get("completed_minutes") or 0) for x in completed_cardio)
+    best_holds={}
+    for x in logs:
+        if x.get("duration_seconds"):
+            best_holds[x["name"]]=max(best_holds.get(x["name"],0),int(x["duration_seconds"]))
+    return {
+        "sessions":sessions[:100],
+        "recent_core_logs":logs[:100],
+        "core_sessions_completed":len(completed_core),
+        "cardio_sessions_completed":len(completed_cardio),
+        "cardio_minutes_completed":round(total_cardio_minutes,1),
+        "best_core_holds":best_holds,
+    }
+
+
+def get_module_status_for_workout(user_id: int, workout_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    with session(db_path) as con:
+        rows=con.execute(
+            """SELECT * FROM training_module_sessions
+               WHERE user_id=? AND workout_id=? ORDER BY id DESC""",(user_id,workout_id)
+        ).fetchall()
+    out={"core":None,"cardio":None}
+    for row in rows:
+        d=dict(row)
+        if out.get(d["module_type"]) is None:
+            out[d["module_type"]]=d
+    return out
+
+
 def get_workout_schedule_item(user_id: int, workout_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
     schedule=get_workout_schedule(user_id,db_path)
     item=next((x for x in schedule if int(x["workout_id"])==int(workout_id)),None)

@@ -6,7 +6,7 @@ let authToken = localStorage.getItem("forge_auth_token") || "";
 let account = null;
 let plan = null, session = null;
 const profile = {goal:"build_muscle",experience:"intermediate",days_per_week:4,minutes_per_workout:45,equipment:["full_gym"],preferred_exercises:[],excluded_exercises:[],priority_muscles:[],recovery_level:"normal",cardio_preference:"moderate",workout_split:"auto",sport:"general",core_workouts_per_week:2,cardio_workouts_per_week:2,seed:42};
-const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0};
+const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null};
 const V=document.querySelector("#view"),toastEl=document.querySelector("#toast"),nav=document.querySelector("#bottomNav"),topbar=document.querySelector("#topbar");
 const toast=t=>{toastEl.textContent=t;toastEl.classList.add("show");setTimeout(()=>toastEl.classList.remove("show"),1800)};
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
@@ -28,12 +28,12 @@ function moreSheet(){
       <button data-a=open-equipment-log><span>▣</span><div><b>Equipment Log</b><small>Manage available gym equipment</small></div><em>›</em></button>
       <button data-a=open-calendar-settings><span>▦</span><div><b>Calendar & Time</b><small>${S.calendarStatus?.connected?"Google Calendar connected":"Schedule and timezone"}</small></div><em>›</em></button>
       <button class=more-signout data-a=signout><span>↪</span><div><b>Sign Out</b><small>Your Forge data stays saved</small></div></button>
-      <div class=more-version>Forge Fitness v14.35.2</div>
+      <div class=more-version>Forge Fitness v14.35.3</div>
     </div>
   </div>`;
 }
 function finalPolishSettingsCard(){
-  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.35.2</span></div>
+  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.35.3</span></div>
     <div class=settings-status-row><span>Connection</span><b>${S.online?"Online":"Offline"}</b></div>
     <div class=settings-status-row><span>Install mode</span><b>${isStandalonePWA()?"Installed app":"Browser"}</b></div>
     <div class=settings-status-row><span>Calendar</span><b>${S.calendarStatus?.connected?"Connected":"Not connected"}</b></div>
@@ -832,12 +832,14 @@ function coachMessageHTML(m){
 }
 function progressVisualSummary(){
   const workouts=plan?.workouts||[];
+  const ms=S.moduleSummary||{};
   const done=workouts.filter(x=>x.status==="completed").length;
   const adherence=S.progressIntelligence?.metrics?.adherence_percent;
   const muscles={};
   workouts.forEach(w=>(w.exercises||[]).forEach(e=>{const m=e.primary_muscle||"Other";muscles[m]=(muscles[m]||0)+Number(e.sets||0)}));
   const top=Object.entries(muscles).sort((a,b)=>b[1]-a[1]).slice(0,5),max=top[0]?.[1]||1;
   return `<div class=progress-visual-grid>
+    <div class="card progress-consistency-card"><p class=eyebrow>CORE + CARDIO</p><div class=consistency-value><b>${Number(ms.core_sessions_completed||0)} core</b><span>${Number(ms.cardio_sessions_completed||0)} cardio sessions • ${Number(ms.cardio_minutes_completed||0)} cardio min</span></div></div>
     <div class="card progress-consistency-card"><p class=eyebrow>CONSISTENCY</p><div class=consistency-value><b>${adherence==null?"—":Math.round(adherence)+"%"}</b><span>${done}/${workouts.length||0} current-plan workouts complete</span></div><div class=consistency-track><i style="width:${adherence==null?0:Math.min(100,adherence)}%"></i></div></div>
     <div class="card muscle-volume-card"><p class=eyebrow>WEEKLY MUSCLE VOLUME</p>${top.length?top.map(([m,s])=>`<div class=volume-row><span>${esc(m)}</span><b>${s} sets</b><i><u style="width:${Math.round(s/max*100)}%"></u></i></div>`).join(""):`<div class=polished-empty><b>Volume appears after your plan is built</b><span>Forge will summarize weekly set distribution here.</span></div>`}</div>
   </div>`;
@@ -869,6 +871,7 @@ const card=todayWorkout?`<div class="card hero-workout ${todayWorkout.status==="
     ${todayWorkout.status==="completed"
       ?`<p class=eyebrow>WORKOUT COMPLETE</p><h2>${esc(todayWorkout.name)} finished</h2><p class=muted>Training is done for today. Recovery and nutrition are the next priority.</p><div class=spacer></div><div class=home-complete-badge>✓ Completed</div>`
       :`<p class=eyebrow>PRIMARY ACTION</p><h2>${esc(todayWorkout.name)}</h2><p class=muted>${todayWorkout.exercises.length} exercises • ${esc(todayWorkout.scheduled_time||S.timeSettings?.default_workout_time||"17:00")} • ${todayWorkout.estimated_minutes||profile.minutes_per_workout} min${todayWorkout.core_included?" • Core":""}</p><div class=spacer></div><button class="btn hero-start" data-a=startworkout>Start Today’s Workout</button>`}
+${todayWorkout.core_module?`<div class=spacer></div><small>Core: ${todayWorkout.module_status?.core?.status==="completed"?"✓ Complete":"Scheduled"}</small>`:""}${todayWorkout.cardio_module?`<small>Cardio: ${todayWorkout.module_status?.cardio?.status==="completed"?"✓ Complete":"Scheduled"}</small>`:""}
   </div>
   <div class="workout-status-mark ${todayWorkout.status==="completed"?"done":""}">${todayWorkout.status==="completed"?"✓":"▶"}</div>
 </div>`:`<div class="card hero-workout recovery-home"><div class=copy><p class=eyebrow>RECOVERY DAY</p><h2>No workout scheduled today</h2><p class=muted>Recover, stay on top of nutrition, or ask Forge Coach to move a workout here.</p><div class=spacer></div><button class="btn dark" data-coach-route=coach>Ask Forge Coach</button></div></div>`;
@@ -899,15 +902,18 @@ function coreModuleCard(ww){
   const m=ww?.core_module;if(!m)return "";
   return `<div class=spacer></div><div class="card training-module-card core-module-card">
     <div class=row><div><p class=eyebrow>CORE • SEPARATE MODULE</p><h3>${esc(m.name)}</h3></div><span class=module-duration>${m.estimated_minutes||8} min</span></div>
-    <p class=muted>Scheduled after ${esc(ww.name)}. ${m.rounds||2} circuit rounds targeting the full core.</p>
+    <p class=muted>${esc(m.reason||`Scheduled after ${ww.name}.`)}</p>
     <div class=module-exercise-list>${(m.exercises||[]).map((e,i)=>`<div class=module-exercise-row><span>${i+1}</span><div><b>${esc(e.name)}</b><small>${esc(e.core_region||e.primary_muscle)} • ${e.sets} sets • ${moduleExerciseTarget(e)}${isBodyweightExercise(e)?" • Bodyweight":""}</small></div></div>`).join("")}</div>
+    <div class=spacer></div><button class=btn data-a=start-core-module>${ww.module_status?.core?.status==="completed"?"View Core Tracking":"Track Core Circuit"}</button>
   </div>`;
 }
 function cardioModuleCard(ww){
   const m=ww?.cardio_module;if(!m)return "";
   return `<div class=spacer></div><div class="card training-module-card cardio-module-card">
     <div class=row><div><p class=eyebrow>CARDIO • SEPARATE MODULE</p><h3>${esc(m.name)}</h3></div><button class="btn dark compact" data-a=swap-cardio>Swap</button></div>
-    <p class=muted>${m.minutes||15} min • ${cardioLabel(m.intensity||profile.cardio_preference)} intensity • scheduled with ${esc(ww.name)}</p>
+    <p class=muted>${m.minutes||15} min • ${cardioLabel(m.intensity||profile.cardio_preference)} intensity</p>
+    <p class=muted>${esc(m.reason||`Scheduled with ${ww.name}`)}</p>
+    <div class=spacer></div><button class=btn data-a=start-cardio-module>${ww.module_status?.cardio?.status==="completed"?"View Cardio Tracking":"Track Cardio"}</button>
   </div>`;
 }
 function workout(){
@@ -985,6 +991,31 @@ ${bodyweight?`<div class=logging-row><label for=loadMode>Load</label><select cla
 <div class=exercise-actions><button class=btn data-a=completeset>Complete ${timed?"Timed Set":"Set"}</button><button class="btn dark" data-a=swap-exercise>Swap Exercise</button><button class="text-action skip-set-action" data-a=skip-set>Skip this set</button></div></div>`;
 }
 
+function coretracker(){
+const ww=plan?.workouts?.[S.moduleWorkoutIndex??S.wi],m=ww?.core_module,s=S.moduleSession;
+if(!m)return `<h2>Core Circuit</h2><p class=muted>No core circuit selected.</p>`;
+return `<p class=eyebrow>CORE TRACKING</p><h2>${esc(m.name)}</h2><p class=muted>${esc(m.reason||"Balanced core circuit")}</p>
+<div class=big-spacer></div>${(m.exercises||[]).map((e,i)=>`<div class=card>
+<div class=row><div><p class=eyebrow>${esc(e.core_region||"CORE")}</p><h3>${esc(e.name)}</h3></div><span>${e.sets} sets</span></div>
+<p class=muted>Target ${moduleExerciseTarget(e)}${isBodyweightExercise(e)?" • Bodyweight":""}</p>
+<div class=logging-grid>
+<div class=logging-row><label>${isTimedExercise(e)?"Seconds":"Reps"}</label><input class=log-input data-core-value=${i} type=number min=1 value="${Math.round((Number(e.min_reps||10)+Number(e.max_reps||10))/2)}"></div>
+<div class=logging-row><label>RPE</label><input class=log-input data-core-rpe=${i} type=number min=1 max=10 value=7></div>
+</div></div><div class=spacer></div>`).join("")}
+<button class=btn data-a=complete-core-module>Complete Core Circuit</button>`;
+}
+function cardiotracker(){
+const ww=plan?.workouts?.[S.moduleWorkoutIndex??S.wi],m=ww?.cardio_module;
+if(!m)return `<h2>Cardio</h2><p class=muted>No cardio module selected.</p>`;
+return `<p class=eyebrow>CARDIO TRACKING</p><h2>${esc(m.name)}</h2><p class=muted>${esc(m.reason||"Goal-aware cardio")}</p>
+<div class=big-spacer></div><div class=card>
+<div class=logging-grid>
+<div class=logging-row><label>Completed Minutes</label><input class=log-input id=cardioMinutes type=number min=0 step=1 value="${m.minutes||15}"></div>
+<div class=logging-row><label>RPE</label><input class=log-input id=cardioRpe type=number min=1 max=10 value=7></div>
+<div class=logging-row><label>Distance <small>optional</small></label><input class=log-input id=cardioDistance type=number min=0 step=.01 placeholder="0"></div>
+<div class=logging-row><label>Pace <small>optional</small></label><input class=log-input id=cardioPace type=text placeholder="e.g. 10:00 / mi"></div>
+</div></div><div class=big-spacer></div><button class=btn data-a=complete-cardio-module>Complete Cardio</button>`;
+}
 function timer(){
 const t=S.restRemaining||w().exercises[S.ei].rest_seconds||60,mm=String(Math.floor(t/60)).padStart(2,"0"),ss=String(t%60).padStart(2,"0"),e=w().exercises[S.ei];
 return `<div class=center><p class=eyebrow>RECOVERY BETWEEN SETS</p><h2>Rest Timer</h2><p class=muted>Next: ${esc(e.name)} • Set ${S.set+1} of ${e.sets}</p><div class=ring><div><strong id=restClock>${mm}:${ss}</strong><span class=muted>Remaining</span></div></div><div class=timer-actions><button data-addrest=30>+30s</button><button data-addrest=60>+1m</button><button data-a=skiprest>Skip</button></div><div class=big-spacer></div><button class=btn data-a=skiprest>Start Next Set</button><div class=spacer></div><button class="btn dark" data-a=view-workout-rest>View Workout While Resting</button></div>`;
@@ -1669,7 +1700,7 @@ ${connected
 </div>
 <div class=big-spacer></div><button class=btn data-a=calendar-settings-save>Save Calendar & Time Settings</button>`;
 }
-function render(){const map={welcome,register,login,goal,experience,schedule,equipment,preferences,preferencepicker,cardiopicker,cardiofrequencypicker,splitpicker,sportpicker,corepicker,trainingsettings,adjustplan,calendarsettings,generating,yourplan,home,workout,exercise,timer,complete,progress,nutrition,nutritionadd,history,prs,exercisehistory,swapexercise,cardioswap,coach,notifications:notificationCenter,equipmentlog,equipmentdetails,exercisedirectory,exercisedetail,plan:planScreen};V.innerHTML=networkBanner()+updateBanner()+map[S.route]()+floatingRestTimer()+moreSheet();const onboarding=["welcome","register","login","goal","experience","schedule","equipment","equipmentdetails","preferences","preferencepicker","cardiopicker","cardiofrequencypicker","splitpicker","sportpicker","corepicker","generating","yourplan"].includes(S.route)&&!plan;nav.classList.toggle("hidden",onboarding);document.querySelector("#backBtn").style.visibility=["welcome","home","progress","nutrition","coach"].includes(S.route)?"hidden":"visible";document.querySelectorAll("[data-plan-tab]").forEach(b=>b.onclick=()=>{S.planTab=b.dataset.planTab;render()});document.querySelectorAll("[data-coach-route]").forEach(b=>b.onclick=()=>go(b.dataset.coachRoute));
+function render(){const map={welcome,register,login,goal,experience,schedule,equipment,preferences,preferencepicker,cardiopicker,cardiofrequencypicker,splitpicker,sportpicker,corepicker,trainingsettings,adjustplan,calendarsettings,generating,yourplan,home,workout,exercise,timer,complete,progress,nutrition,nutritionadd,history,prs,exercisehistory,swapexercise,cardioswap,coretracker,cardiotracker,coach,notifications:notificationCenter,equipmentlog,equipmentdetails,exercisedirectory,exercisedetail,plan:planScreen};V.innerHTML=networkBanner()+updateBanner()+map[S.route]()+floatingRestTimer()+moreSheet();const onboarding=["welcome","register","login","goal","experience","schedule","equipment","equipmentdetails","preferences","preferencepicker","cardiopicker","cardiofrequencypicker","splitpicker","sportpicker","corepicker","generating","yourplan"].includes(S.route)&&!plan;nav.classList.toggle("hidden",onboarding);document.querySelector("#backBtn").style.visibility=["welcome","home","progress","nutrition","coach"].includes(S.route)?"hidden":"visible";document.querySelectorAll("[data-plan-tab]").forEach(b=>b.onclick=()=>{S.planTab=b.dataset.planTab;render()});document.querySelectorAll("[data-coach-route]").forEach(b=>b.onclick=()=>go(b.dataset.coachRoute));
 document.querySelectorAll("[data-nav]").forEach(b=>{b.classList.toggle("active",b.dataset.nav===S.route);b.onclick=()=>go(b.dataset.nav)});document.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>act(b.dataset.a));document.querySelectorAll("[data-goal]").forEach(b=>b.onclick=()=>{profile.goal=b.dataset.goal;render()});document.querySelectorAll("[data-exp]").forEach(b=>b.onclick=()=>{profile.experience=b.dataset.exp;render()});document.querySelectorAll("[data-days]").forEach(b=>b.onclick=()=>{profile.days_per_week=+b.dataset.days;profile.core_workouts_per_week=Math.min(profile.core_workouts_per_week,profile.days_per_week);profile.cardio_workouts_per_week=Math.min(profile.cardio_workouts_per_week,profile.days_per_week);render()});document.querySelectorAll("[data-mins]").forEach(b=>b.onclick=()=>{profile.minutes_per_workout=+b.dataset.mins;render()});document.querySelectorAll("[data-setchange]").forEach(b=>b.onclick=async()=>{const ex=w()?.exercises?.[S.ei];if(!ex)return;const next=Math.max(S.set+1,Math.min(12,Number(ex.sets)+Number(b.dataset.setchange)));if(next===ex.sets)return;try{await api(`/me/workouts/${w().workout_id}/exercise-sets`,{method:"PUT",body:JSON.stringify({exercise_id:ex.exercise_id,sets:next})});ex.sets=next;toast(`${next} sets planned`);render()}catch(e){toast(e.message)}});document.querySelectorAll("[data-adjust-days]").forEach(b=>b.onclick=()=>{profile.days_per_week=+b.dataset.adjustDays;profile.core_workouts_per_week=Math.min(profile.core_workouts_per_week,profile.days_per_week);profile.cardio_workouts_per_week=Math.min(profile.cardio_workouts_per_week,profile.days_per_week);S.preferredDays=S.preferredDays.slice(0,profile.days_per_week);render()});document.querySelectorAll("[data-adjust-mins]").forEach(b=>b.onclick=()=>{profile.minutes_per_workout=+b.dataset.adjustMins;render()});document.querySelectorAll("[data-preferred-day]").forEach(b=>b.onclick=()=>{const d=+b.dataset.preferredDay,i=S.preferredDays.indexOf(d);if(i>=0)S.preferredDays.splice(i,1);else if(S.preferredDays.length<profile.days_per_week)S.preferredDays.push(d);else{toast(`Choose ${profile.days_per_week} days`);return}render()});document.querySelectorAll("[data-cardio]").forEach(b=>b.onclick=()=>{profile.cardio_preference=b.dataset.cardio;render()});document.querySelectorAll("[data-split]").forEach(b=>b.onclick=()=>{profile.workout_split=b.dataset.split;render()});document.querySelectorAll("[data-sport]").forEach(b=>b.onclick=()=>{profile.sport=b.dataset.sport;render()});document.querySelectorAll("[data-core-frequency]").forEach(b=>b.onclick=()=>{profile.core_workouts_per_week=Math.min(+b.dataset.coreFrequency,+profile.days_per_week);render()});document.querySelectorAll("[data-cardio-frequency]").forEach(b=>b.onclick=()=>{profile.cardio_workouts_per_week=Math.min(+b.dataset.cardioFrequency,+profile.days_per_week);if(!["light","moderate","high","extended"].includes(profile.cardio_preference))profile.cardio_preference="moderate";render()});const nutritionDate=document.querySelector("#nutritionDate");
 if(nutritionDate)nutritionDate.onchange=()=>{S.nutritionDate=nutritionDate.value;S.nutrition=null;loadNutrition();};
 document.querySelectorAll("[data-nutrition-delete]").forEach(b=>b.onclick=async()=>{if(confirm("Delete this food entry?")){await api(`/me/nutrition/entries/${b.dataset.nutritionDelete}`,{method:"DELETE"});S.nutrition=null;await loadNutrition();}});
@@ -1734,7 +1765,7 @@ if(S.route==="calendarsettings"){if(!S.calendarStatus||!S.timeSettings)loadCalen
 function toggleArr(arr,v){const i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else arr.push(v);render()}
 function go(r){
   if(!S.restRemaining)stopTimer();S.route=r;render();scrollTo(0,0);
-  if(r==="progress"){loadProgressIntelligence();loadBodyMetrics();}
+  if(r==="progress"){loadProgressIntelligence();loadBodyMetrics();api("/me/modules/summary").then(x=>{S.moduleSummary=x;render()}).catch(()=>{});}
   if(r==="home"){loadHomeDashboard();loadNotifications();}
   if(r==="notifications")loadNotifications();
   if((r==="home"||r==="plan")&&S.calendarStatus?.connected&&S.calendarStatus?.sync_enabled){
@@ -1911,6 +1942,36 @@ async function act(a){
     if(a==="gohome")go("home");
     if(a==="startworkout")await startWorkout();
     if(a==="openexercise")go("exercise");if(a==="swap-exercise")go("swapexercise");
+    if(a==="start-core-module"){
+      S.moduleWorkoutIndex=S.wi;
+      const d=await api(`/me/workouts/${w().workout_id}/modules/core/start`,{method:"POST"});
+      S.moduleSession=d.session;go("coretracker");return;
+    }
+    if(a==="start-cardio-module"){
+      S.moduleWorkoutIndex=S.wi;
+      const d=await api(`/me/workouts/${w().workout_id}/modules/cardio/start`,{method:"POST"});
+      S.moduleSession=d.session;go("cardiotracker");return;
+    }
+    if(a==="complete-core-module"){
+      const ww=plan.workouts[S.moduleWorkoutIndex],m=ww.core_module;
+      for(let i=0;i<(m.exercises||[]).length;i++){
+        const e=m.exercises[i],value=Number(document.querySelector(`[data-core-value="${i}"]`)?.value||0),rpe=Number(document.querySelector(`[data-core-rpe="${i}"]`)?.value||7);
+        if(value<=0)throw Error(`Enter a result for ${e.name}`);
+        await api(`/me/modules/${S.moduleSession.id}/core/log`,{method:"POST",body:JSON.stringify({
+          exercise_id:e.exercise_id,sets_completed:e.sets,reps:isTimedExercise(e)?[]:[value],
+          duration_seconds:isTimedExercise(e)?value:null,weight:null,
+          load_mode:isTimedExercise(e)?"timed":(isBodyweightExercise(e)?"bodyweight":"weight"),rpe
+        })});
+      }
+      await api(`/me/modules/${S.moduleSession.id}/complete`,{method:"POST",body:JSON.stringify({completed_minutes:m.estimated_minutes||8,rpe:7})});
+      plan=await api("/me/plan/current");S.moduleSession=null;S.moduleSummary=await api("/me/modules/summary");toast("Core circuit completed");go("workout");return;
+    }
+    if(a==="complete-cardio-module"){
+      const mins=Number(document.querySelector("#cardioMinutes")?.value||0),rpe=Number(document.querySelector("#cardioRpe")?.value||7),distance=Number(document.querySelector("#cardioDistance")?.value||0),pace=document.querySelector("#cardioPace")?.value?.trim()||null;
+      if(mins<=0)throw Error("Enter completed cardio minutes");
+      await api(`/me/modules/${S.moduleSession.id}/complete`,{method:"POST",body:JSON.stringify({completed_minutes:mins,rpe,distance:distance||null,pace})});
+      plan=await api("/me/plan/current");S.moduleSession=null;S.moduleSummary=await api("/me/modules/summary");toast("Cardio completed");go("workout");return;
+    }
     if(a==="swap-cardio")go("cardioswap");
     if(a==="cancel-cardio-swap")go("workout");
     if(a==="apply-cardio-swap")await applyCardioSwap();if(a==="back-exercise")go("exercise");if(a==="swap-selected"){if(S.selectedSwap)await applySwap(S.selectedSwap);else toast("Select an exercise first");}if(a==="abandon"){if(session&&confirm("Abandon this workout? Logged sets will remain in history.")){await api("/me/workout/abandon",{method:"POST",body:JSON.stringify({session_id:session.session_id})});session=null;S.ei=0;S.set=0;S.restRemaining=0;plan=await api("/me/plan/current");go("home");toast("Workout abandoned")}}
@@ -1949,10 +2010,10 @@ document.querySelector("#backBtn").onclick=()=>{
     go(dest);
     return;
   }
-  const dest={register:"welcome",login:"welcome",history:"progress",prs:"history",exercisehistory:"prs",swapexercise:"exercise",cardioswap:"workout",nutritionadd:"nutrition",experience:"goal",schedule:"experience",equipment:"schedule",equipmentlog:plan?"plan":"equipment",equipmentdetails:S.equipmentReturn==="onboarding"?"equipment":"equipmentlog",exercisedirectory:plan?"plan":"preferences",exercisedetail:"exercisedirectory",preferences:"equipment",yourplan:"preferences",workout:"home",exercise:"workout",timer:"exercise",complete:"home",plan:"home",calendarsettings:"trainingsettings",adjustplan:"plan"}[S.route]||"home";
+  const dest={register:"welcome",login:"welcome",history:"progress",prs:"history",exercisehistory:"prs",swapexercise:"exercise",cardioswap:"workout",coretracker:"workout",cardiotracker:"workout",nutritionadd:"nutrition",experience:"goal",schedule:"experience",equipment:"schedule",equipmentlog:plan?"plan":"equipment",equipmentdetails:S.equipmentReturn==="onboarding"?"equipment":"equipmentlog",exercisedirectory:plan?"plan":"preferences",exercisedetail:"exercisedirectory",preferences:"equipment",yourplan:"preferences",workout:"home",exercise:"workout",timer:"exercise",complete:"home",plan:"home",calendarsettings:"trainingsettings",adjustplan:"plan"}[S.route]||"home";
   go(dest);
 };
-document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.35.2")};
+document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.35.3")};
 const calendarParams=new URLSearchParams(location.search);
 const calendarJustConnected=calendarParams.get("calendar_connected")==="1";
 const calendarSyncWarning=calendarParams.get("calendar_sync_warning")==="1";

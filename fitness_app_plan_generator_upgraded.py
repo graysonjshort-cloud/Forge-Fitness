@@ -672,7 +672,7 @@ class PlanGenerator:
     def _core_day_indexes(self, workout_count: int, requested: int) -> list[int]:
         return self._addon_day_indexes(workout_count,requested,0)
 
-    def _build_core_module(self, module_index: int, profile: UserProfile, candidates) -> dict:
+    def _build_core_module(self, module_index: int, profile: UserProfile, candidates, workout: Workout) -> dict:
         """Build a balanced standalone core circuit without consuming strength-workout slots."""
         groups=[
             ("Lower Abs / Hip Flexion", ["Hip Flexion"]),
@@ -682,6 +682,9 @@ class PlanGenerator:
         ]
         used=set()
         exercises=[]
+        workout_name=(workout.name or "").lower()
+        lower_day=any(x in workout_name for x in ("lower","leg","squat","deadlift","posterior"))
+        upper_day=any(x in workout_name for x in ("upper","push","pull","chest","back","shoulder"))
         for label,patterns in groups:
             choices=[]
             for pattern in patterns:
@@ -692,11 +695,17 @@ class PlanGenerator:
                 ])
             if not choices:
                 continue
-            choices=sorted(
-                choices,
-                key=lambda e:self._adaptive_score(e,profile)+self._exercise_quality(e,profile)+self.rng.random()*3,
-                reverse=True,
-            )
+            def core_score(e):
+                score=self._adaptive_score(e,profile)+self._exercise_quality(e,profile)+self.rng.random()*3
+                fatigue=2 + (1 if e.get("exercise_type")=="Compound" else 0)
+                if lower_day and e.get("movement_pattern") in {"Hip Flexion","Rotation"}:
+                    score-=3
+                if lower_day and any(x in str(e.get("name","")).lower() for x in ("hanging","ab wheel")):
+                    score-=4
+                if upper_day and e.get("movement_pattern") in {"Anti-Rotation","Anti-Lateral Flexion"}:
+                    score+=3
+                return score
+            choices=sorted(choices,key=core_score,reverse=True)
             ex=choices[0]
             used.add(ex["name"])
             low,high=self._rep_range(ex,profile.goal)
@@ -724,19 +733,33 @@ class PlanGenerator:
             "estimated_minutes":max(6,min(12,len(exercises)*2+2)),
             "rounds":2,
             "focus":["Lower Abs","Anti-Extension","Obliques","Trunk Flexion"],
+            "reason":("Lower-body fatigue protection: lower-spinal-load core choices were prioritized."
+                      if lower_day else "Core functions were balanced to complement today's strength session."),
             "exercises":exercises,
         }
 
-    def _build_cardio_module(self, profile: UserProfile, candidates) -> dict | None:
+    def _build_cardio_module(self, profile: UserProfile, candidates, workout: Workout) -> dict | None:
         cardio_patterns=["Steady-State Cardio","Interval Cardio"]
         eligible=[x for x in candidates if x.get("exercise_type")=="Cardio" or x.get("movement_pattern") in cardio_patterns]
         if not eligible:
             return None
         intensity=profile.cardio_preference if profile.cardio_preference in {"light","moderate","high","extended"} else "moderate"
-        desired="Interval Cardio" if intensity=="high" else "Steady-State Cardio"
+        workout_name=(workout.name or "").lower()
+        lower_day=any(x in workout_name for x in ("lower","leg","squat","deadlift","posterior"))
+        upper_day=any(x in workout_name for x in ("upper","push","pull","chest","back","shoulder"))
+        goal=profile.goal
+        if lower_day:
+            desired="Steady-State Cardio"
+        elif intensity=="high" and upper_day:
+            desired="Interval Cardio"
+        else:
+            desired="Interval Cardio" if intensity=="high" else "Steady-State Cardio"
         matches=[x for x in eligible if x.get("movement_pattern")==desired] or eligible
         chosen=sorted(matches,key=lambda x:self._adaptive_score(x,profile)+self.rng.random()*3,reverse=True)[0]
-        duration={"light":10,"moderate":15,"high":20,"extended":25}.get(intensity,15)
+        base={"light":10,"moderate":15,"high":20,"extended":25}.get(intensity,15)
+        if goal=="lose_fat": base+=5
+        elif goal=="get_stronger": base=max(10,base-5)
+        duration=base
         return {
             "name":chosen["name"],
             "type":"cardio",
@@ -744,7 +767,14 @@ class PlanGenerator:
             "movement_pattern":chosen["movement_pattern"],
             "equipment":chosen["equipment"],
             "minutes":duration,
-            "intensity":intensity,
+            "intensity":("light" if lower_day and intensity=="high" else intensity),
+            "reason":(
+                "Low-impact steady cardio selected to reduce interference with lower-body recovery."
+                if lower_day else
+                "Higher-intensity cardio fits better after an upper-body strength session."
+                if upper_day and desired=="Interval Cardio" else
+                "Cardio modality and duration were matched to your goal and recovery demands."
+            ),
         }
 
     def _add_core_to_workout(self, workout: Workout, profile: UserProfile, candidates) -> None:
@@ -843,7 +873,7 @@ class PlanGenerator:
         workout_dicts=[asdict(w) for w in workouts]
         core_modules=[]
         for module_number,idx in enumerate(core_indexes):
-            module=self._build_core_module(module_number,profile,candidates)
+            module=self._build_core_module(module_number,profile,candidates,workouts[idx])
             module["workout_index"]=idx
             core_modules.append(module)
             workout_dicts[idx]["core_module"]=module
@@ -851,7 +881,7 @@ class PlanGenerator:
             workout_dicts[idx]["core_exercises"]=[]
         cardio_modules=[]
         for idx in cardio_indexes:
-            module=self._build_cardio_module(profile,candidates)
+            module=self._build_cardio_module(profile,candidates,workouts[idx])
             if module:
                 module["workout_index"]=idx
                 cardio_modules.append(module)
@@ -861,7 +891,7 @@ class PlanGenerator:
                 workout_dicts[idx]["cardio_minutes"]=0
 
         return {
-            "planner_version": "2.2-modular-training",
+            "planner_version": "2.3-smart-modular-tracking",
             "adaptive_features": [
                 "recent performance adaptation",
                 "recovery-aware set adjustment",
@@ -874,6 +904,8 @@ class PlanGenerator:
                 "user exercise preference learning",
                 "standalone balanced core circuits",
                 "standalone cardio modules",
+                "strength-session-aware core selection",
+                "goal-aware cardio interference management",
             ],
             "profile": asdict(profile),
             "split": resolve_sport_split(profile.days_per_week, profile.workout_split, profile.sport),

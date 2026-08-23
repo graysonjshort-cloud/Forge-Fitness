@@ -405,3 +405,41 @@ CREATE TABLE IF NOT EXISTS body_metrics (
 
 CREATE INDEX IF NOT EXISTS idx_body_metrics_user_date
 ON body_metrics(user_id, entry_date DESC);
+
+
+CREATE TABLE IF NOT EXISTS training_module_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    workout_id INTEGER NOT NULL,
+    module_type TEXT NOT NULL CHECK(module_type IN ('core','cardio')),
+    module_name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','completed','abandoned')),
+    planned_minutes INTEGER,
+    completed_minutes REAL,
+    distance REAL,
+    pace TEXT,
+    rpe REAL,
+    started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at TEXT,
+    notes TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(workout_id) REFERENCES workouts(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_training_module_sessions_user
+ON training_module_sessions(user_id, module_type, status);
+
+CREATE TABLE IF NOT EXISTS training_module_exercise_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    module_session_id INTEGER NOT NULL,
+    exercise_id INTEGER NOT NULL,
+    sets_completed INTEGER NOT NULL DEFAULT 1,
+    reps_json TEXT NOT NULL DEFAULT '[]',
+    duration_seconds INTEGER,
+    weight REAL,
+    load_mode TEXT NOT NULL DEFAULT 'bodyweight',
+    rpe REAL,
+    recorded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(module_session_id) REFERENCES training_module_sessions(id) ON DELETE CASCADE,
+    FOREIGN KEY(exercise_id) REFERENCES exercises(id)
+);

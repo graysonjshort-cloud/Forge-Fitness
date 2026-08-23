@@ -1,2 +1,2 @@
-Forge Fitness v14.35.2
-Modular core/cardio + complete bodyweight tracking + adjustable timed targets
+Forge Fitness v14.35.3
+Smart Core/Cardio Programming + Independent Tracking

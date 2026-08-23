@@ -504,6 +504,22 @@ class ExerciseSetsRequest(BaseModel):
     exercise_id: int
     sets: int = Field(ge=1, le=12)
 
+class CoreModuleLogRequest(BaseModel):
+    exercise_id: int
+    sets_completed: int = Field(1, ge=1, le=20)
+    reps: list[int] = []
+    duration_seconds: Optional[int] = Field(None, ge=1, le=3600)
+    weight: Optional[float] = Field(None, ge=0)
+    load_mode: str = "bodyweight"
+    rpe: Optional[float] = Field(None, ge=1, le=10)
+
+class ModuleCompleteRequest(BaseModel):
+    completed_minutes: Optional[float] = Field(None, ge=0, le=1440)
+    distance: Optional[float] = Field(None, ge=0)
+    pace: Optional[str] = None
+    rpe: Optional[float] = Field(None, ge=1, le=10)
+    notes: Optional[str] = None
+
 class ExercisePreferenceRequest(BaseModel):
     preference: str = "neutral"
     notes: Optional[str] = None
@@ -812,6 +828,7 @@ def _hydrate_plan_workout_ids(user_id: int, plan: dict) -> dict:
             workout["started_at"] = row.get("started_at")
             workout["completed_at"] = row.get("completed_at")
             workout["week_number"] = int(row.get("week_number") or 1)
+            workout["module_status"]=database.get_module_status_for_workout(user_id,int(row["id"]),DB_PATH)
             sch=schedule.get(int(row["id"]))
             if sch:
                 workout["scheduled_day"]=int(sch["scheduled_day"])
@@ -1464,6 +1481,46 @@ def me_prs(limit: int = 100, authorization: Optional[str] = Header(None)):
     user = _current_account(authorization)
     return database.get_personal_records(user["user_id"], limit, DB_PATH)
 
+
+@app.post("/me/workouts/{workout_id}/modules/{module_type}/start")
+def me_start_training_module(workout_id: int, module_type: str,
+                             authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    try:
+        session=database.start_training_module(user["user_id"],workout_id,module_type,DB_PATH)
+        module=database.get_current_module(user["user_id"],workout_id,module_type,DB_PATH)
+        return {"session":session,"module":module}
+    except ValueError as e:
+        raise HTTPException(400,str(e))
+
+@app.post("/me/modules/{module_session_id}/core/log")
+def me_log_core_module(module_session_id: int, request: CoreModuleLogRequest,
+                       authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    try:
+        return database.log_core_module_exercise(
+            user["user_id"],module_session_id,request.exercise_id,request.sets_completed,
+            request.reps,request.duration_seconds,request.weight,request.load_mode,request.rpe,DB_PATH
+        )
+    except ValueError as e:
+        raise HTTPException(400,str(e))
+
+@app.post("/me/modules/{module_session_id}/complete")
+def me_complete_training_module(module_session_id: int, request: ModuleCompleteRequest,
+                                authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    try:
+        return database.complete_training_module(
+            user["user_id"],module_session_id,request.completed_minutes,request.distance,
+            request.pace,request.rpe,request.notes,DB_PATH
+        )
+    except ValueError as e:
+        raise HTTPException(400,str(e))
+
+@app.get("/me/modules/summary")
+def me_module_summary(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return database.get_module_tracking_summary(user["user_id"],DB_PATH)
 
 @app.get("/me/cardio/options")
 def me_cardio_options(authorization: Optional[str]=Header(None)):
