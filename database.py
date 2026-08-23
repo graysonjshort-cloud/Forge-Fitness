@@ -8,6 +8,8 @@ import sqlite3
 import os
 import tempfile
 import threading
+import logging
+from urllib.parse import urlsplit
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -25,6 +27,25 @@ PERSISTENCE_KEY = os.getenv("FORGE_PERSISTENCE_KEY", "forge-production").strip()
 _persist_lock = threading.RLock()
 _persist_restore_attempted = False
 _persist_syncing = False
+_persist_available = None
+_log = logging.getLogger("forge.persistence")
+
+def _persistence_target() -> str:
+    """Return a password-free persistence target for diagnostics."""
+    if not SUPABASE_DB_URL:
+        return "disabled"
+    try:
+        u = urlsplit(SUPABASE_DB_URL)
+        return f"user={u.username or '?'} host={u.hostname or '?'} port={u.port or '?'} db={(u.path or '/').lstrip('/') or '?'}"
+    except Exception:
+        return "configured (URL could not be parsed)"
+
+def _persistence_warning(action: str, exc: Exception) -> None:
+    global _persist_available
+    _persist_available = False
+    _log.warning("Supabase persistence %s failed; continuing with local SQLite. %s; error=%s: %s",
+                 action, _persistence_target(), type(exc).__name__, exc)
+
 
 def _pg_connect():
     if not SUPABASE_DB_URL:
@@ -52,26 +73,35 @@ def restore_remote_snapshot(db_path=DEFAULT_DB_PATH) -> bool:
         if _persist_restore_attempted:
             return False
         _persist_restore_attempted = True
-        pg = _pg_connect()
-        if pg is None:
-            return False
+        pg = None
         try:
+            pg = _pg_connect()
+            if pg is None:
+                return False
             _ensure_remote_store(pg)
             with pg.cursor() as cur:
                 cur.execute("SELECT sqlite_blob FROM forge_persistence_snapshots WHERE app_key=%s", (PERSISTENCE_KEY,))
                 row = cur.fetchone()
+            global _persist_available
+            _persist_available = True
+            _log.info("Supabase persistence connected for restore: %s", _persistence_target())
             if not row:
                 return False
             path = Path(db_path)
             path.parent.mkdir(parents=True, exist_ok=True)
-            # The stored object is a complete SQLite backup, so replacing the
-            # ephemeral Render copy is safe before the first application DB use.
             path.write_bytes(bytes(row[0]))
             for suffix in ("-wal", "-shm"):
                 Path(str(path)+suffix).unlink(missing_ok=True)
             return True
+        except Exception as exc:
+            _persistence_warning("restore", exc)
+            return False
         finally:
-            pg.close()
+            if pg is not None:
+                try:
+                    pg.close()
+                except Exception:
+                    pass
 
 def sync_remote_snapshot(db_path=DEFAULT_DB_PATH) -> bool:
     """Persist a transaction-consistent SQLite snapshot to Supabase Postgres."""
@@ -95,10 +125,11 @@ def sync_remote_snapshot(db_path=DEFAULT_DB_PATH) -> bool:
                 target.close()
                 source.close()
             payload = Path(tmp_name).read_bytes()
-            pg = _pg_connect()
-            if pg is None:
-                return False
+            pg = None
             try:
+                pg = _pg_connect()
+                if pg is None:
+                    return False
                 _ensure_remote_store(pg)
                 with pg.cursor() as cur:
                     cur.execute('''
@@ -108,9 +139,18 @@ def sync_remote_snapshot(db_path=DEFAULT_DB_PATH) -> bool:
                         SET sqlite_blob=EXCLUDED.sqlite_blob, updated_at=NOW()
                     ''', (PERSISTENCE_KEY, payload))
                 pg.commit()
+                global _persist_available
+                _persist_available = True
                 return True
+            except Exception as exc:
+                _persistence_warning("sync", exc)
+                return False
             finally:
-                pg.close()
+                if pg is not None:
+                    try:
+                        pg.close()
+                    except Exception:
+                        pass
         finally:
             if tmp_name:
                 Path(tmp_name).unlink(missing_ok=True)

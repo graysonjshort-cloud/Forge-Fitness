@@ -1,2 +1,2 @@
-Forge Fitness v14.33
-Final polish release
+Forge Fitness v14.33.1
+Supabase fail-safe stability patch
