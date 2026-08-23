@@ -504,6 +504,9 @@ class ExerciseSetsRequest(BaseModel):
     exercise_id: int
     sets: int = Field(ge=1, le=12)
 
+class ModuleMoveRequest(BaseModel):
+    target_workout_id: int
+
 class CoreModuleLogRequest(BaseModel):
     exercise_id: int
     sets_completed: int = Field(1, ge=1, le=20)
@@ -643,8 +646,11 @@ def _profile_from_db(user_id: int) -> UserProfile:
     if not p:
         raise HTTPException(404, "Profile not found")
     s = database.get_training_state(user_id, DB_PATH)
+    exercise_history=dict(s.get("exercise_history", {}))
+    for exercise_name,core_history in database.get_core_progression_history(user_id,DB_PATH).items():
+        exercise_history.setdefault(exercise_name,{}).update(core_history)
     state = TrainingState(
-        exercise_history=s.get("exercise_history", {}),
+        exercise_history=exercise_history,
         weekly_fatigue=s.get("fatigue_score", 0.0),
         missed_workouts=s.get("missed_workouts", 0),
     )
@@ -1481,6 +1487,19 @@ def me_prs(limit: int = 100, authorization: Optional[str] = Header(None)):
     user = _current_account(authorization)
     return database.get_personal_records(user["user_id"], limit, DB_PATH)
 
+
+@app.post("/me/workouts/{workout_id}/modules/{module_type}/move")
+def me_move_training_module(workout_id: int, module_type: str, request: ModuleMoveRequest,
+                            authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    try:
+        result=database.move_training_module(
+            user["user_id"],workout_id,request.target_workout_id,module_type,DB_PATH
+        )
+        plan=database.get_current_plan(user["user_id"],DB_PATH)
+        return {"result":result,"plan":_hydrate_plan_workout_ids(user["user_id"],plan)}
+    except ValueError as e:
+        raise HTTPException(400,str(e))
 
 @app.post("/me/workouts/{workout_id}/modules/{module_type}/start")
 def me_start_training_module(workout_id: int, module_type: str,

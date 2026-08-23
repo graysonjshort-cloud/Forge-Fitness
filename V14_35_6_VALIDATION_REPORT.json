@@ -1,0 +1,25 @@
+{
+  "version": "v14.35.6",
+  "status": "passed",
+  "tests": {
+    "backend_health": "passed",
+    "core_rest_programming": "passed",
+    "core_estimated_time_includes_rest": "passed",
+    "per_set_immediate_logging": "passed",
+    "core_history_persistence": "passed",
+    "reconfigure_with_progressive_generator": "passed",
+    "history_based_target_progression": "passed",
+    "built_in_rest_timer_frontend": "passed",
+    "rest_skip_control": "passed",
+    "completion_locked_until_all_sets": "passed",
+    "javascript_syntax": "passed",
+    "python_syntax": "passed",
+    "pwa_update_delivery": "passed"
+  },
+  "sample_core": {
+    "name": "Core Circuit A",
+    "estimated_minutes": 8,
+    "between_rest_seconds": 30,
+    "round_rest_seconds": 75
+  }
+}

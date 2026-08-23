@@ -734,6 +734,33 @@ class PlanGenerator:
             timed=ex.get("exercise_type")=="Isometric" or any(
                 x in ex.get("name","").lower() for x in ("plank","hold","wall sit")
             )
+            history=self._history_for(profile,ex["name"])
+            avg_rpe=history.get("core_avg_rpe")
+            progression_note="Build consistency first; progress when all sets finish with good form and ~2-3 reps in reserve."
+            if timed:
+                last=int(history.get("core_last_duration") or 0)
+                if last:
+                    if avg_rpe is not None and avg_rpe <= 7:
+                        low=max(int(low),last+5); high=max(int(high),low+10)
+                        progression_note="Previous holds were comfortable, so Forge added about 5 seconds."
+                    elif avg_rpe is not None and avg_rpe >= 9:
+                        low=max(10,min(int(low),last)); high=max(low+5,min(int(high),last+5))
+                        progression_note="Previous holds were near limit, so Forge held the target steady."
+                    else:
+                        low=max(int(low),last); high=max(int(high),last+10)
+                        progression_note="Target follows your most recent hold while preserving room to progress."
+            else:
+                last=int(history.get("core_last_reps") or 0)
+                if last:
+                    if avg_rpe is not None and avg_rpe <= 7:
+                        low=max(int(low),last); high=max(int(high),last+2)
+                        progression_note="Previous sets were comfortable, so Forge progressed the rep target."
+                    elif avg_rpe is not None and avg_rpe >= 9:
+                        low=max(5,min(int(low),last-1)); high=max(low+2,min(int(high),last+1))
+                        progression_note="Previous sets were near limit, so Forge held or slightly reduced the target."
+                    else:
+                        low=max(int(low),last-1); high=max(int(high),last+1)
+                        progression_note="Target stays close to your latest performance until effort improves."
             exercises.append({
                 "exercise_id":int(ex["id"]),
                 "name":ex["name"],
@@ -744,16 +771,22 @@ class PlanGenerator:
                 "sets":2,
                 "min_reps":int(low),
                 "max_reps":int(high),
-                "rest_seconds":min(int(ex["default_rest_seconds"]),45),
-                "progression_method":self._progression_note(ex,profile),
+                "rest_seconds":35 if not lower_day else 30,
+                "round_rest_seconds":75 if lower_day else 60,
+                "progression_method":progression_note,
                 "tracking_mode":"timed" if timed else "reps",
                 "bodyweight_default":"bodyweight" in str(ex.get("equipment","")).lower(),
             })
         return {
             "name":f"Core Circuit {chr(65 + (module_index % 3))}",
             "type":"core",
-            "estimated_minutes":max(6,min(12,len(exercises)*2+2)),
+            "estimated_minutes":max(8,min(18,math.ceil(
+                sum((e["sets"]*35)+((e["sets"]-1)*e["rest_seconds"]) for e in exercises)/60
+                + ((75 if lower_day else 60)/60)
+            ))),
             "rounds":2,
+            "between_exercise_rest_seconds":30 if lower_day else 35,
+            "round_rest_seconds":75 if lower_day else 60,
             "focus":["Lower Abs","Anti-Extension","Obliques","Trunk Flexion"],
             "reason":("Lower-body fatigue protection: lower-spinal-load core choices were prioritized."
                       if lower_day else "Core functions were balanced to complement today's strength session."),
@@ -913,7 +946,7 @@ class PlanGenerator:
                 workout_dicts[idx]["cardio_minutes"]=0
 
         return {
-            "planner_version": "2.4-time-aware-modular-tracking",
+            "planner_version": "2.5-progressive-core-circuits",
             "adaptive_features": [
                 "recent performance adaptation",
                 "recovery-aware set adjustment",

@@ -1,2 +1,2 @@
-Forge Fitness v14.35.5
-Core per-set tracking + unified effort + time-aware plans + expanded bodyweight classification
+Forge Fitness v14.35.7
+Expanded Muscle Volume + Separate Core/Cardio Progress + Module Day Moves

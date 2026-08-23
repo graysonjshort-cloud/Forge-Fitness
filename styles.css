@@ -1279,3 +1279,36 @@ input,select,textarea{border-radius:9px!important}
 
 /* v14.35.5 */
 .core-set-stack{display:flex;flex-direction:column;gap:12px;margin-top:14px}.core-set-card{padding:14px;border:1px solid #2c333b;border-radius:14px;background:#11161b}.core-set-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.core-set-title small{color:var(--muted,#9ba3ad)}
+
+/* v14.35.6 progressive core circuits */
+.core-circuit-rest-info{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.core-circuit-rest-info span{font-size:11px;color:var(--muted,#9ba3ad);background:#161b20;border:1px solid #2b333b;border-radius:999px;padding:6px 9px}
+.core-progression-note{font-size:12px;line-height:1.4;margin-top:6px}
+.core-set-complete{opacity:.72;border-color:#3b4949}
+.core-complete-set{margin-top:12px}
+.core-rest-overlay{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:24px;background:rgba(5,8,11,.8);backdrop-filter:blur(8px)}
+.core-rest-card{width:min(360px,100%);padding:24px;border-radius:20px;background:#171c22;border:1px solid #343c45;text-align:center;box-shadow:0 22px 80px rgba(0,0,0,.45)}
+#coreRestClock{font-size:58px;font-weight:900;line-height:1;letter-spacing:.04em;font-variant-numeric:tabular-nums;margin:16px 0}
+
+/* v14.35.7 progress dashboard + module day moving */
+.progress-visual-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.expanded-muscle-volume{grid-column:1/-1}
+.muscle-volume-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:12px}
+.muscle-volume-head h3{margin:3px 0 0}
+.muscle-volume-head>span{font-size:12px;color:var(--muted,#9ba3ad);white-space:nowrap}
+.expanded-muscle-volume .volume-row{display:grid;grid-template-columns:minmax(90px,1fr) auto;gap:5px 12px;padding:7px 0}
+.expanded-muscle-volume .volume-row i{grid-column:1/-1;height:5px}
+.module-progress-card small{display:block;margin-top:8px;color:var(--muted,#9ba3ad);line-height:1.35}
+.module-progress-value{display:flex;align-items:baseline;gap:8px;margin:6px 0 10px}
+.module-progress-value b{font-size:34px;line-height:1}
+.module-progress-value span{font-size:12px;color:var(--muted,#9ba3ad)}
+.module-card-actions{display:grid;grid-template-columns:1fr auto;gap:8px}
+.module-card-actions .btn.dark{min-width:92px}
+.module-day-option{text-align:left;width:100%}
+.module-day-option.selected{border-color:var(--red,#ef233c)}
+@media(max-width:620px){
+  .progress-visual-grid{grid-template-columns:1fr}
+  .expanded-muscle-volume{grid-column:auto}
+  .muscle-volume-head{display:block}
+  .muscle-volume-head>span{display:block;margin-top:5px}
+}

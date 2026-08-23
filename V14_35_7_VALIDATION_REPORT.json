@@ -1,0 +1,18 @@
+{
+  "version": "v14.35.7",
+  "status": "passed",
+  "tests": {
+    "backend_health": "passed",
+    "weekly_muscle_chart_expanded": "passed",
+    "all_muscle_groups_rendered": "passed",
+    "core_progress_separate": "passed",
+    "cardio_progress_separate": "passed",
+    "core_module_day_move": "passed",
+    "cardio_module_day_move": "passed",
+    "strength_workout_stays_put": "passed",
+    "frontend_module_move_route": "passed",
+    "javascript_syntax": "passed",
+    "python_syntax": "passed",
+    "pwa_update_delivery": "passed"
+  }
+}

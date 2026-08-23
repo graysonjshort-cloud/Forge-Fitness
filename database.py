@@ -917,6 +917,85 @@ def get_cardio_options_for_user(user_id: int, db_path=DEFAULT_DB_PATH) -> list[d
         out.append(item)
     return out
 
+def move_training_module(user_id: int, source_workout_id: int, target_workout_id: int,
+                         module_type: str, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    if module_type not in {"core","cardio"}:
+        raise ValueError("Invalid module type")
+    if int(source_workout_id)==int(target_workout_id):
+        raise ValueError("Choose a different training day")
+    with session(db_path) as con:
+        rows=con.execute(
+            """SELECT w.id,w.name,w.workout_index,pw.id AS week_id,pw.plan_json
+               FROM workouts w
+               JOIN program_weeks pw ON pw.id=w.program_week_id
+               JOIN programs p ON p.id=pw.program_id
+               WHERE p.user_id=? AND p.status='active' AND w.id IN (?,?)
+               ORDER BY w.id""",
+            (user_id,source_workout_id,target_workout_id),
+        ).fetchall()
+        by_id={int(r["id"]):r for r in rows}
+        if int(source_workout_id) not in by_id or int(target_workout_id) not in by_id:
+            raise ValueError("Workout not found")
+        src=by_id[int(source_workout_id)]; dst=by_id[int(target_workout_id)]
+        if int(src["week_id"])!=int(dst["week_id"]):
+            raise ValueError("Modules can only move within the current training week")
+
+        completed=con.execute(
+            """SELECT 1 FROM training_module_sessions
+               WHERE user_id=? AND workout_id=? AND module_type=? AND status='completed' LIMIT 1""",
+            (user_id,source_workout_id,module_type),
+        ).fetchone()
+        if completed:
+            raise ValueError(f"Completed {module_type} sessions cannot be moved")
+
+        plan=json.loads(src["plan_json"])
+        workouts=plan.get("workouts",[])
+        si=int(src["workout_index"]); ti=int(dst["workout_index"])
+        if si>=len(workouts) or ti>=len(workouts):
+            raise ValueError("Workout is missing from the active plan")
+        source=workouts[si]; target=workouts[ti]
+        key=f"{module_type}_module"
+        module=source.get(key)
+        if not module:
+            raise ValueError(f"No {module_type} module is scheduled on the source day")
+        if target.get(key):
+            raise ValueError(f"The target day already has a {module_type} module")
+
+        source[key]=None
+        target[key]=module
+        module["workout_index"]=ti
+        module["moved_by_user"]=True
+        module["scheduled_with"]=target.get("name") or dst["name"]
+
+        top_key=f"{module_type}_modules"
+        for top in plan.get(top_key,[]):
+            if int(top.get("workout_index",-1))==si:
+                top.update(module)
+                top["workout_index"]=ti
+                break
+
+        # Any still-active, uncompleted module session follows the module.
+        con.execute(
+            """UPDATE training_module_sessions SET workout_id=?
+               WHERE user_id=? AND workout_id=? AND module_type=? AND status='active'""",
+            (target_workout_id,user_id,source_workout_id,module_type),
+        )
+        con.execute("UPDATE program_weeks SET plan_json=? WHERE id=?",(_json(plan),int(src["week_id"])))
+        con.execute(
+            """INSERT INTO progression_events(user_id,workout_id,event_type,old_value,new_value,reason)
+               VALUES (?,?,?,?,?,?)""",
+            (user_id,target_workout_id,f"{module_type}_day_move",
+             source.get("name") or src["name"],target.get("name") or dst["name"],
+             f"User moved {module_type} module to a different training day"),
+        )
+    return {
+        "status":"moved","module_type":module_type,
+        "source_workout_id":int(source_workout_id),
+        "target_workout_id":int(target_workout_id),
+        "target_workout_name":target.get("name") or dst["name"],
+    }
+
+
 def swap_workout_cardio(user_id: int, workout_id: int, new_exercise_id: int,
                         db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
     options={int(x["id"]):x for x in get_cardio_options_for_user(user_id,db_path)}
@@ -1485,6 +1564,45 @@ def complete_training_module(user_id: int, module_session_id: int,
         )
         result=con.execute("SELECT * FROM training_module_sessions WHERE id=?",(module_session_id,)).fetchone()
         return dict(result)
+
+
+def get_core_progression_history(user_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    """Summarize recent completed core work for progressive future targets."""
+    with session(db_path) as con:
+        rows=con.execute(
+            """SELECT e.name,l.reps_json,l.duration_seconds,l.rpe,l.recorded_at
+               FROM training_module_exercise_logs l
+               JOIN training_module_sessions s ON s.id=l.module_session_id
+               JOIN exercises e ON e.id=l.exercise_id
+               WHERE s.user_id=? AND s.module_type='core' AND s.status='completed'
+               ORDER BY l.recorded_at DESC,l.id DESC""",(user_id,)
+        ).fetchall()
+    grouped={}
+    for row in rows:
+        recent=grouped.setdefault(row["name"],[])
+        if len(recent)>=8:
+            continue
+        reps=json.loads(row["reps_json"] or "[]")
+        recent.append({
+            "reps":int(reps[0]) if reps else None,
+            "duration_seconds":int(row["duration_seconds"]) if row["duration_seconds"] else None,
+            "rpe":float(row["rpe"]) if row["rpe"] is not None else None,
+            "recorded_at":row["recorded_at"],
+        })
+    out={}
+    for name,recent in grouped.items():
+        reps=[x["reps"] for x in recent if x["reps"] is not None]
+        holds=[x["duration_seconds"] for x in recent if x["duration_seconds"] is not None]
+        rpes=[x["rpe"] for x in recent if x["rpe"] is not None]
+        out[name]={
+            "core_recent":recent,
+            "core_last_reps":reps[0] if reps else None,
+            "core_last_duration":holds[0] if holds else None,
+            "core_best_reps":max(reps) if reps else None,
+            "core_best_duration":max(holds) if holds else None,
+            "core_avg_rpe":round(sum(rpes)/len(rpes),2) if rpes else None,
+        }
+    return out
 
 
 def get_module_tracking_summary(user_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
