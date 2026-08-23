@@ -103,7 +103,9 @@ CREATE TABLE IF NOT EXISTS exercise_performance (
     reps_json TEXT NOT NULL DEFAULT '[]',
     difficulty REAL,
     skipped INTEGER,
-    weight REAL NOT NULL DEFAULT 0,
+    weight REAL,
+    duration_seconds INTEGER,
+    load_mode TEXT NOT NULL DEFAULT 'weight',
     recorded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(session_id) REFERENCES workout_sessions(id) ON DELETE CASCADE,
     FOREIGN KEY(exercise_id) REFERENCES exercises(id)
@@ -255,6 +257,21 @@ CREATE TABLE IF NOT EXISTS exercise_substitutions (
 
 CREATE INDEX IF NOT EXISTS idx_exercise_substitutions_exercise
 ON exercise_substitutions(exercise_id);
+
+CREATE TABLE IF NOT EXISTS user_exercise_preferences (
+    user_id INTEGER NOT NULL,
+    exercise_id INTEGER NOT NULL,
+    preference TEXT NOT NULL DEFAULT 'neutral'
+        CHECK(preference IN ('neutral','favorite','avoid','painful')),
+    notes TEXT,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(user_id, exercise_id),
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_exercise_preferences_user
+ON user_exercise_preferences(user_id);
 
 
 CREATE TABLE IF NOT EXISTS user_time_settings (

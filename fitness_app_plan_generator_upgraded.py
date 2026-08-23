@@ -362,6 +362,13 @@ class PlanGenerator:
 
         if e["name"] in used_names:
             score -= 80
+        # Avoid stacking too many near-identical movements when another valid option exists.
+        pattern_marker=f"pattern::{e['movement_pattern']}"
+        muscle_marker=f"muscle::{e['primary_muscle'].split(',')[0].strip().lower()}"
+        if pattern_marker in used_names:
+            score -= 14
+        if muscle_marker in used_names:
+            score -= 8
 
         if profile.experience == "beginner" and e["difficulty"] == "Beginner":
             score += 10
@@ -371,7 +378,8 @@ class PlanGenerator:
             score += 8
 
         score += self._adaptive_score(e, profile)
-        score += self.rng.random() * 8
+        score += self._exercise_quality(e, profile)
+        score += self.rng.random() * 5
         return score
 
     def _pick(self, candidates, pattern, kind, profile, used_names):
@@ -429,6 +437,32 @@ class PlanGenerator:
         if not state or not state.exercise_history:
             return {}
         return state.exercise_history.get(exercise_name, {})
+
+    def _exercise_quality(self, e, profile: UserProfile) -> float:
+        """Prefer useful stimulus with manageable fatigue and skill for this user."""
+        equipment=str(e.get("equipment","")).lower()
+        name=str(e.get("name","")).lower()
+        pattern=str(e.get("movement_pattern",""))
+        compound=e.get("exercise_type")=="Compound"
+        free_weight=any(x in equipment for x in ("barbell","dumbbell","kettlebell"))
+        supported=any(x in name for x in ("supported","seated","machine")) or "machine" in equipment
+        fatigue=2 + (1 if compound else 0) + (1 if free_weight and compound else 0)
+        if pattern in {"Squat","Hinge","Deadlift","Loaded Carry"}: fatigue+=1
+        if supported: fatigue-=1
+        fatigue=max(1,min(fatigue,5))
+        score=0.0
+        # Short sessions favor high stimulus-to-fatigue choices.
+        if profile.minutes_per_workout<=30:
+            score += (6-fatigue)*3
+            if supported: score+=4
+        # Low recovery steers away from systemically expensive options.
+        if self._normalize(profile.recovery_level)=="low":
+            score += (6-fatigue)*4
+        # Beginners get a stability/skill bias toward supported and machine work.
+        if profile.experience=="beginner":
+            if supported: score+=8
+            if e.get("difficulty")=="Advanced": score-=18
+        return score
 
     def _adaptive_score(self, e, profile: UserProfile) -> float:
         """Score an exercise using recent performance, recovery, and priorities."""
@@ -578,6 +612,8 @@ class PlanGenerator:
             if not e:
                 continue
             used.add(e["name"])
+            used.add(f"pattern::{e['movement_pattern']}")
+            used.add(f"muscle::{e['primary_muscle'].split(',')[0].strip().lower()}")
             low, high = self._rep_range(e, profile.goal)
             sport_bias=SPORT_PROFILES.get(profile.sport,SPORT_PROFILES["general"]).get("rep_bias",0)
             if sport_bias:
@@ -732,7 +768,7 @@ class PlanGenerator:
         self._validate_intelligent_plan(workouts, profile)
 
         return {
-            "planner_version": "2.0-intelligent",
+            "planner_version": "2.1-exercise-intelligence",
             "adaptive_features": [
                 "recent performance adaptation",
                 "recovery-aware set adjustment",
@@ -740,6 +776,9 @@ class PlanGenerator:
                 "fatigue-aware volume control",
                 "time-aware exercise preservation",
                 "adaptive progression instructions",
+                "stimulus-to-fatigue exercise selection",
+                "redundant movement protection",
+                "user exercise preference learning",
             ],
             "profile": asdict(profile),
             "split": resolve_sport_split(profile.days_per_week, profile.workout_split, profile.sport),

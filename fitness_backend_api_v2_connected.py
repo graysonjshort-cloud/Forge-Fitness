@@ -504,6 +504,10 @@ class ExerciseSetsRequest(BaseModel):
     exercise_id: int
     sets: int = Field(ge=1, le=12)
 
+class ExercisePreferenceRequest(BaseModel):
+    preference: str = "neutral"
+    notes: Optional[str] = None
+
 class PlanReconfigureRequest(BaseModel):
     days_per_week: int = Field(ge=2, le=6)
     minutes_per_workout: int = Field(ge=15, le=180)
@@ -596,6 +600,8 @@ class PerformanceRequest(BaseModel):
     reps: list[int] = []
     difficulty: Optional[float] = Field(None, ge=1, le=10)
     weight: Optional[float] = Field(None, ge=0)
+    duration_seconds: Optional[int] = Field(None, ge=1, le=86400)
+    load_mode: str = "weight"
     skipped: bool = False
 
 
@@ -778,7 +784,22 @@ def _hydrate_plan_workout_ids(user_id: int, plan: dict) -> dict:
             by_index[idx] = dict(row)
     database.ensure_workout_schedule(user_id, DB_PATH)
     schedule={int(x["workout_id"]):x for x in database.get_workout_schedule(user_id,DB_PATH)}
+    with database.session(DB_PATH) as con:
+        exercise_rows=con.execute("SELECT id,name,equipment,exercise_type FROM exercises").fetchall()
+    exercise_meta={}
+    for exrow in exercise_rows:
+        ex=dict(exrow)
+        name=str(ex.get("name") or "").lower()
+        timed=ex.get("exercise_type")=="Isometric" or any(x in name for x in ("plank","hold","wall sit"))
+        exercise_meta[int(ex["id"])]={
+            "tracking_mode":"timed" if timed else "reps",
+            "bodyweight_default":"bodyweight" in str(ex.get("equipment") or "").lower(),
+            "exercise_type":ex.get("exercise_type"),
+        }
     for idx, workout in enumerate(hydrated.get("workouts", [])):
+        for exercise in workout.get("exercises",[]):
+            meta=exercise_meta.get(int(exercise.get("exercise_id") or 0),{})
+            exercise.update(meta)
         row = by_index.get(idx)
         if row:
             workout["workout_id"] = int(row["id"])
@@ -882,6 +903,12 @@ def start_workout(user_id: int, workout_id: int):
 @app.post("/users/{user_id}/performance")
 def performance(user_id: int, request: PerformanceRequest):
     try:
+        if request.load_mode not in {"weight","bodyweight","timed"}:
+            raise ValueError("Invalid exercise load mode")
+        if request.load_mode=="timed" and not request.duration_seconds:
+            raise ValueError("Timed exercises require a duration")
+        if request.load_mode=="bodyweight":
+            request.weight=None
         before=database.get_exercise_history(user_id,request.exercise_id,100,DB_PATH)
         prior=before.get("prs",{})
         pid,duplicate=database.record_performance_idempotent(
@@ -890,10 +917,12 @@ def performance(user_id: int, request: PerformanceRequest):
         after=database.get_exercise_history(user_id,request.exercise_id,100,DB_PATH)
         current=after.get("prs",{}); name=after.get("name","Exercise"); prs=[]
         if not duplicate:
-            if float(current.get("max_weight",0))>float(prior.get("max_weight",0)): prs.append({"type":"max_weight","label":"Weight PR","exercise_name":name,"value":current["max_weight"],"unit":"lb"})
-            if float(current.get("best_e1rm",0))>float(prior.get("best_e1rm",0)): prs.append({"type":"best_e1rm","label":"Estimated 1RM PR","exercise_name":name,"value":current["best_e1rm"],"unit":"lb"})
-            if int(current.get("best_reps",0))>int(prior.get("best_reps",0)): prs.append({"type":"best_reps","label":"Rep PR","exercise_name":name,"value":current["best_reps"],"unit":"reps"})
-            if float(current.get("best_volume_set",0))>float(prior.get("best_volume_set",0)): prs.append({"type":"best_volume_set","label":"Set Volume PR","exercise_name":name,"value":current["best_volume_set"],"unit":"lb"})
+            timed=request.load_mode=="timed"
+            bodyweight=request.load_mode=="bodyweight"
+            if not timed and not bodyweight and float(current.get("max_weight",0))>float(prior.get("max_weight",0)): prs.append({"type":"max_weight","label":"Weight PR","exercise_name":name,"value":current["max_weight"],"unit":"lb"})
+            if not timed and not bodyweight and float(current.get("best_e1rm",0))>float(prior.get("best_e1rm",0)): prs.append({"type":"best_e1rm","label":"Estimated 1RM PR","exercise_name":name,"value":current["best_e1rm"],"unit":"lb"})
+            if int(current.get("best_reps",0))>int(prior.get("best_reps",0)): prs.append({"type":"best_duration" if timed else "best_reps","label":"Duration PR" if timed else "Rep PR","exercise_name":name,"value":current["best_reps"],"unit":"sec" if timed else "reps"})
+            if not timed and not bodyweight and float(current.get("best_volume_set",0))>float(prior.get("best_volume_set",0)): prs.append({"type":"best_volume_set","label":"Set Volume PR","exercise_name":name,"value":current["best_volume_set"],"unit":"lb"})
         return {"performance_id":pid,"status":"recorded","duplicate":duplicate,"pr_events":prs,"exercise_prs":current}
     except ValueError as e:
         raise HTTPException(400,str(e))
@@ -1398,6 +1427,20 @@ def me_exercise_directory_item(exercise_id: int, authorization: Optional[str]=He
         return database.get_exercise_directory_item(exercise_id,user["user_id"],DB_PATH)
     except ValueError as e:
         raise HTTPException(404,str(e))
+
+
+@app.put("/me/exercises/{exercise_id}/preference")
+def me_exercise_preference(exercise_id: int, request: ExercisePreferenceRequest,
+                           authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    try:
+        pref=database.set_user_exercise_preference(
+            user["user_id"],exercise_id,request.preference,request.notes,DB_PATH
+        )
+        item=database.get_exercise_directory_item(exercise_id,user["user_id"],DB_PATH)
+        return {"status":"saved","preference":pref,"exercise":item}
+    except ValueError as e:
+        raise HTTPException(400,str(e))
 
 
 @app.get("/me/exercises/{exercise_id}/history")

@@ -435,8 +435,9 @@ def record_performance(user_id: int, session_id: int, exercise_id: int, data: di
             raise ValueError("Workout session not found for user")
         cur = con.execute(
             """INSERT INTO exercise_performance
-               (session_id, exercise_id, completed_sets, reps_json, difficulty, skipped, weight, recorded_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+               (session_id, exercise_id, completed_sets, reps_json, difficulty, skipped,
+                weight, duration_seconds, load_mode, recorded_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
             (
                 session_id,
                 exercise_id,
@@ -444,7 +445,9 @@ def record_performance(user_id: int, session_id: int, exercise_id: int, data: di
                 _json(data.get("reps", [])),
                 data.get("difficulty"),
                 int(bool(data.get("skipped", False))),
-                data.get("weight"),
+                data.get("weight") if data.get("weight") is not None else 0,
+                data.get("duration_seconds"),
+                data.get("load_mode") or "weight",
             ),
         )
         return int(cur.lastrowid)
@@ -481,6 +484,10 @@ def ensure_performance_weight_column(db_path=DEFAULT_DB_PATH):
         cols = [r["name"] for r in con.execute("PRAGMA table_info(exercise_performance)").fetchall()]
         if "weight" not in cols:
             con.execute("ALTER TABLE exercise_performance ADD COLUMN weight REAL")
+        if "duration_seconds" not in cols:
+            con.execute("ALTER TABLE exercise_performance ADD COLUMN duration_seconds INTEGER")
+        if "load_mode" not in cols:
+            con.execute("ALTER TABLE exercise_performance ADD COLUMN load_mode TEXT NOT NULL DEFAULT 'weight'")
 
 
 def get_active_session(user_id: int, db_path=DEFAULT_DB_PATH):
@@ -733,19 +740,39 @@ def get_exercise_history(user_id: int, exercise_id: int, limit: int = 100, db_pa
             reps_list = json.loads(row["reps_json"]) if row["reps_json"] else []
         except Exception:
             reps_list = []
-        weight = float(row["weight"] or 0)
+        weight = float(row["weight"] or 0) if row["weight"] is not None else None
+        duration = int(row["duration_seconds"] or 0) if "duration_seconds" in row.keys() else 0
+        load_mode = (row["load_mode"] if "load_mode" in row.keys() else "weight") or "weight"
+        if duration > 0:
+            best_reps = max(best_reps, duration)
+            sets.append({
+                "recorded_at": row["recorded_at"],
+                "workout_name": row["workout_name"],
+                "weight": weight,
+                "load_mode": load_mode,
+                "duration_seconds": duration,
+                "reps": None,
+                "rpe": row["difficulty"],
+                "e1rm": 0,
+                "volume": 0,
+            })
+            continue
         for reps in reps_list or [0]:
             reps = int(reps or 0)
-            e1rm = weight * (1 + reps / 30.0) if weight > 0 and reps > 0 else 0.0
-            vol = weight * reps
-            best_weight = max(best_weight, weight)
-            best_e1rm = max(best_e1rm, e1rm)
-            best_volume_set = max(best_volume_set, vol)
+            calc_weight = float(weight or 0)
+            e1rm = calc_weight * (1 + reps / 30.0) if calc_weight > 0 and reps > 0 and load_mode != "bodyweight" else 0.0
+            vol = calc_weight * reps if load_mode != "bodyweight" else 0.0
+            if load_mode != "bodyweight":
+                best_weight = max(best_weight, calc_weight)
+                best_e1rm = max(best_e1rm, e1rm)
+                best_volume_set = max(best_volume_set, vol)
             best_reps = max(best_reps, reps)
             sets.append({
                 "recorded_at": row["recorded_at"],
                 "workout_name": row["workout_name"],
                 "weight": weight,
+                "load_mode": load_mode,
+                "duration_seconds": None,
                 "reps": reps,
                 "rpe": row["difficulty"],
                 "e1rm": round(e1rm, 2),
@@ -946,6 +973,14 @@ def get_substitutions_for_user(user_id: int, exercise_id: int, db_path=DEFAULT_D
     profile = get_profile(user_id, db_path) or {}
     equipment = profile.get("equipment", ["full_gym"])
     with session(db_path) as con:
+        original=con.execute(
+            """SELECT id,name,primary_muscle,secondary_muscles,movement_pattern,equipment,
+                      difficulty,exercise_type,min_reps,max_reps,default_sets,
+                      default_rest_seconds,progression_method
+               FROM exercises WHERE id=?""",(exercise_id,)
+        ).fetchone()
+        if not original:
+            raise ValueError("Exercise not found")
         rows = con.execute(
             """
             SELECT e.id, e.name, e.primary_muscle, e.secondary_muscles, e.movement_pattern,
@@ -955,15 +990,50 @@ def get_substitutions_for_user(user_id: int, exercise_id: int, db_path=DEFAULT_D
             FROM exercise_substitutions s
             JOIN exercises e ON e.id=s.substitute_exercise_id
             WHERE s.exercise_id=?
-            ORDER BY e.name
             """,
             (exercise_id,),
         ).fetchall()
+        pref_rows=con.execute(
+            "SELECT exercise_id,preference FROM user_exercise_preferences WHERE user_id=?",
+            (user_id,),
+        ).fetchall()
+    prefs={int(r["exercise_id"]):r["preference"] for r in pref_rows}
+    orig=dict(original); om=_exercise_intelligence_metadata(orig)
     out=[]
     for row in rows:
         d=dict(row)
         d["equipment_compatible"]=_equipment_allowed(d["equipment"],equipment)
+        d.update(_exercise_intelligence_metadata(d))
+        pref=prefs.get(int(d["id"]),"neutral")
+        d["user_preference"]=pref
+        score=0
+        reasons=[]
+        if d["movement_pattern"]==orig["movement_pattern"]:
+            score+=40; reasons.append("same movement")
+        if d["primary_muscle"]==orig["primary_muscle"]:
+            score+=25; reasons.append("same primary muscle")
+        elif d["primary_muscle"].split(",")[0].strip()==orig["primary_muscle"].split(",")[0].strip():
+            score+=18; reasons.append("similar target")
+        if d["exercise_type"]==orig["exercise_type"]:
+            score+=10
+        score-=abs(d["fatigue_cost"]-om["fatigue_cost"])*4
+        score-=abs(d["skill_demand"]-om["skill_demand"])*2
+        if d["equipment_compatible"]:
+            score+=20; reasons.append("available equipment")
+        else:
+            score-=60
+        if pref=="favorite":
+            score+=30; reasons.append("favorite")
+        elif pref=="avoid":
+            score-=80
+        elif pref=="painful":
+            score-=200
+        if profile.get("recovery_level")=="low":
+            score+=(om["fatigue_cost"]-d["fatigue_cost"])*5
+        d["substitution_score"]=score
+        d["smart_reason"]=", ".join(reasons[:3]) or d.get("reason") or "similar exercise"
         out.append(d)
+    out.sort(key=lambda x:(x["substitution_score"],x["equipment_compatible"]),reverse=True)
     return out
 
 
@@ -2581,6 +2651,128 @@ def ensure_expanded_exercise_directory(db_path=DEFAULT_DB_PATH) -> dict[str, int
                 substitutions += max(cur.rowcount,0)
     return {"inserted":inserted,"substitutions_added":substitutions}
 
+
+def _exercise_intelligence_metadata(exercise: dict[str, Any]) -> dict[str, Any]:
+    """Derive stable exercise intelligence from the existing Forge directory."""
+    name=str(exercise.get("name") or "")
+    pattern=str(exercise.get("movement_pattern") or "")
+    etype=str(exercise.get("exercise_type") or "")
+    equipment=str(exercise.get("equipment") or "")
+    difficulty=str(exercise.get("difficulty") or "Intermediate")
+    primary=str(exercise.get("primary_muscle") or "")
+
+    compound=etype=="Compound"
+    machine=any(x in equipment.lower() for x in ("machine","cable"))
+    bodyweight="bodyweight" in equipment.lower()
+    unilateral=any(x in name.lower() for x in (
+        "one-arm","single-arm","single-leg","split squat","lunge","bulgarian",
+        "step-up","step up","pistol","single d"
+    ))
+    supported=any(x in name.lower() for x in ("chest-supported","seated","machine","supported"))
+    free_weight=any(x in equipment.lower() for x in ("barbell","dumbbell","kettlebell"))
+
+    fatigue=2
+    if compound: fatigue+=1
+    if free_weight and compound: fatigue+=1
+    if pattern in {"Squat","Hinge","Deadlift","Loaded Carry"}: fatigue+=1
+    if machine or supported: fatigue-=1
+    fatigue=max(1,min(fatigue,5))
+
+    stability=2
+    if free_weight: stability+=1
+    if unilateral: stability+=1
+    if machine or supported: stability-=1
+    stability=max(1,min(stability,5))
+
+    joint_stress=2
+    lname=name.lower()
+    if any(x in lname for x in ("behind neck","upright row","dip","skull crusher")): joint_stress+=1
+    if any(x in lname for x in ("machine","cable","supported","floor press")): joint_stress-=1
+    joint_stress=max(1,min(joint_stress,5))
+
+    skill={"Beginner":1,"Intermediate":3,"Advanced":5}.get(difficulty,3)
+    hypertrophy=4 if etype in {"Isolation","Compound"} else 2
+    strength=5 if compound and pattern in {"Horizontal Push","Vertical Push","Horizontal Pull","Vertical Pull","Squat","Hinge"} else (3 if compound else 1)
+    conditioning=5 if etype=="Cardio" or "Cardio" in pattern else (3 if pattern=="Loaded Carry" else 1)
+
+    if machine or supported:
+        hypertrophy=min(5,hypertrophy+1)
+    if bodyweight and difficulty=="Beginner":
+        skill=max(1,skill-1)
+
+    timed = etype=="Isometric" or any(x in name.lower() for x in ("plank","hold","wall sit"))
+    bodyweight = "bodyweight" in equipment.lower()
+    return {
+        "tracking_mode":"timed" if timed else "reps",
+        "bodyweight_default":bodyweight,
+        "fatigue_cost":fatigue,
+        "stability_demand":stability,
+        "joint_stress":joint_stress,
+        "skill_demand":skill,
+        "hypertrophy_score":hypertrophy,
+        "strength_score":strength,
+        "conditioning_score":conditioning,
+        "unilateral":unilateral,
+        "supported":supported,
+        "compound":compound,
+        "primary_pattern":pattern,
+        "selection_tags":[
+            x for x,yes in (
+                ("compound",compound),("unilateral",unilateral),("supported",supported),
+                ("machine",machine),("bodyweight",bodyweight),("free_weight",free_weight)
+            ) if yes
+        ],
+    }
+
+
+def get_user_exercise_preference(user_id: int, exercise_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    with session(db_path) as con:
+        row=con.execute(
+            "SELECT preference,notes,updated_at FROM user_exercise_preferences WHERE user_id=? AND exercise_id=?",
+            (user_id,exercise_id),
+        ).fetchone()
+    return dict(row) if row else {"preference":"neutral","notes":None,"updated_at":None}
+
+
+def set_user_exercise_preference(user_id: int, exercise_id: int, preference: str,
+                                 notes: str | None = None, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    preference=(preference or "neutral").strip().lower()
+    if preference not in {"neutral","favorite","avoid","painful"}:
+        raise ValueError("Preference must be neutral, favorite, avoid, or painful")
+    with session(db_path) as con:
+        ex=con.execute("SELECT id,name FROM exercises WHERE id=?",(exercise_id,)).fetchone()
+        if not ex:
+            raise ValueError("Exercise not found")
+        if preference=="neutral" and not notes:
+            con.execute("DELETE FROM user_exercise_preferences WHERE user_id=? AND exercise_id=?",(user_id,exercise_id))
+        else:
+            con.execute(
+                """INSERT INTO user_exercise_preferences(user_id,exercise_id,preference,notes)
+                   VALUES (?,?,?,?)
+                   ON CONFLICT(user_id,exercise_id) DO UPDATE SET
+                     preference=excluded.preference,notes=excluded.notes,updated_at=CURRENT_TIMESTAMP""",
+                (user_id,exercise_id,preference,notes),
+            )
+
+    # Keep the generator's existing preference fields synchronized so changes
+    # immediately influence plan generation/rebuilds.
+    profile=get_profile(user_id,db_path)
+    if profile:
+        preferred=list(profile.get("preferred_exercises",[]))
+        excluded=list(profile.get("excluded_exercises",[]))
+        name=str(ex["name"])
+        preferred=[x for x in preferred if x.lower()!=name.lower()]
+        excluded=[x for x in excluded if x.lower()!=name.lower()]
+        if preference=="favorite":
+            preferred.append(name)
+        elif preference in {"avoid","painful"}:
+            excluded.append(name)
+        profile["preferred_exercises"]=preferred
+        profile["excluded_exercises"]=excluded
+        upsert_profile(user_id,profile,db_path)
+    return get_user_exercise_preference(user_id,exercise_id,db_path)
+
+
 def list_exercise_directory(user_id: int | None = None, search: str = "",
                             muscle: str | None = None, equipment: str | None = None,
                             difficulty: str | None = None, movement: str | None = None,
@@ -2598,11 +2790,23 @@ def list_exercise_directory(user_id: int | None = None, search: str = "",
                FROM exercises ORDER BY primary_muscle,name"""
         )]
 
+    prefs={}
+    if user_id:
+        with session(db_path) as con:
+            prefs={int(r["exercise_id"]):dict(r) for r in con.execute(
+                "SELECT exercise_id,preference,notes FROM user_exercise_preferences WHERE user_id=?",
+                (user_id,),
+            ).fetchall()}
+
     q=(search or "").strip().lower()
     out=[]
     for d in rows:
         d["beginner_suitable"]=bool(d["beginner_suitable"])
         d["equipment_compatible"]=_equipment_allowed(d["equipment"],profile_equipment) if user_id else True
+        d.update(_exercise_intelligence_metadata(d))
+        pref=prefs.get(int(d["id"]),{})
+        d["user_preference"]=pref.get("preference","neutral")
+        d["preference_notes"]=pref.get("notes")
         if q and q not in " ".join(str(d.get(k,"")) for k in
             ("name","primary_muscle","secondary_muscles","movement_pattern","equipment")).lower():
             continue
@@ -2649,4 +2853,8 @@ def get_exercise_directory_item(exercise_id: int, user_id: int | None = None,
     d["beginner_suitable"]=bool(d["beginner_suitable"])
     profile=get_profile(user_id,db_path) if user_id else None
     d["equipment_compatible"]=_equipment_allowed(d["equipment"],(profile or {}).get("equipment",["full_gym"]))
+    d.update(_exercise_intelligence_metadata(d))
+    pref=get_user_exercise_preference(user_id,exercise_id,db_path) if user_id else {"preference":"neutral","notes":None}
+    d["user_preference"]=pref.get("preference","neutral")
+    d["preference_notes"]=pref.get("notes")
     return d

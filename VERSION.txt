@@ -1,2 +1,2 @@
-Forge Fitness v14.34.3
-Android launcher icon patch
+Forge Fitness v14.35.1
+Exercise tracking modes: timed + bodyweight

@@ -6,7 +6,7 @@ let authToken = localStorage.getItem("forge_auth_token") || "";
 let account = null;
 let plan = null, session = null;
 const profile = {goal:"build_muscle",experience:"intermediate",days_per_week:4,minutes_per_workout:45,equipment:["full_gym"],preferred_exercises:[],excluded_exercises:[],priority_muscles:[],recovery_level:"normal",cardio_preference:"moderate",workout_split:"auto",sport:"general",core_workouts_per_week:2,cardio_workouts_per_week:2,seed:42};
-const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false};
+const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false};
 const V=document.querySelector("#view"),toastEl=document.querySelector("#toast"),nav=document.querySelector("#bottomNav"),topbar=document.querySelector("#topbar");
 const toast=t=>{toastEl.textContent=t;toastEl.classList.add("show");setTimeout(()=>toastEl.classList.remove("show"),1800)};
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
@@ -28,12 +28,12 @@ function moreSheet(){
       <button data-a=open-equipment-log><span>▣</span><div><b>Equipment Log</b><small>Manage available gym equipment</small></div><em>›</em></button>
       <button data-a=open-calendar-settings><span>▦</span><div><b>Calendar & Time</b><small>${S.calendarStatus?.connected?"Google Calendar connected":"Schedule and timezone"}</small></div><em>›</em></button>
       <button class=more-signout data-a=signout><span>↪</span><div><b>Sign Out</b><small>Your Forge data stays saved</small></div></button>
-      <div class=more-version>Forge Fitness v14.34.3</div>
+      <div class=more-version>Forge Fitness v14.35.1</div>
     </div>
   </div>`;
 }
 function finalPolishSettingsCard(){
-  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.34.3</span></div>
+  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.35.1</span></div>
     <div class=settings-status-row><span>Connection</span><b>${S.online?"Online":"Offline"}</b></div>
     <div class=settings-status-row><span>Install mode</span><b>${isStandalonePWA()?"Installed app":"Browser"}</b></div>
     <div class=settings-status-row><span>Calendar</span><b>${S.calendarStatus?.connected?"Connected":"Not connected"}</b></div>
@@ -668,24 +668,41 @@ return `<p class=eyebrow>LIBRARY</p><div class=row><div><h2>Exercise Directory</
 <div class=directory-list>${rows.map(e=>`<button class="directory-card ${e.equipment_compatible?"":"incompatible"}" data-directory-exercise=${e.id}>
 <div class=row><div><p class=eyebrow>${esc(e.primary_muscle)}</p><h3>${esc(e.name)}</h3></div><span>›</span></div>
 <p class=muted>${esc(e.equipment)} • ${esc(e.difficulty)} • ${e.min_reps}-${e.max_reps} reps</p>
-<div class=directory-tags><span>${esc(e.movement_pattern)}</span><span>${esc(e.exercise_type)}</span>${e.beginner_suitable?"<span>Beginner Friendly</span>":""}</div>
+<div class=directory-tags><span>${esc(e.movement_pattern)}</span><span>${esc(e.exercise_type)}</span>${e.beginner_suitable?"<span>Beginner Friendly</span>":""}${e.user_preference==="favorite"?"<span>★ Favorite</span>":e.user_preference==="avoid"?"<span>Avoid</span>":e.user_preference==="painful"?"<span>Painful</span>":""}</div>
 </button>`).join("")||'<div class=card><p class=muted>No exercises match these filters.</p></div>'}</div>`;
 }
 
 function exercisedetail(){
 const e=S.exerciseDirectorySelected;
 if(!e)return `<h2>Exercise</h2><p class=muted>Select an exercise from the directory.</p>`;
-return `<p class=eyebrow>EXERCISE</p><h2>${esc(e.name)}</h2><p class=muted>${esc(e.primary_muscle)} • ${esc(e.difficulty)}</p>
+const pref=e.user_preference||"neutral";
+const lvl=n=>["","Low","Low","Moderate","High","Very High"][Math.max(1,Math.min(5,Number(n||1)))];
+return `<p class=eyebrow>EXERCISE INTELLIGENCE</p><h2>${esc(e.name)}</h2><p class=muted>${esc(e.primary_muscle)} • ${esc(e.difficulty)}</p>
 <div class=big-spacer></div>
 <div class=exercise-directory-hero><div>🏋️</div><span>${e.equipment_compatible?"✓ Works with your equipment":"Not currently compatible with your equipment log"}</span></div>
 <div class=spacer></div>
 <div class=exercise-directory-facts>
 <div><small>Sets</small><b>${e.default_sets}</b></div>
 <div><small>Rep Range</small><b>${e.min_reps}-${e.max_reps}</b></div>
-<div><small>Rest</small><b>${e.default_rest_seconds}s</b></div>
-<div><small>Type</small><b>${esc(e.exercise_type)}</b></div>
+<div><small>Fatigue</small><b>${lvl(e.fatigue_cost)}</b></div>
+<div><small>Skill</small><b>${lvl(e.skill_demand)}</b></div>
 </div>
 <div class=big-spacer></div>
+<div class=card><p class=eyebrow>FORGE RATING</p>
+<div class=settings-status-row><span>Hypertrophy</span><b>${e.hypertrophy_score}/5</b></div>
+<div class=settings-status-row><span>Strength</span><b>${e.strength_score}/5</b></div>
+<div class=settings-status-row><span>Stability demand</span><b>${e.stability_demand}/5</b></div>
+<div class=settings-status-row><span>Joint stress</span><b>${e.joint_stress}/5</b></div>
+</div>
+<div class=spacer></div>
+<div class=card><p class=eyebrow>MY PREFERENCE</p><p class=muted>Forge uses this when generating and rebuilding your plan.</p>
+<div class=chips>
+<button class="chip ${pref==="favorite"?"selected":""}" data-exercise-pref=favorite>★ Favorite</button>
+<button class="chip ${pref==="avoid"?"selected":""}" data-exercise-pref=avoid>Avoid</button>
+<button class="chip ${pref==="painful"?"selected":""}" data-exercise-pref=painful>Painful</button>
+<button class="chip ${pref==="neutral"?"selected":""}" data-exercise-pref=neutral>Neutral</button>
+</div></div>
+<div class=spacer></div>
 <div class=card><p class=eyebrow>TARGETS</p><h3>${esc(e.primary_muscle)}</h3><p class=muted>${e.secondary_muscles?`Also works: ${esc(e.secondary_muscles)}`:"Primary target exercise"}</p></div>
 <div class=spacer></div>
 <div class=card><p class=eyebrow>MOVEMENT</p><h3>${esc(e.movement_pattern)}</h3><p class=muted>${esc(e.equipment)} • ${esc(e.progression_method)}</p>${e.notes?`<p class=muted>${esc(e.notes)}</p>`:""}</div>
@@ -889,18 +906,55 @@ ${ww.cardio_included?`<div class=spacer></div><div class=card><div class=row><di
 <div class=big-spacer></div>${session?`<button class="btn dark" data-a=abandon>End Workout Early</button>`:`<button class=btn data-a=startworkout>Start Workout</button>`}`;
 }
 
+function isTimedExercise(e){
+  return e?.tracking_mode==="timed" || /plank|hold|wall sit/i.test(e?.name||"");
+}
+function isBodyweightExercise(e){
+  return !!e?.bodyweight_default || /bodyweight/i.test(e?.equipment||"");
+}
+function stopExerciseTimer(){
+  if(S.exerciseTimer){clearInterval(S.exerciseTimer);S.exerciseTimer=null}
+  S.exerciseTimerRunning=false;
+}
+function resetExerciseTimer(){
+  stopExerciseTimer();S.exerciseElapsed=0;render();
+}
+function toggleExerciseTimer(){
+  if(S.exerciseTimerRunning){stopExerciseTimer();render();return}
+  S.exerciseTimerRunning=true;
+  S.exerciseTimer=setInterval(()=>{
+    S.exerciseElapsed++;
+    const el=document.querySelector("#exerciseClock");
+    if(el){
+      const mm=String(Math.floor(S.exerciseElapsed/60)).padStart(2,"0");
+      const ss=String(S.exerciseElapsed%60).padStart(2,"0");
+      el.textContent=`${mm}:${ss}`;
+    }
+  },1000);
+  render();
+}
 function exercise(){
-const e=w().exercises[S.ei],setPct=Math.round((S.set)/Math.max(1,e.sets)*100);
-return `<div class=exercise-session-top><div><p class=eyebrow>${esc(w().name)}</p><h2>${esc(e.name)}</h2><p class=muted>Set ${S.set+1} of ${e.sets} • Target ${e.min_reps}-${e.max_reps} reps</p><div class=set-adjuster><button type=button data-setchange=-1 aria-label="Remove a set">−</button><span><b>${e.sets}</b><small>planned sets</small></span><button type=button data-setchange=1 aria-label="Add a set">+</button></div></div><span class=set-progress-pill>${setPct}%</span></div>
+const e=w().exercises[S.ei],setPct=Math.round((S.set)/Math.max(1,e.sets)*100),timed=isTimedExercise(e),bodyweight=isBodyweightExercise(e);
+const target=timed?`${e.min_reps}-${e.max_reps} sec`:`${e.min_reps}-${e.max_reps} reps`;
+const clock=`${String(Math.floor(S.exerciseElapsed/60)).padStart(2,"0")}:${String(S.exerciseElapsed%60).padStart(2,"0")}`;
+return `<div class=exercise-session-top><div><p class=eyebrow>${esc(w().name)}</p><h2>${esc(e.name)}</h2><p class=muted>Set ${S.set+1} of ${e.sets} • Target ${target}</p><div class=set-adjuster><button type=button data-setchange=-1 aria-label="Remove a set">−</button><span><b>${e.sets}</b><small>planned sets</small></span><button type=button data-setchange=1 aria-label="Add a set">+</button></div></div><span class=set-progress-pill>${setPct}%</span></div>
 <div class=workout-progress-track><i style="width:${setPct}%"></i></div>
 <div class=spacer></div><div id=recallCard class="card previous-performance-card"><p class=eyebrow>PREVIOUS PERFORMANCE</p><p class=muted>Loading your last performance and next target...</p></div>
 <div class=big-spacer></div>
 <div class=log-panel><div class=log-panel-head><h3>Log Set ${S.set+1}</h3><span>${e.rest_seconds||60}s rest after</span></div>
+${timed?`
+<div class="card timed-exercise-card"><p class=eyebrow>TIMED SET</p><div id=exerciseClock class=timer-big>${clock}</div>
+<p class=muted>Target ${target}. Start the timer when you begin the hold.</p>
+<div class=exercise-actions><button class="btn ${S.exerciseTimerRunning?"dark":""}" data-a=exercise-timer-toggle>${S.exerciseTimerRunning?"Pause":"Start Timer"}</button><button class="btn dark" data-a=exercise-timer-reset>Reset</button></div></div>
+<input id=durationSeconds type=hidden value="${S.exerciseElapsed}">
+`:`
 <div class=logging-grid>
-<div class=logging-row><label for=weight>Weight <small>lb</small></label><input class=log-input id=weight type=number inputmode=decimal min=0 step=2.5 placeholder="0" autocomplete=off></div>
-<div class=logging-row><label for=reps>Reps</label><input class=log-input id=reps type=number inputmode=numeric min=0 step=1 value="${e.min_reps}" autocomplete=off></div>
-</div>
-<div class=effort-section><div class=effort-heading><strong>Effort / RIR</strong><small>How many good reps were left?</small></div>
+${bodyweight?`<div class=logging-row><label for=loadMode>Load</label><select class=log-input id=loadMode><option value=bodyweight selected>Bodyweight</option><option value=weight>Added Weight</option></select></div>
+<div class=logging-row id=addedWeightRow style="display:none"><label for=weight>Added Weight <small>lb</small></label><input class=log-input id=weight type=number inputmode=decimal min=0 step=2.5 placeholder="0" autocomplete=off></div>`:
+`<div class=logging-row><label for=weight>Weight <small>lb</small></label><input class=log-input id=weight type=number inputmode=decimal min=0 step=2.5 placeholder="0" autocomplete=off></div>`}
+<div class=logging-row><label for=reps>Reps</label><input class=log-input id=reps type=number inputmode=numeric min=1 step=1 value="${e.min_reps}" autocomplete=off></div>
+</div>`}
+<div class=effort-section><div class=effort-heading><strong>Effort / RIR</strong><small>${timed?"How hard was the hold?":"How many good reps were left?"}</small></div>
 <div class=effort-options>
 <button type=button class=effort-choice data-rpe=6><b>Easy</b><small>4+ left</small></button>
 <button type=button class="effort-choice selected" data-rpe=7><b>Moderate</b><small>~3 left</small></button>
@@ -908,7 +962,7 @@ return `<div class=exercise-session-top><div><p class=eyebrow>${esc(w().name)}</
 <button type=button class=effort-choice data-rpe=9><b>Very Hard</b><small>~1 left</small></button>
 <button type=button class=effort-choice data-rpe=10><b>Limit</b><small>0 left</small></button>
 </div><input id=rpe type=hidden value="7"></div>
-<div class=exercise-actions><button class=btn data-a=completeset>Complete Set</button><button class="btn dark" data-a=swap-exercise>Swap Exercise</button><button class="text-action skip-set-action" data-a=skip-set>Skip this set</button></div></div>`;
+<div class=exercise-actions><button class=btn data-a=completeset>Complete ${timed?"Timed Set":"Set"}</button><button class="btn dark" data-a=swap-exercise>Swap Exercise</button><button class="text-action skip-set-action" data-a=skip-set>Skip this set</button></div></div>`;
 }
 
 function timer(){
@@ -1622,13 +1676,25 @@ if(dirDifficulty)dirDifficulty.onchange=()=>{S.exerciseDirectoryDifficulty=dirDi
 document.querySelectorAll("[data-directory-exercise]").forEach(b=>b.onclick=async()=>{
   try{S.exerciseDirectorySelected=await api(`/me/exercises/${b.dataset.directoryExercise}/directory`);go("exercisedetail")}catch(e){toast(e.message)}
 });
+document.querySelectorAll("[data-exercise-pref]").forEach(b=>b.onclick=async()=>{
+  if(!S.exerciseDirectorySelected)return;
+  try{
+    const d=await api(`/me/exercises/${S.exerciseDirectorySelected.id}/preference`,{method:"PUT",body:JSON.stringify({preference:b.dataset.exercisePref})});
+    S.exerciseDirectorySelected=d.exercise;
+    S.exerciseDirectory=null;
+    toast(b.dataset.exercisePref==="neutral"?"Exercise preference cleared":"Exercise preference saved");
+    render();
+  }catch(e){toast(e.message)}
+});
 const equipmentSearch=document.querySelector("#equipmentSearch");
 if(equipmentSearch)equipmentSearch.oninput=()=>{S.equipmentSearch=equipmentSearch.value;render();};
 document.querySelectorAll("[data-equipment-category]").forEach(b=>b.onclick=()=>{S.equipmentCategory=b.dataset.equipmentCategory;render();});
 document.querySelectorAll("[data-equipment-edit]").forEach(b=>b.onclick=()=>{S.equipmentReturn=S.route==="equipment"?"onboarding":(S.equipmentReturn||"plan");S.equipmentEditKey=b.dataset.equipmentEdit;go("equipmentdetails");});
 document.querySelectorAll("[data-equipment-key]").forEach(b=>b.onclick=()=>toggleEquipmentKey(b.dataset.equipmentKey));
 document.querySelectorAll("[data-equipment-preset]").forEach(b=>b.onclick=()=>setEquipmentPreset(b.dataset.equipmentPreset));
-document.querySelectorAll("[data-remove-custom]").forEach(b=>b.onclick=()=>{S.equipmentLog=S.equipmentLog.filter(x=>x.key!==b.dataset.removeCustom);render();});document.querySelectorAll("[data-pref]").forEach(b=>b.onclick=()=>toggleArr(profile.preferred_exercises,b.dataset.pref));document.querySelectorAll("[data-avoid]").forEach(b=>b.onclick=()=>toggleArr(profile.excluded_exercises,b.dataset.avoid));document.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{S.wi=+b.dataset.w;go("workout")});document.querySelectorAll("[data-ex]").forEach(b=>b.onclick=async()=>{S.ei=+b.dataset.ex;S.set=0;await persistPosition();go("exercise")});document.querySelectorAll("[data-feel]").forEach(b=>b.onclick=()=>{S.feel=b.dataset.feel;render()});
+document.querySelectorAll("[data-remove-custom]").forEach(b=>b.onclick=()=>{S.equipmentLog=S.equipmentLog.filter(x=>x.key!==b.dataset.removeCustom);render();});document.querySelectorAll("[data-pref]").forEach(b=>b.onclick=()=>toggleArr(profile.preferred_exercises,b.dataset.pref));document.querySelectorAll("[data-avoid]").forEach(b=>b.onclick=()=>toggleArr(profile.excluded_exercises,b.dataset.avoid));document.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{S.wi=+b.dataset.w;go("workout")});document.querySelectorAll("[data-ex]").forEach(b=>b.onclick=async()=>{stopExerciseTimer();S.exerciseElapsed=0;S.ei=+b.dataset.ex;S.set=0;await persistPosition();go("exercise")});document.querySelectorAll("[data-feel]").forEach(b=>b.onclick=()=>{S.feel=b.dataset.feel;render()});
+const loadMode=document.querySelector("#loadMode");
+if(loadMode)loadMode.onchange=()=>{const row=document.querySelector("#addedWeightRow");if(row)row.style.display=loadMode.value==="weight"?"":"none";};
 const strengthSelect=document.querySelector("#strengthExercise");
 if(strengthSelect)strengthSelect.onchange=()=>{S.strengthExercise=strengthSelect.value;S.strengthPoint=null;S.strengthTrend=null;render();};
 document.querySelectorAll("[data-strength-range]").forEach(b=>b.onclick=()=>{S.strengthRange=b.dataset.strengthRange;S.strengthPoint=null;S.strengthTrend=null;render();});
@@ -1660,12 +1726,35 @@ setTimeout(()=>go("yourplan"),800)}catch(e){toast(e.message);go("preferences")}}
 async function startWorkout(){const ww=w();const s=await api(`/me/workout/${ww.workout_id}/start`,{method:"POST"});session={session_id:s.session_id};S.lastSessionId=s.session_id;S.ei=0;S.set=0;S.workoutPRs=[];await persistPosition();go("workout")}
 async function saveSet(){
   if(!session)await startWorkout();
-  const e=w().exercises[S.ei],weight=+document.querySelector("#weight").value,reps=+document.querySelector("#reps").value,rpe=+document.querySelector("#rpe").value;
-  if(!Number.isFinite(weight)||weight<0)throw Error("Enter a valid weight");
-  if(!Number.isFinite(reps)||reps<=0)throw Error("Enter valid reps");
+  const e=w().exercises[S.ei],timed=isTimedExercise(e),rpe=+document.querySelector("#rpe").value;
   if(!Number.isFinite(rpe)||rpe<1||rpe>10)throw Error("RPE must be 1–10");
-  const result=await api("/me/performance",{method:"POST",body:JSON.stringify({request_id:requestId(),session_id:session.session_id,exercise_id:e.exercise_id,completed_sets:1,reps:[reps],difficulty:rpe,weight,skipped:false})});
+  let payload={request_id:requestId(),session_id:session.session_id,exercise_id:e.exercise_id,completed_sets:1,difficulty:rpe,skipped:false};
+  if(timed){
+    stopExerciseTimer();
+    const duration=Math.max(0,Number(S.exerciseElapsed||0));
+    if(duration<1)throw Error("Run the timer before completing this set");
+    payload.reps=[];
+    payload.weight=null;
+    payload.duration_seconds=Math.round(duration);
+    payload.load_mode="timed";
+  }else{
+    const reps=+document.querySelector("#reps").value;
+    if(!Number.isFinite(reps)||reps<=0)throw Error("Enter valid reps");
+    const bodyweight=isBodyweightExercise(e);
+    const mode=bodyweight?(document.querySelector("#loadMode")?.value||"bodyweight"):"weight";
+    let weight=null;
+    if(mode==="weight"){
+      weight=+document.querySelector("#weight").value;
+      if(!Number.isFinite(weight)||weight<0)throw Error("Enter a valid weight");
+    }
+    payload.reps=[reps];
+    payload.weight=weight;
+    payload.duration_seconds=null;
+    payload.load_mode=mode;
+  }
+  const result=await api("/me/performance",{method:"POST",body:JSON.stringify(payload)});
   if(result.pr_events?.length){S.workoutPRs.push(...result.pr_events);toast(`🏆 ${result.pr_events[0].label}: ${result.pr_events[0].exercise_name}`)}
+  S.exerciseElapsed=0;stopExerciseTimer();
   S.set++;
   if(S.set>=e.sets){
     S.set=0;S.ei++;
@@ -1691,6 +1780,8 @@ function saveEquipmentDetailForm(){
 
 async function act(a){
   try{
+    if(a==="exercise-timer-toggle"){toggleExerciseTimer();return}
+    if(a==="exercise-timer-reset"){resetExerciseTimer();return}
     if(a==="register-screen")go("register");if(a==="google-mock")toast("Google sign-in is not connected yet");
     if(a==="login-screen")go("login");
     if(a==="next"){S.route={goal:"experience",experience:"schedule",schedule:"equipment"}[S.route];render();}
