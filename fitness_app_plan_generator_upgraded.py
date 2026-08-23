@@ -570,6 +570,28 @@ class PlanGenerator:
             return f"{base} — if all sets reach the top of the range with good form, progress the load next session."
         return base
 
+    def _fit_to_session_time(self, exercises, max_minutes):
+        """Make the selected session length materially change programmed volume."""
+        exercises=self._intelligent_trim(exercises,max_minutes)
+        if not exercises:
+            return exercises
+        # Use most of the selected budget. Longer sessions gain sets; shorter
+        # sessions are reduced by _intelligent_trim/_trim_to_time.
+        target=max(12,int(max_minutes*0.82))
+        guard=0
+        while self._estimate_minutes(exercises) < target and guard < 30:
+            guard += 1
+            ranked=sorted(exercises,key=lambda e:(e.sets>=5,e.sets))
+            changed=False
+            for e in ranked:
+                if e.sets < 5:
+                    e.sets += 1
+                    changed=True
+                    break
+            if not changed:
+                break
+        return self._trim_to_time(exercises,max_minutes)
+
     def _intelligent_trim(self, exercises, max_minutes):
         """Preserve higher-value work when time is limited."""
         exercises = exercises[:]
@@ -647,7 +669,7 @@ class PlanGenerator:
                         rest_seconds=addon["default_rest_seconds"],progression_method=self._progression_note(addon,profile)))
                     break
         selected = selected[:max_exercises]
-        selected = self._intelligent_trim(selected, profile.minutes_per_workout)
+        selected = self._fit_to_session_time(selected, profile.minutes_per_workout)
 
         return Workout(
             name=dynamic_workout_name(workout_name, profile),
@@ -891,7 +913,7 @@ class PlanGenerator:
                 workout_dicts[idx]["cardio_minutes"]=0
 
         return {
-            "planner_version": "2.3-smart-modular-tracking",
+            "planner_version": "2.4-time-aware-modular-tracking",
             "adaptive_features": [
                 "recent performance adaptation",
                 "recovery-aware set adjustment",

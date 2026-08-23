@@ -1,0 +1,47 @@
+{
+  "version": "v14.35.5",
+  "status": "passed",
+  "tests": {
+    "javascript_syntax": "passed",
+    "python_syntax": "passed",
+    "core_per_set_tracking": "passed",
+    "core_per_set_effort_rir_buttons": "passed",
+    "cardio_effort_rir_buttons": "passed",
+    "timed_core_timer_per_set": "passed",
+    "session_length_changes_programmed_volume": "passed",
+    "equipment_required_bodyweight_classification": "passed",
+    "machine_assistance_not_misclassified": "passed",
+    "pwa_update_delivery": "passed"
+  },
+  "session_length_comparison": {
+    "30": {
+      "estimated_minutes": 29,
+      "exercise_count": 6,
+      "total_sets": 18
+    },
+    "45": {
+      "estimated_minutes": 37,
+      "exercise_count": 7,
+      "total_sets": 22
+    },
+    "60": {
+      "estimated_minutes": 49,
+      "exercise_count": 7,
+      "total_sets": 28
+    }
+  },
+  "bodyweight_reclassified": [
+    "Pull-Up",
+    "Chin-Up",
+    "Neutral-Grip Pull-Up",
+    "Scapular Pull-Up",
+    "Bench Dip",
+    "Hanging Knee Raise",
+    "Hanging Leg Raise"
+  ],
+  "kept_machine_loaded": [
+    "Assisted Pull-Up",
+    "Assisted Dip",
+    "Machine Dip"
+  ]
+}

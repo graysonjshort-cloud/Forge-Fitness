@@ -2796,6 +2796,22 @@ def ensure_expanded_exercise_directory(db_path=DEFAULT_DB_PATH) -> dict[str, int
     return {"inserted":inserted,"substitutions_added":substitutions}
 
 
+def _is_bodyweight_loaded_exercise(exercise: dict[str, Any]) -> bool:
+    """True when body mass is the primary resistance even if equipment is required."""
+    name=str(exercise.get("name") or "").lower()
+    equipment=str(exercise.get("equipment") or "").lower()
+    if "bodyweight" in equipment:
+        return True
+    if any(x in name for x in ("assisted pull-up","assisted dip","machine dip")):
+        return False
+    patterns=(
+        "pull-up","pull up","chin-up","chin up","scapular pull-up",
+        "bench dip","hanging knee raise","hanging leg raise",
+        "inverted row","muscle-up","muscle up"
+    )
+    return any(x in name for x in patterns)
+
+
 def _exercise_intelligence_metadata(exercise: dict[str, Any]) -> dict[str, Any]:
     """Derive stable exercise intelligence from the existing Forge directory."""
     name=str(exercise.get("name") or "")
@@ -2845,7 +2861,7 @@ def _exercise_intelligence_metadata(exercise: dict[str, Any]) -> dict[str, Any]:
         skill=max(1,skill-1)
 
     timed = etype=="Isometric" or any(x in name.lower() for x in ("plank","hold","wall sit"))
-    bodyweight = "bodyweight" in equipment.lower()
+    bodyweight = _is_bodyweight_loaded_exercise(exercise)
     return {
         "tracking_mode":"timed" if timed else "reps",
         "bodyweight_default":bodyweight,

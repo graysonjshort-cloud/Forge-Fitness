@@ -809,7 +809,7 @@ def _hydrate_plan_workout_ids(user_id: int, plan: dict) -> dict:
         timed=ex.get("exercise_type")=="Isometric" or any(x in name for x in ("plank","hold","wall sit"))
         exercise_meta[int(ex["id"])]={
             "tracking_mode":"timed" if timed else "reps",
-            "bodyweight_default":"bodyweight" in str(ex.get("equipment") or "").lower(),
+            "bodyweight_default":database._is_bodyweight_loaded_exercise(ex),
             "exercise_type":ex.get("exercise_type"),
         }
     for idx, workout in enumerate(hydrated.get("workouts", [])):

@@ -6,7 +6,7 @@ let authToken = localStorage.getItem("forge_auth_token") || "";
 let account = null;
 let plan = null, session = null;
 const profile = {goal:"build_muscle",experience:"intermediate",days_per_week:4,minutes_per_workout:45,equipment:["full_gym"],preferred_exercises:[],excluded_exercises:[],priority_muscles:[],recovery_level:"normal",cardio_preference:"moderate",workout_split:"auto",sport:"general",core_workouts_per_week:2,cardio_workouts_per_week:2,seed:42};
-const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null};
+const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7};
 const V=document.querySelector("#view"),toastEl=document.querySelector("#toast"),nav=document.querySelector("#bottomNav"),topbar=document.querySelector("#topbar");
 const toast=t=>{toastEl.textContent=t;toastEl.classList.add("show");setTimeout(()=>toastEl.classList.remove("show"),1800)};
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
@@ -28,12 +28,12 @@ function moreSheet(){
       <button data-a=open-equipment-log><span>▣</span><div><b>Equipment Log</b><small>Manage available gym equipment</small></div><em>›</em></button>
       <button data-a=open-calendar-settings><span>▦</span><div><b>Calendar & Time</b><small>${S.calendarStatus?.connected?"Google Calendar connected":"Schedule and timezone"}</small></div><em>›</em></button>
       <button class=more-signout data-a=signout><span>↪</span><div><b>Sign Out</b><small>Your Forge data stays saved</small></div></button>
-      <div class=more-version>Forge Fitness v14.35.4</div>
+      <div class=more-version>Forge Fitness v14.35.5</div>
     </div>
   </div>`;
 }
 function finalPolishSettingsCard(){
-  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.35.4</span></div>
+  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.35.5</span></div>
     <div class=settings-status-row><span>Connection</span><b>${S.online?"Online":"Offline"}</b></div>
     <div class=settings-status-row><span>Install mode</span><b>${isStandalonePWA()?"Installed app":"Browser"}</b></div>
     <div class=settings-status-row><span>Calendar</span><b>${S.calendarStatus?.connected?"Connected":"Not connected"}</b></div>
@@ -1006,7 +1006,7 @@ function stopCoreTimer(){
   S.coreTimerRunning=null;
 }
 function startCoreTimer(index){
-  index=Number(index);
+  index=String(index);
   if(S.coreTimerRunning===index){stopCoreTimer();render();return}
   stopCoreTimer();
   if(!Number.isFinite(S.coreTimerElapsed[index]))S.coreTimerElapsed[index]=0;
@@ -1024,58 +1024,46 @@ function startCoreTimer(index){
   render();
 }
 function resetCoreTimer(index){
-  index=Number(index);
+  index=String(index);
   if(S.coreTimerRunning===index)stopCoreTimer();
   S.coreTimerElapsed[index]=0;
   render();
+}
+function effortChoiceHTML(selected, kind, key=""){
+  const rows=[[6,"Easy","4+ left"],[7,"Moderate","~3 left"],[8,"Hard","~2 left"],[9,"Very Hard","~1 left"],[10,"Limit","0 left"]];
+  return rows.map(([v,label,sub])=>{
+    const attrs=kind==="core"?`data-core-effort="${v}" data-core-effort-key="${key}"`:`data-cardio-effort="${v}"`;
+    return `<button type=button class="effort-choice ${Number(selected)===v?"selected":""}" ${attrs}><b>${label}</b><small>${sub}</small></button>`;
+  }).join("");
 }
 function coretracker(){
 const ww=plan?.workouts?.[S.moduleWorkoutIndex??S.wi],m=ww?.core_module;
 if(!m)return `<h2>Core Circuit</h2><p class=muted>No core circuit selected.</p>`;
 return `<p class=eyebrow>CORE TRACKING</p><h2>${esc(m.name)}</h2><p class=muted>${esc(m.reason||"Balanced core circuit")}</p>
 <div class=big-spacer></div>${(m.exercises||[]).map((e,i)=>{
-  const timed=isTimedExercise(e);
-  const defaultValue=Math.round((Number(e.min_reps||10)+Number(e.max_reps||10))/2);
-  const elapsed=Number(S.coreTimerElapsed[i]||0);
-  const clock=`${String(Math.floor(elapsed/60)).padStart(2,"0")}:${String(elapsed%60).padStart(2,"0")}`;
-  return `<div class="card core-track-card">
-    <div class=core-track-heading>
-      <div><p class=eyebrow>${esc(e.core_region||"CORE")}</p><h3>${esc(e.name)}</h3></div>
-      <span>${e.sets} sets</span>
-    </div>
-    <p class=muted>Target: ${moduleExerciseTarget(e)}${isBodyweightExercise(e)?" • Bodyweight":""}</p>
-    ${timed?`
-      <div class=core-timer-panel>
-        <div class=core-timer-clock data-core-clock="${i}">${clock}</div>
-        <small>Actual hold time</small>
-        <div class=core-timer-actions>
-          <button type=button data-core-timer-start="${i}">${S.coreTimerRunning===i?"Pause":"Start Timer"}</button>
-          <button type=button data-core-timer-reset="${i}">Reset</button>
-        </div>
-      </div>
-      <input data-core-value="${i}" type=hidden value="${elapsed}">
-    `:`
-      <div class=logging-grid>
-        <div class=logging-row><label>Reps</label><input class=log-input data-core-value="${i}" type=number min=1 value="${defaultValue}"></div>
-        <div class=logging-row><label>RPE</label><input class=log-input data-core-rpe="${i}" type=number min=1 max=10 value=7></div>
-      </div>
-    `}
-    ${timed?`<div class=logging-row core-timer-rpe><label>RPE</label><input class=log-input data-core-rpe="${i}" type=number min=1 max=10 value=7></div>`:""}
-  </div><div class=spacer></div>`;
+  const timed=isTimedExercise(e),defaultValue=Math.round((Number(e.min_reps||10)+Number(e.max_reps||10))/2);
+  const sets=[];
+  for(let setIndex=0;setIndex<Number(e.sets||1);setIndex++){
+    const key=`${i}-${setIndex}`,elapsed=Number(S.coreTimerElapsed[key]||0),effort=Number(S.coreEffort[key]||7);
+    const clock=`${String(Math.floor(elapsed/60)).padStart(2,"0")}:${String(elapsed%60).padStart(2,"0")}`;
+    sets.push(`<div class=core-set-card>
+      <div class=core-set-title><b>Set ${setIndex+1}</b><small>${timed?"Timed hold":`${defaultValue} rep target`}</small></div>
+      ${timed?`<div class=core-timer-panel><div class=core-timer-clock data-core-clock="${key}">${clock}</div><small>Actual hold time</small><div class=core-timer-actions><button type=button data-core-timer-start="${key}">${S.coreTimerRunning===key?"Pause":"Start Timer"}</button><button type=button data-core-timer-reset="${key}">Reset</button></div></div><input data-core-value="${key}" type=hidden value="${elapsed}">`:`<div class=logging-row><label>Reps</label><input class=log-input data-core-value="${key}" type=number min=1 value="${defaultValue}"></div>`}
+      <div class=effort-section><div class=effort-heading><strong>Effort / RIR</strong><small>${timed?"How hard was the hold?":"How many good reps were left?"}</small></div><div class=effort-options>${effortChoiceHTML(effort,"core",key)}</div><input data-core-rpe="${key}" type=hidden value="${effort}"></div>
+    </div>`);
+  }
+  return `<div class="card core-track-card"><div class=core-track-heading><div><p class=eyebrow>${esc(e.core_region||"CORE")}</p><h3>${esc(e.name)}</h3></div><span>${e.sets} sets</span></div><p class=muted>Target: ${moduleExerciseTarget(e)}${isBodyweightExercise(e)?" • Bodyweight":""}</p><div class=core-set-stack>${sets.join("")}</div></div><div class=spacer></div>`;
 }).join("")}
 <button class=btn data-a=complete-core-module>Complete Core Circuit</button>`;
 }
 function cardiotracker(){
-const ww=plan?.workouts?.[S.moduleWorkoutIndex??S.wi],m=ww?.cardio_module;
+const ww=plan?.workouts?.[S.moduleWorkoutIndex??S.wi],m=ww?.cardio_module,effort=Number(S.cardioEffort||7);
 if(!m)return `<h2>Cardio</h2><p class=muted>No cardio module selected.</p>`;
 return `<p class=eyebrow>CARDIO TRACKING</p><h2>${esc(m.name)}</h2><p class=muted>${esc(m.reason||"Goal-aware cardio")}</p>
 <div class=big-spacer></div><div class=card>
-<div class=logging-grid>
-<div class=logging-row><label>Completed Minutes</label><input class=log-input id=cardioMinutes type=number min=0 step=1 value="${m.minutes||15}"></div>
-<div class=logging-row><label>RPE</label><input class=log-input id=cardioRpe type=number min=1 max=10 value=7></div>
-<div class=logging-row><label>Distance <small>optional</small></label><input class=log-input id=cardioDistance type=number min=0 step=.01 placeholder="0"></div>
-<div class=logging-row><label>Pace <small>optional</small></label><input class=log-input id=cardioPace type=text placeholder="e.g. 10:00 / mi"></div>
-</div></div><div class=big-spacer></div><button class=btn data-a=complete-cardio-module>Complete Cardio</button>`;
+<div class=logging-grid><div class=logging-row><label>Completed Minutes</label><input class=log-input id=cardioMinutes type=number min=0 step=1 value="${m.minutes||15}"></div><div class=logging-row><label>Distance <small>optional</small></label><input class=log-input id=cardioDistance type=number min=0 step=.01 placeholder="0"></div><div class=logging-row><label>Pace <small>optional</small></label><input class=log-input id=cardioPace type=text placeholder="e.g. 10:00 / mi"></div></div>
+<div class=effort-section><div class=effort-heading><strong>Effort / RIR</strong><small>How hard did the session feel?</small></div><div class=effort-options>${effortChoiceHTML(effort,"cardio")}</div><input id=cardioRpe type=hidden value="${effort}"></div>
+</div><div class=big-spacer></div><button class=btn data-a=complete-cardio-module>Complete Cardio</button>`;
 }
 function timer(){
 const t=S.restRemaining||w().exercises[S.ei].rest_seconds||60,mm=String(Math.floor(t/60)).padStart(2,"0"),ss=String(t%60).padStart(2,"0"),e=w().exercises[S.ei];
@@ -1808,6 +1796,8 @@ document.querySelectorAll("[data-remove-custom]").forEach(b=>b.onclick=()=>{S.eq
 document.querySelectorAll("[data-timer-target]").forEach(b=>b.onclick=()=>{S.exerciseTimerTarget=Math.max(5,Math.min(600,Number(S.exerciseTimerTarget||30)+Number(b.dataset.timerTarget)));render();});
 document.querySelectorAll("[data-core-timer-start]").forEach(b=>b.onclick=()=>startCoreTimer(b.dataset.coreTimerStart));
 document.querySelectorAll("[data-core-timer-reset]").forEach(b=>b.onclick=()=>resetCoreTimer(b.dataset.coreTimerReset));
+document.querySelectorAll("[data-core-effort]").forEach(b=>b.onclick=()=>{S.coreEffort[b.dataset.coreEffortKey]=Number(b.dataset.coreEffort);render();});
+document.querySelectorAll("[data-cardio-effort]").forEach(b=>b.onclick=()=>{S.cardioEffort=Number(b.dataset.cardioEffort);render();});
 const loadMode=document.querySelector("#loadMode");
 if(loadMode)loadMode.onchange=()=>{const row=document.querySelector("#addedWeightRow");if(row)row.style.display=loadMode.value==="weight"?"":"none";};
 const strengthSelect=document.querySelector("#strengthExercise");
@@ -2006,13 +1996,13 @@ async function act(a){
     if(a==="startworkout")await startWorkout();
     if(a==="openexercise")go("exercise");if(a==="swap-exercise")go("swapexercise");
     if(a==="start-core-module"){
-      stopCoreTimer();S.coreTimerElapsed={};
+      stopCoreTimer();S.coreTimerElapsed={};S.coreEffort={};
       S.moduleWorkoutIndex=S.wi;
       const d=await api(`/me/workouts/${w().workout_id}/modules/core/start`,{method:"POST"});
       S.moduleSession=d.session;go("coretracker");return;
     }
     if(a==="start-cardio-module"){
-      S.moduleWorkoutIndex=S.wi;
+      S.cardioEffort=7;S.moduleWorkoutIndex=S.wi;
       const d=await api(`/me/workouts/${w().workout_id}/modules/cardio/start`,{method:"POST"});
       S.moduleSession=d.session;go("cardiotracker");return;
     }
@@ -2020,15 +2010,15 @@ async function act(a){
       stopCoreTimer();
       const ww=plan.workouts[S.moduleWorkoutIndex],m=ww.core_module;
       for(let i=0;i<(m.exercises||[]).length;i++){
-        const e=m.exercises[i],value=Number(document.querySelector(`[data-core-value="${i}"]`)?.value||0),rpe=Number(document.querySelector(`[data-core-rpe="${i}"]`)?.value||7);
-        if(value<=0)throw Error(isTimedExercise(e)?`Start the timer for ${e.name} before completing the circuit`:`Enter a result for ${e.name}`);
-        await api(`/me/modules/${S.moduleSession.id}/core/log`,{method:"POST",body:JSON.stringify({
-          exercise_id:e.exercise_id,sets_completed:e.sets,reps:isTimedExercise(e)?[]:[value],
-          duration_seconds:isTimedExercise(e)?value:null,weight:null,
-          load_mode:isTimedExercise(e)?"timed":(isBodyweightExercise(e)?"bodyweight":"weight"),rpe
-        })});
+        const e=m.exercises[i];
+        for(let setIndex=0;setIndex<Number(e.sets||1);setIndex++){
+          const key=`${i}-${setIndex}`,value=Number(document.querySelector(`[data-core-value="${key}"]`)?.value||0),rpe=Number(document.querySelector(`[data-core-rpe="${key}"]`)?.value||7);
+          if(value<=0)throw Error(isTimedExercise(e)?`Run the timer for ${e.name} set ${setIndex+1}`:`Enter reps for ${e.name} set ${setIndex+1}`);
+          await api(`/me/modules/${S.moduleSession.id}/core/log`,{method:"POST",body:JSON.stringify({exercise_id:e.exercise_id,sets_completed:1,reps:isTimedExercise(e)?[]:[value],duration_seconds:isTimedExercise(e)?value:null,weight:null,load_mode:isTimedExercise(e)?"timed":(isBodyweightExercise(e)?"bodyweight":"weight"),rpe})});
+        }
       }
-      await api(`/me/modules/${S.moduleSession.id}/complete`,{method:"POST",body:JSON.stringify({completed_minutes:m.estimated_minutes||8,rpe:7})});
+      const effortValues=Object.values(S.coreEffort).map(Number).filter(Number.isFinite),avgEffort=effortValues.length?effortValues.reduce((a,b)=>a+b,0)/effortValues.length:7;
+      await api(`/me/modules/${S.moduleSession.id}/complete`,{method:"POST",body:JSON.stringify({completed_minutes:m.estimated_minutes||8,rpe:avgEffort})});
       plan=await api("/me/plan/current");S.moduleSession=null;S.moduleSummary=await api("/me/modules/summary");toast("Core circuit completed");go("workout");return;
     }
     if(a==="complete-cardio-module"){
@@ -2078,7 +2068,7 @@ document.querySelector("#backBtn").onclick=()=>{
   const dest={register:"welcome",login:"welcome",history:"progress",prs:"history",exercisehistory:"prs",swapexercise:"exercise",cardioswap:"workout",coretracker:"workout",cardiotracker:"workout",nutritionadd:"nutrition",experience:"goal",schedule:"experience",equipment:"schedule",equipmentlog:plan?"plan":"equipment",equipmentdetails:S.equipmentReturn==="onboarding"?"equipment":"equipmentlog",exercisedirectory:plan?"plan":"preferences",exercisedetail:"exercisedirectory",preferences:"equipment",yourplan:"preferences",workout:"home",exercise:"workout",timer:"exercise",complete:"home",plan:"home",calendarsettings:"trainingsettings",adjustplan:"plan"}[S.route]||"home";
   go(dest);
 };
-document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.35.4")};
+document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.35.5")};
 const calendarParams=new URLSearchParams(location.search);
 const calendarJustConnected=calendarParams.get("calendar_connected")==="1";
 const calendarSyncWarning=calendarParams.get("calendar_sync_warning")==="1";
