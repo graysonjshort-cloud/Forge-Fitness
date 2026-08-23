@@ -1,6 +1,6 @@
-const CACHE="forge-v14-35-9-sequential-core-v1";
+const CACHE="forge-v14-35-10-core-button-spacing-v1";
 const APP_SHELL=[
-  "/","/index.html","/styles.css?v=14.35.9","/app.js?v=14.35.9","/manifest.webmanifest?v=14.35.9",
+  "/","/index.html","/styles.css?v=14.35.10","/app.js?v=14.35.10","/manifest.webmanifest?v=14.35.10",
   "/assets/pwa/forge-icon-192-v14343.png","/assets/pwa/forge-icon-512-v14343.png",
   "/assets/pwa/forge-icon-maskable-192-v14343.png","/assets/pwa/forge-icon-maskable-512-v14343.png",
   "/assets/pwa/apple-touch-icon.png"

@@ -1329,3 +1329,8 @@ input,select,textarea{border-radius:9px!important}
 .sequential-core-next h3{margin:3px 0 4px;font-size:15px}
 .sequential-core-complete{text-align:center;padding:26px 18px}
 .sequential-core-complete .completion-check{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;margin:0 auto 12px;background:#1e7d4d;color:#fff;font-size:28px;font-weight:900}
+
+/* v14.35.10 — more breathing room before sequential Core Complete Set */
+.sequential-core-complete-set{
+  margin-top:22px;
+}
