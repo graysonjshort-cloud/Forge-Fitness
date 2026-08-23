@@ -1,0 +1,13 @@
+{
+  "version": "v14.34.3",
+  "status": "passed",
+  "android_icons": [
+    "forge-icon-192-v14343.png",
+    "forge-icon-512-v14343.png",
+    "forge-icon-maskable-192-v14343.png",
+    "forge-icon-maskable-512-v14343.png"
+  ],
+  "manifest_cache_bust": "v14.34.3",
+  "service_worker_cache": "forge-v14-34-3-android-icon-v1",
+  "apple_icon_changed": false
+}
