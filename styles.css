@@ -1154,3 +1154,8 @@ input,select,textarea{border-radius:9px!important}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
 }
+
+/* v14.34 workout customization */
+.set-adjuster{display:flex;align-items:center;gap:10px;margin-top:12px}.set-adjuster button{width:44px;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:inherit;font-size:24px}.set-adjuster span{display:flex;min-width:74px;flex-direction:column;align-items:center}.set-adjuster small{font-size:10px;color:var(--muted)}
+.day-picker{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:14px}.day-picker button{min-height:44px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:inherit}.day-picker button.selected{border-color:#ef233c;background:rgba(239,35,60,.14)}
+@media(max-width:480px){.day-picker{grid-template-columns:repeat(4,1fr)}}

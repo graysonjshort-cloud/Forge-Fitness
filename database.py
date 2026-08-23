@@ -1015,6 +1015,21 @@ def swap_workout_exercise(user_id: int, workout_id: int, old_exercise_id: int,
     return new
 
 
+def update_workout_exercise_sets(user_id: int, workout_id: int, exercise_id: int, sets: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    sets=max(1,min(12,int(sets)))
+    with session(db_path) as con:
+        row=con.execute("""SELECT we.id,we.exercise_order,w.workout_index,pw.id AS week_id,pw.plan_json
+            FROM workout_exercises we JOIN workouts w ON w.id=we.workout_id
+            JOIN program_weeks pw ON pw.id=w.program_week_id JOIN programs p ON p.id=pw.program_id
+            WHERE p.user_id=? AND w.id=? AND we.exercise_id=? LIMIT 1""",(user_id,workout_id,exercise_id)).fetchone()
+        if not row: raise ValueError("Exercise is not part of this workout")
+        con.execute("UPDATE workout_exercises SET sets=? WHERE id=?",(sets,row["id"]))
+        plan=json.loads(row["plan_json"]); wi=int(row["workout_index"]); oi=int(row["exercise_order"])
+        plan["workouts"][wi]["exercises"][oi]["sets"]=sets
+        con.execute("UPDATE program_weeks SET plan_json=? WHERE id=?",(_json(plan),row["week_id"]))
+    return {"workout_id":workout_id,"exercise_id":exercise_id,"sets":sets}
+
+
 def apply_shortened_workout(user_id: int, workout_id: int, target_minutes: int,
                             db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
     with session(db_path) as con:

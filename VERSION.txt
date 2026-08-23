@@ -1,2 +1,2 @@
-Forge Fitness v14.33.1
-Supabase fail-safe stability patch
+Forge Fitness v14.34
+Workout customization + AI Coach context improvements

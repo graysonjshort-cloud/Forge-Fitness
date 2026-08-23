@@ -1,0 +1,19 @@
+{
+  "version": "v14.34",
+  "status": "passed",
+  "features": [
+    "adjustable planned set counters",
+    "custom workouts per week",
+    "custom session duration",
+    "preferred training weekdays",
+    "post-generation plan rebuild",
+    "AI Coach profile-constraint context",
+    "v14.33.1 Supabase fail-safe retained"
+  ],
+  "tests": {
+    "python_syntax": "passed",
+    "javascript_syntax": "passed",
+    "static_validation": "passed",
+    "existing_e2e_flow": "passed"
+  }
+}
