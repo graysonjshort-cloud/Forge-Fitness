@@ -1508,7 +1508,8 @@ def me_start_training_module(workout_id: int, module_type: str,
     try:
         session=database.start_training_module(user["user_id"],workout_id,module_type,DB_PATH)
         module=database.get_current_module(user["user_id"],workout_id,module_type,DB_PATH)
-        return {"session":session,"module":module}
+        logs=database.get_training_module_logs(user["user_id"],int(session["id"]),DB_PATH)
+        return {"session":session,"module":module,"logs":logs}
     except ValueError as e:
         raise HTTPException(400,str(e))
 

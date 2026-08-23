@@ -6,7 +6,7 @@ let authToken = localStorage.getItem("forge_auth_token") || "";
 let account = null;
 let plan = null, session = null;
 const profile = {goal:"build_muscle",experience:"intermediate",days_per_week:4,minutes_per_workout:45,equipment:["full_gym"],preferred_exercises:[],excluded_exercises:[],priority_muscles:[],recovery_level:"normal",cardio_preference:"moderate",workout_split:"auto",sport:"general",core_workouts_per_week:2,cardio_workouts_per_week:2,seed:42};
-const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null};
+const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0};
 const V=document.querySelector("#view"),toastEl=document.querySelector("#toast"),nav=document.querySelector("#bottomNav"),topbar=document.querySelector("#topbar");
 const toast=t=>{toastEl.textContent=t;toastEl.classList.add("show");setTimeout(()=>toastEl.classList.remove("show"),1800)};
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
@@ -28,12 +28,12 @@ function moreSheet(){
       <button data-a=open-equipment-log><span>▣</span><div><b>Equipment Log</b><small>Manage available gym equipment</small></div><em>›</em></button>
       <button data-a=open-calendar-settings><span>▦</span><div><b>Calendar & Time</b><small>${S.calendarStatus?.connected?"Google Calendar connected":"Schedule and timezone"}</small></div><em>›</em></button>
       <button class=more-signout data-a=signout><span>↪</span><div><b>Sign Out</b><small>Your Forge data stays saved</small></div></button>
-      <div class=more-version>Forge Fitness v14.35.8</div>
+      <div class=more-version>Forge Fitness v14.35.9</div>
     </div>
   </div>`;
 }
 function finalPolishSettingsCard(){
-  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.35.8</span></div>
+  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.35.9</span></div>
     <div class=settings-status-row><span>Connection</span><b>${S.online?"Online":"Offline"}</b></div>
     <div class=settings-status-row><span>Install mode</span><b>${isStandalonePWA()?"Installed app":"Browser"}</b></div>
     <div class=settings-status-row><span>Calendar</span><b>${S.calendarStatus?.connected?"Connected":"Not connected"}</b></div>
@@ -1063,28 +1063,81 @@ function coreAllSetsCompleted(module){
   );
 }
 
+function coreSequence(module){
+  const exercises=module?.exercises||[];
+  const rounds=Math.max(1,...exercises.map(e=>Number(e.sets||1)));
+  const sequence=[];
+  for(let round=0;round<rounds;round++){
+    exercises.forEach((e,exerciseIndex)=>{
+      if(round<Number(e.sets||1)){
+        sequence.push({
+          key:`${exerciseIndex}-${round}`,
+          exerciseIndex,
+          setIndex:round,
+          round,
+          exercise:e
+        });
+      }
+    });
+  }
+  return sequence;
+}
+function nextIncompleteCoreIndex(module,start=0){
+  const seq=coreSequence(module);
+  for(let i=Math.max(0,start);i<seq.length;i++){
+    if(!S.coreCompleted[seq[i].key])return i;
+  }
+  for(let i=0;i<Math.max(0,start);i++){
+    if(!S.coreCompleted[seq[i].key])return i;
+  }
+  return seq.length;
+}
+function restoreCoreSequenceFromLogs(module,logs=[]){
+  S.coreCompleted={};
+  const counts={};
+  (logs||[]).forEach(log=>{
+    const exerciseId=Number(log.exercise_id);
+    const exerciseIndex=(module.exercises||[]).findIndex(e=>Number(e.exercise_id)===exerciseId);
+    if(exerciseIndex<0)return;
+    const setIndex=counts[exerciseId]||0;
+    if(setIndex<Number(module.exercises[exerciseIndex].sets||1)){
+      S.coreCompleted[`${exerciseIndex}-${setIndex}`]=true;
+      counts[exerciseId]=setIndex+1;
+    }
+  });
+  S.coreSequenceIndex=nextIncompleteCoreIndex(module,0);
+}
 function coretracker(){
 const ww=plan?.workouts?.[S.moduleWorkoutIndex??S.wi],m=ww?.core_module;
 if(!m)return `<h2>Core Circuit</h2><p class=muted>No core circuit selected.</p>`;
-return `<p class=eyebrow>CORE TRACKING</p><h2>${esc(m.name)}</h2><p class=muted>${esc(m.reason||"Balanced core circuit")}</p>
-<div class=core-circuit-rest-info><span>Between sets: ${m.between_exercise_rest_seconds||35}s</span><span>Round rest: ${m.round_rest_seconds||60}s</span></div>
-<div class=big-spacer></div>${(m.exercises||[]).map((e,i)=>{
-  const timed=isTimedExercise(e),defaultValue=Math.round((Number(e.min_reps||10)+Number(e.max_reps||10))/2);
-  const sets=[];
-  for(let setIndex=0;setIndex<Number(e.sets||1);setIndex++){
-    const key=`${i}-${setIndex}`,elapsed=Number(S.coreTimerElapsed[key]||0),effort=Number(S.coreEffort[key]||7),complete=!!S.coreCompleted[key];
-    const clock=`${String(Math.floor(elapsed/60)).padStart(2,"0")}:${String(elapsed%60).padStart(2,"0")}`;
-    sets.push(`<div class="core-set-card ${complete?"core-set-complete":""}">
-      <div class=core-set-title><b>${complete?"✓ ":""}Set ${setIndex+1}</b><small>${timed?"Timed hold":`${defaultValue} rep target`}</small></div>
-      ${timed?`<div class=core-timer-panel><div class=core-timer-clock data-core-clock="${key}">${clock}</div><small>Actual hold time</small><div class=core-timer-actions><button type=button data-core-timer-start="${key}" ${complete?"disabled":""}>${S.coreTimerRunning===key?"Pause":"Start Timer"}</button><button type=button data-core-timer-reset="${key}" ${complete?"disabled":""}>Reset</button></div></div><input data-core-value="${key}" type=hidden value="${elapsed}">`:`<div class=logging-row><label>Reps</label><input class=log-input data-core-value="${key}" type=number min=1 value="${defaultValue}" ${complete?"disabled":""}></div>`}
-      <div class=effort-section><div class=effort-heading><strong>Effort / RIR</strong><small>${timed?"How hard was the hold?":"How many good reps were left?"}</small></div><div class=effort-options>${effortChoiceHTML(effort,"core",key)}</div><input data-core-rpe="${key}" type=hidden value="${effort}"></div>
-      <button class="btn core-complete-set ${complete?"dark":""}" type=button data-core-complete-set="${key}" data-core-exercise="${i}" data-core-set="${setIndex}" ${complete?"disabled":""}>${complete?"Set Complete":"Complete Set"}</button>
-    </div>`);
-  }
-  return `<div class="card core-track-card"><div class=core-track-heading><div><p class=eyebrow>${esc(e.core_region||"CORE")}</p><h3>${esc(e.name)}</h3></div><span>${e.sets} sets</span></div><p class=muted>Target: ${moduleExerciseTarget(e)}${isBodyweightExercise(e)?" • Bodyweight":""}</p><p class="muted core-progression-note">${esc(e.progression_method||"Progress when all sets finish with good form.")}</p><div class=core-set-stack>${sets.join("")}</div></div><div class=spacer></div>`;
-}).join("")}
-${S.coreRestRemaining>0?`<div class=core-rest-overlay><div class=core-rest-card><p class=eyebrow>CORE REST</p><div id=coreRestClock>${String(Math.floor(S.coreRestRemaining/60)).padStart(2,"0")}:${String(S.coreRestRemaining%60).padStart(2,"0")}</div><p class=muted>Recover before the next core set.</p><button class=btn data-a=skip-core-rest>Skip Rest</button></div></div>`:""}
-<button class=btn data-a=complete-core-module ${coreAllSetsCompleted(m)?"":"disabled"}>Complete Core Circuit</button>`;
+const seq=coreSequence(m),total=seq.length,completed=seq.filter(x=>S.coreCompleted[x.key]).length;
+S.coreSequenceIndex=Math.min(nextIncompleteCoreIndex(m,S.coreSequenceIndex),total);
+if(S.coreSequenceIndex>=total){
+  return `<p class=eyebrow>CORE CIRCUIT</p><h2>${esc(m.name)}</h2>
+  <div class="card sequential-core-complete"><div class=completion-check>✓</div><h3>All ${total} sets complete</h3><p class=muted>Your reps, hold times, and effort are saved. Finish the circuit to store this session for progression.</p></div>
+  <div class=big-spacer></div><button class=btn data-a=complete-core-module>Finish Core Circuit</button>`;
+}
+const step=seq[S.coreSequenceIndex],e=step.exercise,key=step.key,timed=isTimedExercise(e);
+const elapsed=Number(S.coreTimerElapsed[key]||0),effort=Number(S.coreEffort[key]||7);
+const defaultValue=Math.round((Number(e.min_reps||10)+Number(e.max_reps||10))/2);
+const clock=`${String(Math.floor(elapsed/60)).padStart(2,"0")}:${String(elapsed%60).padStart(2,"0")}`;
+const roundCount=Math.max(...(m.exercises||[]).map(x=>Number(x.sets||1)),1);
+const nextStep=seq[S.coreSequenceIndex+1];
+return `<p class=eyebrow>CORE CIRCUIT • SEQUENTIAL</p><div class=sequential-core-top><div><h2>${esc(m.name)}</h2><p class=muted>Round ${step.round+1} of ${roundCount}</p></div><span>${completed}/${total}</span></div>
+<div class=workout-progress-track><i style="width:${Math.round(completed/Math.max(1,total)*100)}%"></i></div>
+<div class=big-spacer></div>
+<div class="card sequential-core-current">
+  <div class=core-track-heading><div><p class=eyebrow>${esc(e.core_region||"CORE")}</p><h2>${esc(e.name)}</h2></div><span>Set ${step.setIndex+1}/${e.sets}</span></div>
+  <p class=muted>Target: ${moduleExerciseTarget(e)}${isBodyweightExercise(e)?" • Bodyweight":""}</p>
+  <p class="muted core-progression-note">${esc(e.progression_method||"Progress when all sets finish with good form.")}</p>
+  ${timed?`<div class=core-timer-panel><div class=core-timer-clock data-core-clock="${key}">${clock}</div><small>Actual hold time</small><div class=core-timer-actions><button type=button data-core-timer-start="${key}">${S.coreTimerRunning===key?"Pause":"Start Timer"}</button><button type=button data-core-timer-reset="${key}">Reset</button></div></div><input data-core-value="${key}" type=hidden value="${elapsed}">`
+  :`<div class=logging-row><label>Reps</label><input class=log-input data-core-value="${key}" type=number min=1 value="${defaultValue}"></div>`}
+  <div class=effort-section><div class=effort-heading><strong>Effort / RIR</strong><small>${timed?"How hard was the hold?":"How many good reps were left?"}</small></div><div class=effort-options>${effortChoiceHTML(effort,"core",key)}</div><input data-core-rpe="${key}" type=hidden value="${effort}"></div>
+  <button class=btn type=button data-core-complete-set="${key}" data-core-exercise="${step.exerciseIndex}" data-core-set="${step.setIndex}">Complete Set</button>
+</div>
+<div class=spacer></div>
+<div class="card sequential-core-next"><p class=eyebrow>NEXT</p>${nextStep?`<h3>${esc(nextStep.exercise.name)}</h3><p class=muted>Round ${nextStep.round+1} • Set ${nextStep.setIndex+1} • ${moduleExerciseTarget(nextStep.exercise)}</p>`:`<h3>Finish Circuit</h3>`}</div>
+${S.coreRestRemaining>0?`<div class=core-rest-overlay><div class=core-rest-card><p class=eyebrow>${nextStep&&nextStep.round>step.round?"ROUND REST":"CORE REST"}</p><div id=coreRestClock>${String(Math.floor(S.coreRestRemaining/60)).padStart(2,"0")}:${String(S.coreRestRemaining%60).padStart(2,"0")}</div><p class=muted>${nextStep?`Next: ${esc(nextStep.exercise.name)}`:"Final recovery"}</p><button class=btn data-a=skip-core-rest>Skip Rest</button></div></div>`:""}`;
 }
 function cardiotracker(){
 const ww=plan?.workouts?.[S.moduleWorkoutIndex??S.wi],m=ww?.cardio_module,effort=Number(S.cardioEffort||7);
@@ -1841,11 +1894,13 @@ document.querySelectorAll("[data-core-effort]").forEach(b=>b.onclick=()=>{S.core
 document.querySelectorAll("[data-cardio-effort]").forEach(b=>b.onclick=()=>{S.cardioEffort=Number(b.dataset.cardioEffort);render();});
 document.querySelectorAll("[data-module-day]").forEach(b=>b.onclick=()=>{S.moduleMoveTarget=Number(b.dataset.moduleDay);render();});
 document.querySelectorAll("[data-core-complete-set]").forEach(b=>b.onclick=async()=>{
-  const ww=plan.workouts[S.moduleWorkoutIndex],m=ww.core_module;
-  const i=Number(b.dataset.coreExercise),setIndex=Number(b.dataset.coreSet),key=b.dataset.coreCompleteSet,e=m.exercises[i];
+  const ww=plan.workouts[S.moduleWorkoutIndex],m=ww.core_module,seq=coreSequence(m);
+  const active=seq[S.coreSequenceIndex];
+  if(!active||b.dataset.coreCompleteSet!==active.key){toast("Complete the current core set first");return}
+  const i=active.exerciseIndex,setIndex=active.setIndex,key=active.key,e=active.exercise;
   const value=Number(document.querySelector(`[data-core-value="${key}"]`)?.value||0);
   const rpe=Number(document.querySelector(`[data-core-rpe="${key}"]`)?.value||7);
-  if(value<=0){toast(isTimedExercise(e)?`Run the timer for ${e.name} set ${setIndex+1}`:`Enter reps for ${e.name} set ${setIndex+1}`);return}
+  if(value<=0){toast(isTimedExercise(e)?`Run the timer for ${e.name}`:`Enter reps for ${e.name}`);return}
   try{
     await api(`/me/modules/${S.moduleSession.id}/core/log`,{method:"POST",body:JSON.stringify({
       exercise_id:e.exercise_id,sets_completed:1,reps:isTimedExercise(e)?[]:[value],
@@ -1854,10 +1909,11 @@ document.querySelectorAll("[data-core-complete-set]").forEach(b=>b.onclick=async
     })});
     S.coreCompleted[key]=true;
     if(S.coreTimerRunning===key)stopCoreTimer();
-    const isLastSet=setIndex===Number(e.sets||1)-1;
-    const isLastExercise=i===m.exercises.length-1;
-    if(!coreAllSetsCompleted(m)){
-      const rest=(isLastSet&&isLastExercise)?Number(m.round_rest_seconds||60):Number(e.rest_seconds||m.between_exercise_rest_seconds||35);
+    const oldRound=active.round;
+    S.coreSequenceIndex=nextIncompleteCoreIndex(m,S.coreSequenceIndex+1);
+    const next=seq[S.coreSequenceIndex];
+    if(next){
+      const rest=next.round>oldRound?Number(m.round_rest_seconds||60):Number(e.rest_seconds||m.between_exercise_rest_seconds||35);
       startCoreRest(rest);
     }else render();
   }catch(err){toast(err.message)}
@@ -2073,7 +2129,7 @@ async function act(a){
       stopCoreTimer();stopCoreRest();S.coreTimerElapsed={};S.coreEffort={};S.coreCompleted={};
       S.moduleWorkoutIndex=S.wi;
       const d=await api(`/me/workouts/${w().workout_id}/modules/core/start`,{method:"POST"});
-      S.moduleSession=d.session;go("coretracker");return;
+      S.moduleSession=d.session;restoreCoreSequenceFromLogs(d.module,d.logs||[]);go("coretracker");return;
     }
     if(a==="start-cardio-module"){
       S.cardioEffort=7;S.moduleWorkoutIndex=S.wi;
@@ -2137,7 +2193,7 @@ document.querySelector("#backBtn").onclick=()=>{
   const dest={register:"welcome",login:"welcome",history:"progress",prs:"history",exercisehistory:"prs",swapexercise:"exercise",cardioswap:"workout",modulemove:"workout",coretracker:"workout",cardiotracker:"workout",nutritionadd:"nutrition",experience:"goal",schedule:"experience",equipment:"schedule",equipmentlog:plan?"plan":"equipment",equipmentdetails:S.equipmentReturn==="onboarding"?"equipment":"equipmentlog",exercisedirectory:plan?"plan":"preferences",exercisedetail:"exercisedirectory",preferences:"equipment",yourplan:"preferences",workout:"home",exercise:"workout",timer:"exercise",complete:"home",plan:"home",calendarsettings:"trainingsettings",adjustplan:"plan"}[S.route]||"home";
   go(dest);
 };
-document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.35.8")};
+document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.35.9")};
 const calendarParams=new URLSearchParams(location.search);
 const calendarJustConnected=calendarParams.get("calendar_connected")==="1";
 const calendarSyncWarning=calendarParams.get("calendar_sync_warning")==="1";

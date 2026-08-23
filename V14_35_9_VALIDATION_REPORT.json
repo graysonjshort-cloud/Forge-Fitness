@@ -1,0 +1,17 @@
+{
+  "version": "v14.35.9",
+  "status": "passed",
+  "tests": {
+    "backend_health": "passed",
+    "sequential_core_order": "passed",
+    "single_current_set_ui": "passed",
+    "next_exercise_preview": "passed",
+    "round_rest_transition": "passed",
+    "timed_core_support": "passed",
+    "per_set_effort_support": "passed",
+    "resume_active_core_from_saved_logs": "passed",
+    "javascript_syntax": "passed",
+    "python_syntax": "passed",
+    "pwa_update_delivery": "passed"
+  }
+}

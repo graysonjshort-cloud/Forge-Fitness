@@ -1318,3 +1318,14 @@ input,select,textarea{border-radius:9px!important}
 .module-day-option span,.module-day-option p{color:#fff}
 .module-day-option .muted{color:#b8c2cc}
 .module-day-option .eyebrow{color:var(--red,#ef233c)}
+
+/* v14.35.9 sequential core circuit */
+.sequential-core-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.sequential-core-top h2{margin:0 0 4px}
+.sequential-core-top>span{font-weight:900;font-size:13px;background:#222a31;border:1px solid #333d46;border-radius:999px;padding:7px 10px}
+.sequential-core-current{border-color:#38424b}
+.sequential-core-current h2{margin-top:2px}
+.sequential-core-next{padding:14px 16px}
+.sequential-core-next h3{margin:3px 0 4px;font-size:15px}
+.sequential-core-complete{text-align:center;padding:26px 18px}
+.sequential-core-complete .completion-check{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;margin:0 auto 12px;background:#1e7d4d;color:#fff;font-size:28px;font-weight:900}

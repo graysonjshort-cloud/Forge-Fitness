@@ -1543,6 +1543,24 @@ def start_training_module(user_id: int, workout_id: int, module_type: str, db_pa
         return dict(row)
 
 
+def get_training_module_logs(user_id: int, module_session_id: int, db_path=DEFAULT_DB_PATH) -> list[dict[str, Any]]:
+    with session(db_path) as con:
+        rows=con.execute(
+            """SELECT l.*
+               FROM training_module_exercise_logs l
+               JOIN training_module_sessions s ON s.id=l.module_session_id
+               WHERE l.module_session_id=? AND s.user_id=?
+               ORDER BY l.id""",
+            (module_session_id,user_id),
+        ).fetchall()
+    out=[]
+    for row in rows:
+        d=dict(row)
+        d["reps"]=json.loads(d.pop("reps_json") or "[]")
+        out.append(d)
+    return out
+
+
 def log_core_module_exercise(user_id: int, module_session_id: int, exercise_id: int,
                              sets_completed: int, reps: list[int] | None = None,
                              duration_seconds: int | None = None, weight: float | None = None,
