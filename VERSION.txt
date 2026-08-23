@@ -1,2 +1,2 @@
-Forge Fitness v14.35.3
-Smart Core/Cardio Programming + Independent Tracking
+Forge Fitness v14.35.4
+Core UI cleanup + timed core timers + Home-first startup
