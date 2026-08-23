@@ -1,2 +1,2 @@
-Forge Fitness v14.35.1
-Exercise tracking modes: timed + bodyweight
+Forge Fitness v14.35.2
+Modular core/cardio + complete bodyweight tracking + adjustable timed targets

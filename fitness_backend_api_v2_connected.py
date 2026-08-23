@@ -800,6 +800,11 @@ def _hydrate_plan_workout_ids(user_id: int, plan: dict) -> dict:
         for exercise in workout.get("exercises",[]):
             meta=exercise_meta.get(int(exercise.get("exercise_id") or 0),{})
             exercise.update(meta)
+        core_module=workout.get("core_module")
+        if core_module:
+            for exercise in core_module.get("exercises",[]):
+                meta=exercise_meta.get(int(exercise.get("exercise_id") or 0),{})
+                exercise.update(meta)
         row = by_index.get(idx)
         if row:
             workout["workout_id"] = int(row["id"])

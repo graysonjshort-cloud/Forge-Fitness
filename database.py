@@ -932,7 +932,7 @@ def swap_workout_cardio(user_id: int, workout_id: int, new_exercise_id: int,
                FROM workouts w
                JOIN program_weeks pw ON pw.id=w.program_week_id
                JOIN programs p ON p.id=pw.program_id
-               WHERE w.id=? AND p.user_id=?""",(workout_id,user_id)
+               WHERE w.id=? AND p.user_id=? AND p.status='active'""",(workout_id,user_id)
         ).fetchone()
         if not row:
             raise ValueError("Workout not found")
@@ -943,14 +943,22 @@ def swap_workout_cardio(user_id: int, workout_id: int, new_exercise_id: int,
         if idx<0 or idx>=len(workouts):
             raise ValueError("Workout is missing from the active plan")
         workout=workouts[idx]
-        if not workout.get("cardio_included"):
-            raise ValueError("This workout does not have a cardio add-on")
+        module=workout.get("cardio_module")
+        if not module:
+            raise ValueError("This training day does not have a cardio module")
 
-        old=workout.get("cardio_name")
-        workout["cardio_name"]=new["name"]
-        workout["cardio_exercise_id"]=int(new["id"])
-        workout["cardio_movement_pattern"]=new["movement_pattern"]
-        workout["cardio_equipment"]=new["equipment"]
+        old=module.get("name")
+        module["name"]=new["name"]
+        module["exercise_id"]=int(new["id"])
+        module["movement_pattern"]=new["movement_pattern"]
+        module["equipment"]=new["equipment"]
+
+        # Keep top-level module list synchronized.
+        for top in plan.get("cardio_modules",[]):
+            if int(top.get("workout_index",-1))==idx:
+                top.update(module)
+                break
+
         con.execute(
             "UPDATE program_weeks SET plan_json=? WHERE id=?",
             (_json(plan),int(row["week_id"]))
@@ -958,7 +966,7 @@ def swap_workout_cardio(user_id: int, workout_id: int, new_exercise_id: int,
         con.execute(
             """INSERT INTO progression_events(user_id,workout_id,event_type,old_value,new_value,reason)
                VALUES (?,?,?,?,?,?)""",
-            (user_id,workout_id,"cardio_swap",old,new["name"],"User swapped cardio exercise")
+            (user_id,workout_id,"cardio_swap",old,new["name"],"User swapped standalone cardio module")
         )
     return {
         "workout_id":int(workout_id),
@@ -968,6 +976,7 @@ def swap_workout_cardio(user_id: int, workout_id: int, new_exercise_id: int,
         "cardio_movement_pattern":new["movement_pattern"],
         "cardio_equipment":new["equipment"],
     }
+
 
 def get_substitutions_for_user(user_id: int, exercise_id: int, db_path=DEFAULT_DB_PATH) -> list[dict[str, Any]]:
     profile = get_profile(user_id, db_path) or {}
