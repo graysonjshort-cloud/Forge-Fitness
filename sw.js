@@ -1,6 +1,6 @@
-const CACHE="forge-v14-35-7-progress-module-move-v1";
+const CACHE="forge-v14-35-8-any-workout-day-v1";
 const APP_SHELL=[
-  "/","/index.html","/styles.css?v=14.35.7","/app.js?v=14.35.7","/manifest.webmanifest?v=14.35.7",
+  "/","/index.html","/styles.css?v=14.35.8","/app.js?v=14.35.8","/manifest.webmanifest?v=14.35.8",
   "/assets/pwa/forge-icon-192-v14343.png","/assets/pwa/forge-icon-512-v14343.png",
   "/assets/pwa/forge-icon-maskable-192-v14343.png","/assets/pwa/forge-icon-maskable-512-v14343.png",
   "/assets/pwa/apple-touch-icon.png"

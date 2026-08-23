@@ -1312,3 +1312,9 @@ input,select,textarea{border-radius:9px!important}
   .muscle-volume-head{display:block}
   .muscle-volume-head>span{display:block;margin-top:5px}
 }
+
+/* v14.35.8 module move readability */
+.module-day-option,.module-day-option h3,.module-day-option b,.module-day-option strong,
+.module-day-option span,.module-day-option p{color:#fff}
+.module-day-option .muted{color:#b8c2cc}
+.module-day-option .eyebrow{color:var(--red,#ef233c)}

@@ -28,12 +28,12 @@ function moreSheet(){
       <button data-a=open-equipment-log><span>▣</span><div><b>Equipment Log</b><small>Manage available gym equipment</small></div><em>›</em></button>
       <button data-a=open-calendar-settings><span>▦</span><div><b>Calendar & Time</b><small>${S.calendarStatus?.connected?"Google Calendar connected":"Schedule and timezone"}</small></div><em>›</em></button>
       <button class=more-signout data-a=signout><span>↪</span><div><b>Sign Out</b><small>Your Forge data stays saved</small></div></button>
-      <div class=more-version>Forge Fitness v14.35.7</div>
+      <div class=more-version>Forge Fitness v14.35.8</div>
     </div>
   </div>`;
 }
 function finalPolishSettingsCard(){
-  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.35.7</span></div>
+  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.35.8</span></div>
     <div class=settings-status-row><span>Connection</span><b>${S.online?"Online":"Offline"}</b></div>
     <div class=settings-status-row><span>Install mode</span><b>${isStandalonePWA()?"Installed app":"Browser"}</b></div>
     <div class=settings-status-row><span>Calendar</span><b>${S.calendarStatus?.connected?"Connected":"Not connected"}</b></div>
@@ -1103,10 +1103,10 @@ function modulemove(){
   const type=S.moduleMoveType,sourceIndex=S.moduleMoveSourceIndex,source=plan?.workouts?.[sourceIndex];
   if(!type||!source)return `<h2>Move Module</h2><p class=muted>No module selected.</p>`;
   const label=type==="core"?"Core Circuit":"Cardio";
-  const candidates=(plan.workouts||[]).map((ww,i)=>({ww,i})).filter(({ww,i})=>i!==sourceIndex&&!ww[`${type}_module`]);
-  return `<p class=eyebrow>MOVE ${type.toUpperCase()}</p><h2>Choose a New Day</h2><p class=muted>${label} is currently attached to ${esc(source.scheduled_day_name||source.name)}. Moving it will not move the strength workout.</p>
+  const candidates=(plan.workouts||[]).map((ww,i)=>({ww,i})).filter(({i})=>i!==sourceIndex);
+  return `<p class=eyebrow>MOVE ${type.toUpperCase()}</p><h2>Choose a New Day</h2><p class=muted>${label} is currently attached to ${esc(source.scheduled_day_name||source.name)}. Choose any other day that has a workout. If that day already has ${type}, the two ${type} modules will swap days.</p>
   <div class=big-spacer></div><div class=stack>${candidates.length?candidates.map(({ww,i})=>`<button class="card module-day-option ${S.moduleMoveTarget===ww.workout_id?"selected":""}" data-module-day="${ww.workout_id}">
-    <div class=row><div><p class=eyebrow>${esc(ww.scheduled_day_name||`Day ${i+1}`)}</p><h3>${esc(ww.name)}</h3><p class=muted>${ww.estimated_minutes||profile.minutes_per_workout} min strength workout</p></div><span>${S.moduleMoveTarget===ww.workout_id?"✓":"›"}</span></div>
+    <div class=row><div><p class=eyebrow>${esc(ww.scheduled_day_name||`Day ${i+1}`)}</p><h3>${esc(ww.name)}</h3><p class=muted>${ww.estimated_minutes||profile.minutes_per_workout} min strength workout${ww[`${type}_module`]?" • Existing module will swap":""}</p></div><span>${S.moduleMoveTarget===ww.workout_id?"✓":"›"}</span></div>
   </button>`).join(""):`<div class=card><p class=muted>Every other workout day already has a ${type} module.</p></div>`}</div>
   <div class=big-spacer></div><div class=row><button class="btn dark" style="width:48%" data-a=cancel-module-move>Cancel</button><button class=btn style="width:48%" data-a=apply-module-move ${S.moduleMoveTarget?"":"disabled"}>Move ${label}</button></div>`;
 }
@@ -2137,7 +2137,7 @@ document.querySelector("#backBtn").onclick=()=>{
   const dest={register:"welcome",login:"welcome",history:"progress",prs:"history",exercisehistory:"prs",swapexercise:"exercise",cardioswap:"workout",modulemove:"workout",coretracker:"workout",cardiotracker:"workout",nutritionadd:"nutrition",experience:"goal",schedule:"experience",equipment:"schedule",equipmentlog:plan?"plan":"equipment",equipmentdetails:S.equipmentReturn==="onboarding"?"equipment":"equipmentlog",exercisedirectory:plan?"plan":"preferences",exercisedetail:"exercisedirectory",preferences:"equipment",yourplan:"preferences",workout:"home",exercise:"workout",timer:"exercise",complete:"home",plan:"home",calendarsettings:"trainingsettings",adjustplan:"plan"}[S.route]||"home";
   go(dest);
 };
-document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.35.7")};
+document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.35.8")};
 const calendarParams=new URLSearchParams(location.search);
 const calendarJustConnected=calendarParams.get("calendar_connected")==="1";
 const calendarSyncWarning=calendarParams.get("calendar_sync_warning")==="1";

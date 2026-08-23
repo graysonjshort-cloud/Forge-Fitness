@@ -958,28 +958,47 @@ def move_training_module(user_id: int, source_workout_id: int, target_workout_id
         module=source.get(key)
         if not module:
             raise ValueError(f"No {module_type} module is scheduled on the source day")
-        if target.get(key):
-            raise ValueError(f"The target day already has a {module_type} module")
+        target_module=target.get(key)
 
-        source[key]=None
+        # Any workout day is a valid destination. If it already contains the same
+        # module type, swap the two modules so neither session is lost.
+        source[key]=target_module
         target[key]=module
         module["workout_index"]=ti
         module["moved_by_user"]=True
         module["scheduled_with"]=target.get("name") or dst["name"]
+        if target_module:
+            target_module["workout_index"]=si
+            target_module["moved_by_user"]=True
+            target_module["scheduled_with"]=source.get("name") or src["name"]
 
         top_key=f"{module_type}_modules"
         for top in plan.get(top_key,[]):
-            if int(top.get("workout_index",-1))==si:
-                top.update(module)
-                top["workout_index"]=ti
-                break
+            wi=int(top.get("workout_index",-1))
+            if wi==si:
+                top.update(module); top["workout_index"]=ti
+            elif target_module and wi==ti:
+                top.update(target_module); top["workout_index"]=si
 
         # Any still-active, uncompleted module session follows the module.
-        con.execute(
-            """UPDATE training_module_sessions SET workout_id=?
-               WHERE user_id=? AND workout_id=? AND module_type=? AND status='active'""",
-            (target_workout_id,user_id,source_workout_id,module_type),
-        )
+        if target_module:
+            con.execute(
+                """UPDATE training_module_sessions SET workout_id=-workout_id
+                   WHERE user_id=? AND workout_id IN (?,?) AND module_type=? AND status='active'""",
+                (user_id,source_workout_id,target_workout_id,module_type),
+            )
+            con.execute(
+                """UPDATE training_module_sessions
+                   SET workout_id=CASE WHEN workout_id=? THEN ? WHEN workout_id=? THEN ? ELSE workout_id END
+                   WHERE user_id=? AND module_type=? AND status='active'""",
+                (-int(source_workout_id),target_workout_id,-int(target_workout_id),source_workout_id,user_id,module_type),
+            )
+        else:
+            con.execute(
+                """UPDATE training_module_sessions SET workout_id=?
+                   WHERE user_id=? AND workout_id=? AND module_type=? AND status='active'""",
+                (target_workout_id,user_id,source_workout_id,module_type),
+            )
         con.execute("UPDATE program_weeks SET plan_json=? WHERE id=?",(_json(plan),int(src["week_id"])))
         con.execute(
             """INSERT INTO progression_events(user_id,workout_id,event_type,old_value,new_value,reason)

@@ -1,2 +1,2 @@
-Forge Fitness v14.35.7
-Expanded Muscle Volume + Separate Core/Cardio Progress + Module Day Moves
+Forge Fitness v14.35.8
+White Module Move Text + Move/Swap Modules To Any Workout Day
