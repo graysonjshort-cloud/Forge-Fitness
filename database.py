@@ -228,6 +228,7 @@ def ensure_schema(db_path: str | Path = DEFAULT_DB_PATH) -> None:
             con.execute("ALTER TABLE nutrition_entries ADD COLUMN source_url TEXT")
     ensure_expanded_exercise_directory(db_path)
     ensure_exercise_form_demo_metadata(db_path)
+    ensure_bundled_exercise_demo_assets(db_path)
 
 def create_user(db_path=DEFAULT_DB_PATH) -> int:
     with session(db_path) as con:
@@ -2997,6 +2998,26 @@ def get_exercise_form_demo(exercise_id,db_path=DEFAULT_DB_PATH):
     for k in ("form_cues_json","setup_cues_json","common_mistakes_json"):d[k[:-5]]=json.loads(d.pop(k) or "[]")
     d["reviewed"]=bool(d["reviewed"]);d["has_animation"]=bool(d.get("demo_asset")) and d.get("demo_type")!="placeholder"
     return d
+
+BUNDLED_EXERCISE_DEMOS = {'Back Squat': '/assets/exercise_demos/back-squat.svg', 'Barbell Bench Press': '/assets/exercise_demos/barbell-bench-press.svg', 'Romanian Deadlift': '/assets/exercise_demos/romanian-deadlift.svg', 'Barbell Overhead Press': '/assets/exercise_demos/barbell-overhead-press.svg', 'Pull-Up': '/assets/exercise_demos/pull-up.svg', 'Chin-Up': '/assets/exercise_demos/chin-up.svg', 'Lat Pulldown': '/assets/exercise_demos/lat-pulldown.svg', 'Barbell Row': '/assets/exercise_demos/barbell-row.svg', 'One-Arm Dumbbell Row': '/assets/exercise_demos/one-arm-dumbbell-row.svg', 'Push-Up': '/assets/exercise_demos/push-up.svg', 'Leg Press': '/assets/exercise_demos/leg-press.svg', 'Lying Leg Curl': '/assets/exercise_demos/lying-leg-curl.svg', 'Leg Extension': '/assets/exercise_demos/leg-extension.svg', 'Plank': '/assets/exercise_demos/plank.svg', 'Hanging Knee Raise': '/assets/exercise_demos/hanging-knee-raise.svg'}
+
+def ensure_bundled_exercise_demo_assets(db_path=DEFAULT_DB_PATH):
+    """Attach bundled Forge demo assets by exact exercise name without marking them reviewed."""
+    updated=0
+    with session(db_path) as con:
+        for name,asset in BUNDLED_EXERCISE_DEMOS.items():
+            row=con.execute("SELECT id FROM exercises WHERE name=?",(name,)).fetchone()
+            if not row:
+                continue
+            demo=con.execute("SELECT demo_asset FROM exercise_form_demos WHERE exercise_id=?",(row["id"],)).fetchone()
+            if demo and demo["demo_asset"]==asset:
+                continue
+            con.execute("""UPDATE exercise_form_demos
+                SET demo_asset=?,demo_type='svg',animation_status='asset_ready',reviewed=0,
+                    updated_at=CURRENT_TIMESTAMP
+                WHERE exercise_id=?""",(asset,row["id"]))
+            updated += 1
+    return {"updated":updated,"bundled":len(BUNDLED_EXERCISE_DEMOS)}
 
 def register_exercise_form_demo_asset(exercise_id: int, demo_asset: str, demo_type: str="video",
                                       secondary_asset: str|None=None, reviewed: bool=False,

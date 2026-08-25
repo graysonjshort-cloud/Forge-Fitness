@@ -28,12 +28,12 @@ function moreSheet(){
       <button data-a=open-equipment-log><span>▣</span><div><b>Equipment Log</b><small>Manage available gym equipment</small></div><em>›</em></button>
       <button data-a=open-calendar-settings><span>▦</span><div><b>Calendar & Time</b><small>${S.calendarStatus?.connected?"Google Calendar connected":"Schedule and timezone"}</small></div><em>›</em></button>
       <button class=more-signout data-a=signout><span>↪</span><div><b>Sign Out</b><small>Your Forge data stays saved</small></div></button>
-      <div class=more-version>Forge Fitness v14.36.6</div>
+      <div class=more-version>Forge Fitness v14.36.7</div>
     </div>
   </div>`;
 }
 function finalPolishSettingsCard(){
-  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.36.6</span></div>
+  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.36.7</span></div>
     <div class=settings-status-row><span>Connection</span><b>${S.online?"Online":"Offline"}</b></div>
     <div class=settings-status-row><span>Install mode</span><b>${isStandalonePWA()?"Installed app":"Browser"}</b></div>
     <div class=settings-status-row><span>Calendar</span><b>${S.calendarStatus?.connected?"Connected":"Not connected"}</b></div>
@@ -725,9 +725,11 @@ async function openDemoReview(id){
 }
 function demoreview(){
  const r=S.demoReview;if(!r)return `<p class=eyebrow>DEMO REVIEW</p><h2>Loading checklist…</h2>`;
+ const auditItem=(S.demoAudit||[]).find(x=>Number(x.id)===Number(S.demoReviewExercise));
+ const reviewPreview=auditItem?.demo_asset?`<div class=exercise-demo-player><img src="${esc(auditItem.demo_asset)}" alt="${esc(r.exercise_name)} review animation"></div><div class=spacer></div>`:"";
  const fields=[["correct_exercise","Correct exercise"],["setup","Setup & equipment"],["range_of_motion","Range of motion"],["joint_alignment","Joint alignment"],["loop_quality","Loop quality"],["mobile_tested","Tested on phone"]];
  return `<p class=eyebrow>DEMO REVIEW</p><h2>${esc(r.exercise_name)}</h2><p class=muted>Only mark items passed after checking the actual animation.</p>
- <div class=card>${fields.map(([k,n])=>`<label class=demo-review-item><input type=checkbox data-demo-review="${k}" ${r[k]?"checked":""}><span><b>${n}</b><small>${r[k]?"Passed":"Needs review"}</small></span></label>`).join("")}</div>
+ ${reviewPreview}<div class=card>${fields.map(([k,n])=>`<label class=demo-review-item><input type=checkbox data-demo-review="${k}" ${r[k]?"checked":""}><span><b>${n}</b><small>${r[k]?"Passed":"Needs review"}</small></span></label>`).join("")}</div>
  <div class=spacer></div><label class=field>Review notes<textarea data-demo-review-notes rows=4 placeholder="Record anything that should be corrected…">${esc(r.notes||"")}</textarea></label>
  <button class=btn data-a=save-demo-review>Save Review</button>
  ${r.complete?`<div class="card demo-reviewed-banner"><b>✓ Reviewed</b><p>All six checks passed. Forge can display this demo as reviewed.</p></div>`:`<p class="muted demo-review-warning">This demo remains Asset Ready until every check passes.</p>`}`;
@@ -2280,7 +2282,7 @@ document.querySelector("#backBtn").onclick=()=>{
   const dest=S.route==="demoreview"?"demoaudit":S.route==="demoaudit"?"formdemo":S.route==="formdemo"?(S.formDemoReturn||"exercise"):{register:"welcome",login:"welcome",history:"progress",prs:"history",exercisehistory:"prs",swapexercise:"exercise",cardioswap:"workout",modulemove:"workout",coretracker:"workout",cardiotracker:"workout",nutritionadd:"nutrition",experience:"goal",schedule:"experience",equipment:"schedule",equipmentlog:plan?"plan":"equipment",equipmentdetails:S.equipmentReturn==="onboarding"?"equipment":"equipmentlog",exercisedirectory:plan?"plan":"preferences",exercisedetail:"exercisedirectory",preferences:"equipment",yourplan:"preferences",workout:"home",exercise:"workout",timer:"exercise",complete:"home",plan:"home",calendarsettings:"trainingsettings",adjustplan:"plan"}[S.route]||"home";
   go(dest);
 };
-document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.36.6")};
+document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.36.7")};
 const calendarParams=new URLSearchParams(location.search);
 const calendarJustConnected=calendarParams.get("calendar_connected")==="1";
 const calendarSyncWarning=calendarParams.get("calendar_sync_warning")==="1";
@@ -2314,5 +2316,5 @@ document.addEventListener("click",async(e)=>{
   }catch(err){ alert("Could not check nutrition provider status: "+err.message); }
 });
 
-// v14.36.6: keep current-week form media warm without blocking the workout UI.
+// v14.36.7: keep current-week form media warm without blocking the workout UI.
 window.addEventListener("online",()=>{if(token&&plan)cacheCurrentPlanDemos(true)});

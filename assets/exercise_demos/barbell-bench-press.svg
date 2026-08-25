@@ -1,1 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-label="Barbell Bench Press movement demonstration"><rect width="320" height="320" rx="28" fill="#11161b"/><path d="M65 205h190M85 205v50M235 205v50" stroke="#59636d" stroke-width="8"/><g stroke="#e8edf2" stroke-width="10" stroke-linecap="round" fill="none"><circle cx="105" cy="172" r="17" stroke-width="7"/><path d="M125 175h88M150 176l-8 55M205 176l18 55"/><path d="M145 170l15-52M198 170l-15-52"/><path d="M112 112h126" stroke="#ef233c" stroke-width="7"><animate attributeName="d" values="M112 112h126;M112 150h126;M112 112h126" dur="2.2s" repeatCount="indefinite"/></path></g><text x="160" y="300" text-anchor="middle" fill="#aeb9c5" font-family="sans-serif" font-size="13">Barbell Bench Press</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" role="img" aria-label="Barbell Bench Press form demonstration">
+<rect width="360" height="360" rx="28" fill="#0f1419"/>
+<circle cx="180" cy="164" r="132" fill="none" stroke="#202832" stroke-width="2"/>
+<path d="M68 224 H286 M92 224 V280 M264 224 V280" stroke="#909aa4" stroke-width="8"/><g stroke="#edf1f5" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="100" cy="190" r="17" stroke-width="7"/><path d="M120 193 H226"/>
+<path d="M145 194 L134 255 M216 194 L233 255"/><path d="M146 186 L153 139 M208 186 L201 139"/>
+</g><g><g stroke="#edf1f5" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M105 126 H250" stroke="#ef233c" stroke-width="8"/><animateTransform attributeName="transform" type="translate" values="0 0;0 33;0 33;0 0;0 0" keyTimes="0;.33;.48;.82;1" dur="2.8s" repeatCount="indefinite"/></g></g>
+<text x="180" y="334" text-anchor="middle" fill="#c4ccd4" font-family="system-ui,sans-serif" font-size="14" font-weight="700">Barbell Bench Press</text>
+<text x="180" y="350" text-anchor="middle" fill="#76818c" font-family="system-ui,sans-serif" font-size="9">FORGE FORM DEMO • LOOPING SIDE/FRONT DIAGRAM</text>
+</svg>

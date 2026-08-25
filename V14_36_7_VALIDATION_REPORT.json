@@ -1,0 +1,18 @@
+{
+  "version": "v14.36.7",
+  "status": "passed",
+  "tests": {
+    "backend_health": "passed",
+    "bundled_asset_auto_registration": "passed",
+    "15_exact_database_demo_assets": "passed",
+    "svg_asset_serving": "passed",
+    "review_preview_in_ui": "passed",
+    "assets_remain_unreviewed_by_default": "passed",
+    "offline_cache_version": "passed",
+    "javascript_syntax": "passed",
+    "python_syntax": "passed",
+    "manifest_validation": "passed"
+  },
+  "animations_ready": 15,
+  "coverage_percent": 10.6
+}
