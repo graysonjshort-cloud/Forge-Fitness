@@ -1463,6 +1463,36 @@ def me_exercise_form_demo(exercise_id:int,authorization:Optional[str]=Header(Non
     try:return database.get_exercise_form_demo(exercise_id,DB_PATH)
     except ValueError as e:raise HTTPException(404,str(e))
 
+@app.get("/me/exercise-demos/current-plan")
+def me_current_plan_demo_assets(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    plan=database.get_current_plan(user["user_id"],DB_PATH)
+    if not plan:
+        return {"exercise_ids":[],"assets":[],"count":0}
+    ids=[]
+    for workout in plan.get("workouts",[]):
+        for ex in workout.get("exercises",[]):
+            eid=ex.get("exercise_id")
+            if eid is not None and int(eid) not in ids: ids.append(int(eid))
+        for module_key in ("core_module","cardio_module"):
+            module=workout.get(module_key) or {}
+            for ex in module.get("exercises",[]):
+                eid=ex.get("exercise_id")
+                if eid is not None and int(eid) not in ids: ids.append(int(eid))
+    assets=[]
+    for eid in ids:
+        try:
+            d=database.get_exercise_form_demo(eid,DB_PATH)
+            if d.get("has_animation") and d.get("demo_asset"):
+                assets.append({"exercise_id":eid,"name":d.get("name"),"url":d["demo_asset"],
+                               "type":d.get("demo_type"),"version":d.get("demo_version",1)})
+            if d.get("secondary_asset"):
+                assets.append({"exercise_id":eid,"name":d.get("name"),"url":d["secondary_asset"],
+                               "type":d.get("demo_type"),"version":d.get("demo_version",1),"view":"secondary"})
+        except ValueError:
+            pass
+    return {"exercise_ids":ids,"assets":assets,"count":len(assets)}
+
 @app.get("/me/exercise-demos/coverage")
 def me_exercise_demo_coverage(authorization:Optional[str]=Header(None)):
     _current_account(authorization);return database.get_exercise_demo_coverage(DB_PATH)

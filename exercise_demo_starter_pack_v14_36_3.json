@@ -1,0 +1,27 @@
+{
+  "version": "14.36.3",
+  "status": "asset_pipeline_ready",
+  "note": "These are the first exercises targeted for original/licensed reviewed animation assets. Missing files intentionally fall back to written form guidance.",
+  "exercises": [
+    "Barbell Back Squat",
+    "Barbell Bench Press",
+    "Romanian Deadlift",
+    "Deadlift",
+    "Overhead Press",
+    "Pull-Up",
+    "Chin-Up",
+    "Lat Pulldown",
+    "Barbell Row",
+    "One-Arm Dumbbell Row",
+    "Push-Up",
+    "Dip",
+    "Leg Press",
+    "Lying Leg Curl",
+    "Leg Extension",
+    "Plank",
+    "Side Plank",
+    "Hanging Knee Raise",
+    "Hollow Body Hold",
+    "Cable Crunch"
+  ]
+}

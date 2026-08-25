@@ -1,2 +1,2 @@
-Forge Fitness v14.36.2
-Exercise Form Demo Foundation + Player + Form Detail
+Forge Fitness v14.36.3
+Offline Exercise Demo Delivery + Starter Pack Pipeline
