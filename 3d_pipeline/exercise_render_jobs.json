@@ -1,0 +1,136 @@
+{
+  "version": "14.37.2",
+  "pipeline": "forge_3d_v1",
+  "render": {
+    "fps": 30,
+    "resolution": [
+      720,
+      720
+    ],
+    "format": "webm",
+    "codec": "vp9",
+    "loop_seconds": [
+      3.5,
+      4.0
+    ]
+  },
+  "exercises": [
+    {
+      "name": "Back Squat",
+      "slug": "back-squat",
+      "primary_view": "side",
+      "secondary_view": "front",
+      "frames": 120,
+      "fps": 30,
+      "checkpoints": [
+        "standing braced",
+        "controlled descent",
+        "depth position",
+        "controlled ascent"
+      ],
+      "equipment": [
+        "olympic barbell",
+        "rack",
+        "plates"
+      ],
+      "camera_notes": {
+        "side": "Show hip/knee travel and torso angle.",
+        "front": "Show stance and knee tracking."
+      },
+      "source_status": "queued"
+    },
+    {
+      "name": "Barbell Bench Press",
+      "slug": "barbell-bench-press",
+      "primary_view": "side",
+      "secondary_view": "front-3q",
+      "frames": 105,
+      "fps": 30,
+      "checkpoints": [
+        "locked-out start",
+        "controlled lower",
+        "lower/mid chest touch",
+        "press to lockout"
+      ],
+      "equipment": [
+        "flat bench",
+        "rack",
+        "olympic barbell",
+        "plates"
+      ],
+      "camera_notes": {
+        "side": "Show bar path, elbow stack and chest touch.",
+        "front-3q": "Show grip symmetry and elbow path."
+      },
+      "source_status": "source_ready"
+    },
+    {
+      "name": "Romanian Deadlift",
+      "slug": "romanian-deadlift",
+      "primary_view": "side",
+      "secondary_view": "front-3q",
+      "frames": 105,
+      "fps": 30,
+      "checkpoints": [
+        "tall start",
+        "hip hinge",
+        "bottom hamstring-loaded position",
+        "hip extension"
+      ],
+      "equipment": [
+        "olympic barbell",
+        "plates"
+      ],
+      "camera_notes": {
+        "side": "Show hip hinge and bar proximity.",
+        "front-3q": "Show symmetrical grip/stance and bar control."
+      },
+      "source_status": "queued"
+    },
+    {
+      "name": "Barbell Overhead Press",
+      "slug": "barbell-overhead-press",
+      "primary_view": "side",
+      "secondary_view": "front",
+      "frames": 105,
+      "fps": 30,
+      "checkpoints": [
+        "front-rack start",
+        "bar clears face",
+        "overhead lockout",
+        "controlled return"
+      ],
+      "equipment": [
+        "olympic barbell",
+        "plates"
+      ],
+      "camera_notes": {
+        "side": "Show vertical bar path and rib position.",
+        "front": "Show grip width and symmetric lockout."
+      },
+      "source_status": "queued"
+    },
+    {
+      "name": "Pull-Up",
+      "slug": "pull-up",
+      "primary_view": "side",
+      "secondary_view": "front",
+      "frames": 105,
+      "fps": 30,
+      "checkpoints": [
+        "dead hang",
+        "scapular initiation",
+        "top position",
+        "controlled descent"
+      ],
+      "equipment": [
+        "pull-up bar"
+      ],
+      "camera_notes": {
+        "side": "Show body swing and vertical travel.",
+        "front": "Show shoulder/elbow symmetry."
+      },
+      "source_status": "queued"
+    }
+  ]
+}

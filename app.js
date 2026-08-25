@@ -28,12 +28,12 @@ function moreSheet(){
       <button data-a=open-equipment-log><span>▣</span><div><b>Equipment Log</b><small>Manage available gym equipment</small></div><em>›</em></button>
       <button data-a=open-calendar-settings><span>▦</span><div><b>Calendar & Time</b><small>${S.calendarStatus?.connected?"Google Calendar connected":"Schedule and timezone"}</small></div><em>›</em></button>
       <button class=more-signout data-a=signout><span>↪</span><div><b>Sign Out</b><small>Your Forge data stays saved</small></div></button>
-      <div class=more-version>Forge Fitness v14.37.0</div>
+      <div class=more-version>Forge Fitness v14.37.2</div>
     </div>
   </div>`;
 }
 function finalPolishSettingsCard(){
-  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.37.0</span></div>
+  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.37.2</span></div>
     <div class=settings-status-row><span>Connection</span><b>${S.online?"Online":"Offline"}</b></div>
     <div class=settings-status-row><span>Install mode</span><b>${isStandalonePWA()?"Installed app":"Browser"}</b></div>
     <div class=settings-status-row><span>Calendar</span><b>${S.calendarStatus?.connected?"Connected":"Not connected"}</b></div>
@@ -2322,7 +2322,7 @@ document.querySelector("#backBtn").onclick=()=>{
   const dest=S.route==="demoreview"?"demoaudit":S.route==="demoaudit"?"formdemo":S.route==="formdemo"?(S.formDemoReturn||"exercise"):{register:"welcome",login:"welcome",history:"progress",prs:"history",exercisehistory:"prs",swapexercise:"exercise",cardioswap:"workout",modulemove:"workout",coretracker:"workout",cardiotracker:"workout",nutritionadd:"nutrition",experience:"goal",schedule:"experience",equipment:"schedule",equipmentlog:plan?"plan":"equipment",equipmentdetails:S.equipmentReturn==="onboarding"?"equipment":"equipmentlog",exercisedirectory:plan?"plan":"preferences",exercisedetail:"exercisedirectory",preferences:"equipment",yourplan:"preferences",workout:"home",exercise:"workout",timer:"exercise",complete:"home",plan:"home",calendarsettings:"trainingsettings",adjustplan:"plan"}[S.route]||"home";
   go(dest);
 };
-document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.37.0")};
+document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.37.2")};
 const calendarParams=new URLSearchParams(location.search);
 const calendarJustConnected=calendarParams.get("calendar_connected")==="1";
 const calendarSyncWarning=calendarParams.get("calendar_sync_warning")==="1";
@@ -2356,5 +2356,5 @@ document.addEventListener("click",async(e)=>{
   }catch(err){ alert("Could not check nutrition provider status: "+err.message); }
 });
 
-// v14.37.0: keep current-week form media warm without blocking the workout UI.
+// v14.37.2: keep current-week form media warm without blocking the workout UI.
 window.addEventListener("online",()=>{if(token&&plan)cacheCurrentPlanDemos(true)});

@@ -1,4 +1,4 @@
-const CACHE="forge-v14-37-0-3d-demo-pipeline-v1";
+const CACHE="forge-v14-37-2-bench-3d-source-v1";
 const APP_SHELL=[
   "/","/index.html","/styles.css?v=14.36.3","/app.js?v=14.36.3","/manifest.webmanifest?v=14.36.3",
   "/assets/pwa/forge-icon-192-v14343.png","/assets/pwa/forge-icon-512-v14343.png",
