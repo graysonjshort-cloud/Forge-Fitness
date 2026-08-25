@@ -1,9 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" role="img" aria-label="Romanian Deadlift form demonstration">
-<rect width="360" height="360" rx="28" fill="#0f1419"/>
-<circle cx="180" cy="164" r="132" fill="none" stroke="#202832" stroke-width="2"/>
-<g stroke="#edf1f5" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="180" cy="80" r="18" stroke-width="7"/><path d="M180 100 L184 185"/>
-<path d="M184 185 L155 276 M184 185 L218 276"/><path d="M169 132 L137 208 M197 132 L229 208"/>
-<path d="M116 214 H250" stroke="#ef233c" stroke-width="8"/><circle cx="116" cy="214" r="11" fill="#ef233c" stroke="none"/><circle cx="250" cy="214" r="11" fill="#ef233c" stroke="none"/><animateTransform attributeName="transform" type="rotate" values="0 184 185;27 184 185;27 184 185;0 184 185;0 184 185" keyTimes="0;.3;.48;.82;1" dur="3s" repeatCount="indefinite"/></g>
-<text x="180" y="334" text-anchor="middle" fill="#c4ccd4" font-family="system-ui,sans-serif" font-size="14" font-weight="700">Romanian Deadlift</text>
-<text x="180" y="350" text-anchor="middle" fill="#76818c" font-family="system-ui,sans-serif" font-size="9">FORGE FORM DEMO • LOOPING SIDE/FRONT DIAGRAM</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420" role="img" aria-label="Romanian Deadlift articulated form demonstration">
+<rect width="420" height="420" rx="30" fill="#0d1217"/>
+<circle cx="210" cy="190" r="158" fill="none" stroke="#202a34" stroke-width="2"/>
+
+<path d="M78 335 H342" stroke="#7e8994" stroke-width="5"/>
+<path d="M240 135 L305 268" stroke="#ef233c" stroke-width="3" stroke-dasharray="7 7" opacity=".5"/>
+<g>
+<circle cx="210" cy="78" r="22" fill="#1b232a" stroke="#eef2f5" stroke-width="5"/>
+<polygon points="180,105 240,105 248,205 172,205" fill="#27313a" stroke="#eef2f5" stroke-width="4"/>
+<line x1="190" y1="130" x2="155" y2="225" stroke="#eef2f5" stroke-width="13" stroke-linecap="round"/>
+<line x1="230" y1="130" x2="265" y2="225" stroke="#eef2f5" stroke-width="13" stroke-linecap="round"/>
+<animateTransform attributeName="transform" type="rotate" values="0 210 205;37 210 205;37 210 205;0 210 205" keyTimes="0;.34;.54;1" dur="3.1s" repeatCount="indefinite"/>
+</g>
+<!-- legs remain comparatively fixed -->
+<line x1="188" y1="205" x2="180" y2="325" stroke="#eef2f5" stroke-width="15" stroke-linecap="round"/>
+<line x1="232" y1="205" x2="242" y2="325" stroke="#eef2f5" stroke-width="15" stroke-linecap="round"/>
+<circle cx="188" cy="205" r="8" fill="#ef233c"/><circle cx="232" cy="205" r="8" fill="#ef233c"/>
+<!-- bar -->
+<g><line x1="118" y1="228" x2="302" y2="228" stroke="#ef233c" stroke-width="9"/><rect x="102" y="213" width="15" height="30" rx="3" fill="#ef233c"/><rect x="303" y="213" width="15" height="30" rx="3" fill="#ef233c"/>
+<animateTransform attributeName="transform" type="translate" values="0 0;0 74;0 74;0 0" keyTimes="0;.34;.54;1" dur="3.1s" repeatCount="indefinite"/></g>
+<text x="210" y="356" text-anchor="middle" fill="#9eabb6" font-family="system-ui,sans-serif" font-size="11">Hips travel back • bar stays close • knees remain softly bent</text>
+
+<text x="210" y="386" text-anchor="middle" fill="#f1f4f7" font-family="system-ui,sans-serif" font-size="15" font-weight="800">Romanian Deadlift</text>
+<text x="210" y="405" text-anchor="middle" fill="#7f8b96" font-family="system-ui,sans-serif" font-size="10">ARTICULATED FORM DEMO • V2</text>
 </svg>

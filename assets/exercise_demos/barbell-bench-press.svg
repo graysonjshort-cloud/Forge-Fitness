@@ -1,9 +1,60 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" role="img" aria-label="Barbell Bench Press form demonstration">
-<rect width="360" height="360" rx="28" fill="#0f1419"/>
-<circle cx="180" cy="164" r="132" fill="none" stroke="#202832" stroke-width="2"/>
-<path d="M68 224 H286 M92 224 V280 M264 224 V280" stroke="#909aa4" stroke-width="8"/><g stroke="#edf1f5" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="100" cy="190" r="17" stroke-width="7"/><path d="M120 193 H226"/>
-<path d="M145 194 L134 255 M216 194 L233 255"/><path d="M146 186 L153 139 M208 186 L201 139"/>
-</g><g><g stroke="#edf1f5" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M105 126 H250" stroke="#ef233c" stroke-width="8"/><animateTransform attributeName="transform" type="translate" values="0 0;0 33;0 33;0 0;0 0" keyTimes="0;.33;.48;.82;1" dur="2.8s" repeatCount="indefinite"/></g></g>
-<text x="180" y="334" text-anchor="middle" fill="#c4ccd4" font-family="system-ui,sans-serif" font-size="14" font-weight="700">Barbell Bench Press</text>
-<text x="180" y="350" text-anchor="middle" fill="#76818c" font-family="system-ui,sans-serif" font-size="9">FORGE FORM DEMO • LOOPING SIDE/FRONT DIAGRAM</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420" role="img" aria-label="Barbell Bench Press articulated form demonstration">
+<rect width="420" height="420" rx="30" fill="#0d1217"/>
+<circle cx="210" cy="190" r="158" fill="none" stroke="#202a34" stroke-width="2"/>
+
+<!-- bench and rack -->
+<path d="M58 286 H350 M92 286 V338 M320 286 V338" stroke="#7e8994" stroke-width="10" stroke-linecap="round"/>
+<path d="M92 110 V286 M328 110 V286" stroke="#3a444e" stroke-width="7"/>
+<!-- bar path -->
+<path d="M210 118 V205" stroke="#ef233c" stroke-width="4" stroke-dasharray="7 7" opacity=".55"/>
+<!-- torso -->
+<polygon points="132,250 150,212 274,212 294,250" fill="#27313a" stroke="#eef2f5" stroke-width="4"/>
+<!-- head -->
+<circle cx="118" cy="222" r="24" fill="#1b232a" stroke="#eef2f5" stroke-width="5"/>
+<!-- shoulders -->
+<circle cx="164" cy="216" r="8" fill="#ef233c"/><circle cx="260" cy="216" r="8" fill="#ef233c"/>
+<!-- arms left/right; animated elbow and wrist positions -->
+<line x1="164" y1="216" x2="150" y2="168" stroke="#eef2f5" stroke-width="13" stroke-linecap="round">
+  <animate attributeName="x2" values="150;145;145;150" dur="3s" repeatCount="indefinite"/>
+  <animate attributeName="y2" values="168;196;196;168" dur="3s" repeatCount="indefinite"/>
+</line>
+<line x1="150" y1="168" x2="160" y2="128" stroke="#eef2f5" stroke-width="11" stroke-linecap="round">
+  <animate attributeName="x1" values="150;145;145;150" dur="3s" repeatCount="indefinite"/>
+  <animate attributeName="y1" values="168;196;196;168" dur="3s" repeatCount="indefinite"/>
+  <animate attributeName="x2" values="160;164;164;160" dur="3s" repeatCount="indefinite"/>
+  <animate attributeName="y2" values="128;202;202;128" dur="3s" repeatCount="indefinite"/>
+</line>
+<line x1="260" y1="216" x2="274" y2="168" stroke="#eef2f5" stroke-width="13" stroke-linecap="round">
+  <animate attributeName="x2" values="274;279;279;274" dur="3s" repeatCount="indefinite"/>
+  <animate attributeName="y2" values="168;196;196;168" dur="3s" repeatCount="indefinite"/>
+</line>
+<line x1="274" y1="168" x2="264" y2="128" stroke="#eef2f5" stroke-width="11" stroke-linecap="round">
+  <animate attributeName="x1" values="274;279;279;274" dur="3s" repeatCount="indefinite"/>
+  <animate attributeName="y1" values="168;196;196;168" dur="3s" repeatCount="indefinite"/>
+  <animate attributeName="x2" values="264;260;260;264" dur="3s" repeatCount="indefinite"/>
+  <animate attributeName="y2" values="128;202;202;128" dur="3s" repeatCount="indefinite"/>
+</line>
+<!-- elbows -->
+<circle cx="150" cy="168" r="8" fill="#ef233c">
+ <animate attributeName="cx" values="150;145;145;150" dur="3s" repeatCount="indefinite"/>
+ <animate attributeName="cy" values="168;196;196;168" dur="3s" repeatCount="indefinite"/>
+</circle>
+<circle cx="274" cy="168" r="8" fill="#ef233c">
+ <animate attributeName="cx" values="274;279;279;274" dur="3s" repeatCount="indefinite"/>
+ <animate attributeName="cy" values="168;196;196;168" dur="3s" repeatCount="indefinite"/>
+</circle>
+<!-- bar -->
+<g>
+<line x1="104" y1="126" x2="316" y2="126" stroke="#ef233c" stroke-width="9" stroke-linecap="round"/>
+<rect x="88" y="112" width="14" height="28" rx="3" fill="#ef233c"/><rect x="318" y="112" width="14" height="28" rx="3" fill="#ef233c"/>
+<animateTransform attributeName="transform" type="translate" values="0 0;0 76;0 76;0 0" keyTimes="0;.34;.54;1" dur="3s" repeatCount="indefinite"/>
+</g>
+<!-- legs -->
+<line x1="250" y1="250" x2="300" y2="300" stroke="#eef2f5" stroke-width="13" stroke-linecap="round"/>
+<line x1="174" y1="250" x2="146" y2="310" stroke="#eef2f5" stroke-width="13" stroke-linecap="round"/>
+<circle cx="300" cy="300" r="7" fill="#ef233c"/><circle cx="146" cy="310" r="7" fill="#ef233c"/>
+<text x="210" y="346" text-anchor="middle" fill="#9eabb6" font-family="system-ui,sans-serif" font-size="11">Bar lowers toward lower/mid chest • forearms stay stacked</text>
+
+<text x="210" y="386" text-anchor="middle" fill="#f1f4f7" font-family="system-ui,sans-serif" font-size="15" font-weight="800">Barbell Bench Press</text>
+<text x="210" y="405" text-anchor="middle" fill="#7f8b96" font-family="system-ui,sans-serif" font-size="10">ARTICULATED FORM DEMO • V2</text>
 </svg>

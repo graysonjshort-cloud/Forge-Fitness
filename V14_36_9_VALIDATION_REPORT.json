@@ -1,0 +1,25 @@
+{
+  "version": "v14.36.9",
+  "status": "passed",
+  "tests": {
+    "backend_health": "passed",
+    "43_existing_demo_assets_preserved": "passed",
+    "five_v2_reference_assets_served": "passed",
+    "v2_assets_reset_unreviewed": "passed",
+    "articulated_bench_motion": "passed",
+    "quality_badge_ui": "passed",
+    "manifest_validation": "passed",
+    "javascript_syntax": "passed",
+    "python_syntax": "passed",
+    "pwa_update_delivery": "passed"
+  },
+  "animations_ready": 43,
+  "coverage_percent": 30.3,
+  "v2_reference_demos": [
+    "Back Squat",
+    "Barbell Bench Press",
+    "Romanian Deadlift",
+    "Barbell Overhead Press",
+    "Pull-Up"
+  ]
+}

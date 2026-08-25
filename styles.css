@@ -1354,3 +1354,7 @@ input,select,textarea{border-radius:9px!important}
 
 /* v14.36.8 scaled demo library + review queue */
 .demo-review-queue-bar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin:12px 0 14px}.demo-review-queue-bar button{border:1px solid #343f49;background:#1b2229;color:#fff;border-radius:9px;padding:9px;font-weight:800}.demo-review-queue-bar button:disabled{opacity:.35}.demo-review-queue-bar span{text-align:center;font-size:11px;color:#aeb8c2;font-weight:800}
+
+/* v14.36.9 articulated demo v2 */
+.exercise-demo-player{position:relative}
+.demo-quality-badge{position:absolute;top:12px;right:12px;border:1px solid #4a5661;background:rgba(12,17,22,.88);color:#dce3e9;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}

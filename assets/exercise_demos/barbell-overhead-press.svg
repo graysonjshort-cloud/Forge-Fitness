@@ -1,8 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" role="img" aria-label="Barbell Overhead Press form demonstration">
-<rect width="360" height="360" rx="28" fill="#0f1419"/>
-<circle cx="180" cy="164" r="132" fill="none" stroke="#202832" stroke-width="2"/>
-<g stroke="#edf1f5" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="180" cy="108" r="18" stroke-width="7"/><path d="M180 128 V215"/>
-<path d="M180 215 L145 286 M180 215 L215 286"/><path d="M151 149 L142 120 M209 149 L218 120"/></g><g stroke="#edf1f5" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M120 116 H240" stroke="#ef233c" stroke-width="8"/><animateTransform attributeName="transform" type="translate" values="0 0;0 -69;0 -69;0 0;0 0" keyTimes="0;.3;.48;.82;1" dur="2.8s" repeatCount="indefinite"/></g>
-<text x="180" y="334" text-anchor="middle" fill="#c4ccd4" font-family="system-ui,sans-serif" font-size="14" font-weight="700">Barbell Overhead Press</text>
-<text x="180" y="350" text-anchor="middle" fill="#76818c" font-family="system-ui,sans-serif" font-size="9">FORGE FORM DEMO • LOOPING SIDE/FRONT DIAGRAM</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420" role="img" aria-label="Barbell Overhead Press articulated form demonstration">
+<rect width="420" height="420" rx="30" fill="#0d1217"/>
+<circle cx="210" cy="190" r="158" fill="none" stroke="#202a34" stroke-width="2"/>
+
+<path d="M80 335 H340" stroke="#7e8994" stroke-width="5"/>
+<!-- torso -->
+<circle cx="210" cy="105" r="22" fill="#1b232a" stroke="#eef2f5" stroke-width="5"/>
+<polygon points="180,132 240,132 250,235 170,235" fill="#27313a" stroke="#eef2f5" stroke-width="4"/>
+<line x1="188" y1="235" x2="175" y2="330" stroke="#eef2f5" stroke-width="15" stroke-linecap="round"/>
+<line x1="232" y1="235" x2="245" y2="330" stroke="#eef2f5" stroke-width="15" stroke-linecap="round"/>
+<!-- arms -->
+<line x1="180" y1="150" x2="165" y2="118" stroke="#eef2f5" stroke-width="13" stroke-linecap="round">
+ <animate attributeName="x2" values="165;165;165;165" dur="2.9s" repeatCount="indefinite"/>
+ <animate attributeName="y2" values="118;76;76;118" dur="2.9s" repeatCount="indefinite"/>
+</line>
+<line x1="165" y1="118" x2="160" y2="95" stroke="#eef2f5" stroke-width="11" stroke-linecap="round">
+ <animate attributeName="y1" values="118;76;76;118" dur="2.9s" repeatCount="indefinite"/>
+ <animate attributeName="y2" values="95;36;36;95" dur="2.9s" repeatCount="indefinite"/>
+</line>
+<line x1="240" y1="150" x2="255" y2="118" stroke="#eef2f5" stroke-width="13" stroke-linecap="round">
+ <animate attributeName="y2" values="118;76;76;118" dur="2.9s" repeatCount="indefinite"/>
+</line>
+<line x1="255" y1="118" x2="260" y2="95" stroke="#eef2f5" stroke-width="11" stroke-linecap="round">
+ <animate attributeName="y1" values="118;76;76;118" dur="2.9s" repeatCount="indefinite"/>
+ <animate attributeName="y2" values="95;36;36;95" dur="2.9s" repeatCount="indefinite"/>
+</line>
+<!-- bar -->
+<g><line x1="112" y1="91" x2="308" y2="91" stroke="#ef233c" stroke-width="9"/><rect x="97" y="77" width="14" height="28" rx="3" fill="#ef233c"/><rect x="309" y="77" width="14" height="28" rx="3" fill="#ef233c"/>
+<animateTransform attributeName="transform" type="translate" values="0 0;0 -61;0 -61;0 0" keyTimes="0;.34;.54;1" dur="2.9s" repeatCount="indefinite"/></g>
+<path d="M210 90 V34" stroke="#ef233c" stroke-width="3" stroke-dasharray="7 7" opacity=".5"/>
+<text x="210" y="356" text-anchor="middle" fill="#9eabb6" font-family="system-ui,sans-serif" font-size="11">Brace ribs down • press vertically • finish without excessive back arch</text>
+
+<text x="210" y="386" text-anchor="middle" fill="#f1f4f7" font-family="system-ui,sans-serif" font-size="15" font-weight="800">Barbell Overhead Press</text>
+<text x="210" y="405" text-anchor="middle" fill="#7f8b96" font-family="system-ui,sans-serif" font-size="10">ARTICULATED FORM DEMO • V2</text>
 </svg>
