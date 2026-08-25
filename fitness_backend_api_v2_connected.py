@@ -1493,6 +1493,18 @@ def me_current_plan_demo_assets(authorization: Optional[str]=Header(None)):
             pass
     return {"exercise_ids":ids,"assets":assets,"count":len(assets)}
 
+@app.get("/me/exercises/{exercise_id}/demo-review")
+def me_get_demo_review(exercise_id:int,authorization:Optional[str]=Header(None)):
+    _current_account(authorization)
+    try:return database.get_exercise_demo_review(exercise_id,DB_PATH)
+    except ValueError as e:raise HTTPException(404,str(e))
+
+@app.put("/me/exercises/{exercise_id}/demo-review")
+def me_update_demo_review(exercise_id:int,payload:dict,authorization:Optional[str]=Header(None)):
+    _current_account(authorization)
+    try:return database.update_exercise_demo_review(exercise_id,payload,DB_PATH)
+    except ValueError as e:raise HTTPException(404,str(e))
+
 @app.get("/me/exercise-demos/audit")
 def me_exercise_demo_audit(authorization: Optional[str]=Header(None)):
     _current_account(authorization)

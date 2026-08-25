@@ -3018,6 +3018,37 @@ def register_exercise_form_demo_asset(exercise_id: int, demo_asset: str, demo_ty
              1 if reviewed else 0,exercise_id))
     return get_exercise_form_demo(exercise_id,db_path)
 
+DEMO_REVIEW_FIELDS=("correct_exercise","setup","range_of_motion","joint_alignment","loop_quality","mobile_tested")
+
+def get_exercise_demo_review(exercise_id:int,db_path=DEFAULT_DB_PATH):
+    with session(db_path) as con:
+        ex=con.execute("SELECT id,name FROM exercises WHERE id=?",(exercise_id,)).fetchone()
+        if not ex: raise ValueError("Exercise not found")
+        con.execute("INSERT OR IGNORE INTO exercise_demo_reviews(exercise_id) VALUES (?)",(exercise_id,))
+        row=con.execute("SELECT * FROM exercise_demo_reviews WHERE exercise_id=?",(exercise_id,)).fetchone()
+    d=dict(row)
+    for k in DEMO_REVIEW_FIELDS:d[k]=bool(d[k])
+    d["complete"]=all(d[k] for k in DEMO_REVIEW_FIELDS)
+    d["exercise_name"]=ex["name"]
+    return d
+
+def update_exercise_demo_review(exercise_id:int,values:dict[str,Any],db_path=DEFAULT_DB_PATH):
+    with session(db_path) as con:
+        ex=con.execute("SELECT id FROM exercises WHERE id=?",(exercise_id,)).fetchone()
+        if not ex: raise ValueError("Exercise not found")
+        con.execute("INSERT OR IGNORE INTO exercise_demo_reviews(exercise_id) VALUES (?)",(exercise_id,))
+        for k in DEMO_REVIEW_FIELDS:
+            if k in values: con.execute(f"UPDATE exercise_demo_reviews SET {k}=? WHERE exercise_id=?",(1 if values[k] else 0,exercise_id))
+        if "notes" in values: con.execute("UPDATE exercise_demo_reviews SET notes=? WHERE exercise_id=?",(str(values.get("notes") or ""),exercise_id))
+        con.execute("UPDATE exercise_demo_reviews SET updated_at=CURRENT_TIMESTAMP WHERE exercise_id=?",(exercise_id,))
+        row=con.execute("SELECT * FROM exercise_demo_reviews WHERE exercise_id=?",(exercise_id,)).fetchone()
+        complete=all(bool(row[k]) for k in DEMO_REVIEW_FIELDS)
+        demo=con.execute("SELECT demo_asset FROM exercise_form_demos WHERE exercise_id=?",(exercise_id,)).fetchone()
+        if demo and demo["demo_asset"]:
+            con.execute("UPDATE exercise_form_demos SET reviewed=?,animation_status=?,updated_at=CURRENT_TIMESTAMP WHERE exercise_id=?",
+                        (1 if complete else 0,"reviewed" if complete else "asset_ready",exercise_id))
+    return get_exercise_demo_review(exercise_id,db_path)
+
 def audit_exercise_form_demos(db_path=DEFAULT_DB_PATH) -> list[dict[str, Any]]:
     ensure_exercise_form_demo_metadata(db_path)
     with session(db_path) as con:
@@ -3029,6 +3060,8 @@ def audit_exercise_form_demos(db_path=DEFAULT_DB_PATH) -> list[dict[str, Any]]:
         d=dict(r)
         d["has_animation"]=bool(d.get("demo_asset")) and d.get("demo_type")!="placeholder"
         d["reviewed"]=bool(d.get("reviewed"))
+        try:d["review"]=get_exercise_demo_review(d["id"],db_path)
+        except Exception:d["review"]=None
         d["has_form_cues"]=bool(json.loads(d.get("form_cues_json") or "[]"))
         d["has_setup_cues"]=bool(json.loads(d.get("setup_cues_json") or "[]"))
         d["has_mistakes"]=bool(json.loads(d.get("common_mistakes_json") or "[]"))
