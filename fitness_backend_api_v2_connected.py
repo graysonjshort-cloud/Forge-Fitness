@@ -1493,6 +1493,23 @@ def me_current_plan_demo_assets(authorization: Optional[str]=Header(None)):
             pass
     return {"exercise_ids":ids,"assets":assets,"count":len(assets)}
 
+@app.get("/me/exercises/{exercise_id}/3d-demo-review")
+def me_get_3d_demo_review(exercise_id:int,authorization:Optional[str]=Header(None)):
+    _current_account(authorization)
+    try:return database.get_exercise_3d_review(exercise_id,DB_PATH)
+    except ValueError as e:raise HTTPException(404,str(e))
+
+@app.put("/me/exercises/{exercise_id}/3d-demo-review")
+def me_update_3d_demo_review(exercise_id:int,payload:dict,authorization:Optional[str]=Header(None)):
+    _current_account(authorization)
+    try:return database.update_exercise_3d_review(exercise_id,payload,DB_PATH)
+    except ValueError as e:raise HTTPException(404,str(e))
+
+@app.get("/me/exercise-demos/3d-coverage")
+def me_3d_demo_coverage(authorization:Optional[str]=Header(None)):
+    _current_account(authorization)
+    return database.get_3d_demo_coverage(DB_PATH)
+
 @app.get("/me/exercises/{exercise_id}/demo-review")
 def me_get_demo_review(exercise_id:int,authorization:Optional[str]=Header(None)):
     _current_account(authorization)

@@ -466,3 +466,35 @@ CREATE TABLE IF NOT EXISTS exercise_demo_reviews (
  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
 );
+
+
+-- v14.37.0: 3D form-demo delivery. Kept separate from legacy SVG demo records so
+-- existing user databases migrate safely without destructive ALTER statements.
+CREATE TABLE IF NOT EXISTS exercise_demo_3d_assets (
+    exercise_id INTEGER PRIMARY KEY,
+    primary_webm TEXT,
+    secondary_webm TEXT,
+    poster_asset TEXT,
+    primary_view TEXT NOT NULL DEFAULT 'side',
+    secondary_view TEXT DEFAULT 'front',
+    render_version TEXT NOT NULL DEFAULT 'forge_3d_v1',
+    status TEXT NOT NULL DEFAULT 'planned',
+    source_kind TEXT NOT NULL DEFAULT 'original_3d',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS exercise_demo_3d_reviews (
+    exercise_id INTEGER PRIMARY KEY,
+    correct_exercise INTEGER NOT NULL DEFAULT 0,
+    equipment_interaction INTEGER NOT NULL DEFAULT 0,
+    range_of_motion INTEGER NOT NULL DEFAULT 0,
+    joint_path INTEGER NOT NULL DEFAULT 0,
+    primary_view INTEGER NOT NULL DEFAULT 0,
+    secondary_view INTEGER NOT NULL DEFAULT 0,
+    loop_quality INTEGER NOT NULL DEFAULT 0,
+    mobile_tested INTEGER NOT NULL DEFAULT 0,
+    notes TEXT,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
+);

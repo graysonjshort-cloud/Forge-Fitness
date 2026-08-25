@@ -1,0 +1,25 @@
+{
+  "version": "v14.37.0",
+  "status": "passed",
+  "tests": {
+    "backend_health": "passed",
+    "non_destructive_3d_schema": "passed",
+    "legacy_svg_not_counted_as_instructional_demo": "passed",
+    "3d_pending_state": "passed",
+    "dual_angle_player_support": "passed",
+    "3d_review_api": "passed",
+    "3d_coverage_api": "passed",
+    "3d_manifest_validation": "passed",
+    "javascript_syntax": "passed",
+    "python_syntax": "passed",
+    "pwa_update_delivery": "passed"
+  },
+  "initial_3d_ready": 0,
+  "reference_pipeline_exercises": [
+    "Back Squat",
+    "Barbell Bench Press",
+    "Romanian Deadlift",
+    "Barbell Overhead Press",
+    "Pull-Up"
+  ]
+}

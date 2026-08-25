@@ -1363,3 +1363,15 @@ input,select,textarea{border-radius:9px!important}
 .exercise-demo-player{min-height:330px;padding:8px;background:radial-gradient(circle at 50% 45%,#172028 0,#0d1217 72%);border-color:#3a4650}
 .exercise-demo-player img{width:100%;max-height:440px;object-fit:contain}
 @media(max-width:420px){.exercise-demo-player{min-height:315px;padding:5px}}
+
+/* v14.37.0 — WebM/3D form-demo pipeline */
+.three-d-demo-player{padding:8px 8px 54px;min-height:330px}
+.three-d-demo-player video{width:100%;max-height:430px;aspect-ratio:1/1;object-fit:contain;border-radius:13px;background:#090d11}
+.demo-angle-switch{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:rgba(11,16,21,.94);border:1px solid #34404a;border-radius:10px;min-width:180px}
+.demo-angle-switch button{border:0;border-radius:7px;padding:7px 12px;background:transparent;color:#aeb8c2;font-weight:850;font-size:11px}
+.demo-angle-switch button.active{background:#ef233c;color:#fff}
+.three-d-view-label{position:absolute;left:13px;top:13px;background:rgba(11,16,21,.88);border:1px solid #35414b;border-radius:999px;padding:5px 8px;color:#d5dce2;font-size:9px;text-transform:uppercase;font-weight:900}
+.three-d-pending{min-height:310px}
+.three-d-pending-mark{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#302026,#151b21 68%);border:1px solid #4a3439;color:#ff5067;font-size:30px;font-weight:950;letter-spacing:-.04em;margin-bottom:10px}
+.three-d-pending small{color:#ff6d80;font-weight:800}
+.three-d-pending p{max-width:300px;line-height:1.5;color:#aeb8c2}

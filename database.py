@@ -2996,7 +2996,14 @@ def get_exercise_form_demo(exercise_id,db_path=DEFAULT_DB_PATH):
     if not row: raise ValueError("Exercise not found")
     d=dict(row)
     for k in ("form_cues_json","setup_cues_json","common_mistakes_json"):d[k[:-5]]=json.loads(d.pop(k) or "[]")
-    d["reviewed"]=bool(d["reviewed"]);d["has_animation"]=bool(d.get("demo_asset")) and d.get("demo_type")!="placeholder"
+    d["reviewed"]=bool(d["reviewed"])
+    three_d=get_exercise_3d_demo_asset(exercise_id,db_path)
+    d["three_d"]=three_d
+    d["has_3d"]=bool(three_d and three_d.get("ready"))
+    # v14.37 abandons legacy SVG as an instructional animation. SVG can remain
+    # archived in the repository but is no longer surfaced as a completed demo.
+    d["legacy_vector_asset"]=d.get("demo_asset") if d.get("demo_type")=="svg" else None
+    d["has_animation"]=bool(d.get("demo_asset")) and d.get("demo_type") in {"video","mp4","webm","gif","image"}
     return d
 
 BUNDLED_EXERCISE_DEMOS = {'Back Squat': '/assets/exercise_demos/back-squat.svg', 'Barbell Bench Press': '/assets/exercise_demos/barbell-bench-press.svg', 'Romanian Deadlift': '/assets/exercise_demos/romanian-deadlift.svg', 'Barbell Overhead Press': '/assets/exercise_demos/barbell-overhead-press.svg', 'Pull-Up': '/assets/exercise_demos/pull-up.svg', 'Chin-Up': '/assets/exercise_demos/chin-up.svg', 'Lat Pulldown': '/assets/exercise_demos/lat-pulldown.svg', 'Barbell Row': '/assets/exercise_demos/barbell-row.svg', 'One-Arm Dumbbell Row': '/assets/exercise_demos/one-arm-dumbbell-row.svg', 'Push-Up': '/assets/exercise_demos/push-up.svg', 'Leg Press': '/assets/exercise_demos/leg-press.svg', 'Lying Leg Curl': '/assets/exercise_demos/lying-leg-curl.svg', 'Leg Extension': '/assets/exercise_demos/leg-extension.svg', 'Plank': '/assets/exercise_demos/plank.svg', 'Hanging Knee Raise': '/assets/exercise_demos/hanging-knee-raise.svg', 'Front Squat': '/assets/exercise_demos/front-squat.svg', 'Goblet Squat': '/assets/exercise_demos/goblet-squat.svg', 'Bulgarian Split Squat': '/assets/exercise_demos/bulgarian-split-squat.svg', 'Dumbbell Bench Press': '/assets/exercise_demos/dumbbell-bench-press.svg', 'Incline Dumbbell Press': '/assets/exercise_demos/incline-dumbbell-press.svg', 'Machine Chest Press': '/assets/exercise_demos/machine-chest-press.svg', 'Dumbbell Shoulder Press': '/assets/exercise_demos/dumbbell-shoulder-press.svg', 'Seated Dumbbell Shoulder Press': '/assets/exercise_demos/seated-dumbbell-shoulder-press.svg', 'Machine Shoulder Press': '/assets/exercise_demos/machine-shoulder-press.svg', 'Assisted Pull-Up': '/assets/exercise_demos/assisted-pull-up.svg', 'Chest-Supported Row': '/assets/exercise_demos/chest-supported-row.svg', 'Dumbbell Lateral Raise': '/assets/exercise_demos/dumbbell-lateral-raise.svg', 'Cable Lateral Raise': '/assets/exercise_demos/cable-lateral-raise.svg', 'Barbell Curl': '/assets/exercise_demos/barbell-curl.svg', 'Dumbbell Curl': '/assets/exercise_demos/dumbbell-curl.svg', 'Hammer Curl': '/assets/exercise_demos/hammer-curl.svg', 'Cable Curl': '/assets/exercise_demos/cable-curl.svg', 'Triceps Pushdown': '/assets/exercise_demos/triceps-pushdown.svg', 'Overhead Cable Triceps Extension': '/assets/exercise_demos/overhead-cable-triceps-extension.svg', 'Hip Thrust': '/assets/exercise_demos/hip-thrust.svg', 'Glute Bridge': '/assets/exercise_demos/glute-bridge.svg', 'Standing Calf Raise': '/assets/exercise_demos/standing-calf-raise.svg', 'Seated Calf Raise': '/assets/exercise_demos/seated-calf-raise.svg', 'Reverse Crunch': '/assets/exercise_demos/reverse-crunch.svg', 'Side Plank': '/assets/exercise_demos/side-plank.svg', 'Cable Crunch': '/assets/exercise_demos/cable-crunch.svg', 'Pallof Press': '/assets/exercise_demos/pallof-press.svg', 'Ab Wheel Rollout': '/assets/exercise_demos/ab-wheel-rollout.svg'}
@@ -3009,15 +3016,113 @@ def ensure_bundled_exercise_demo_assets(db_path=DEFAULT_DB_PATH):
             row=con.execute("SELECT id FROM exercises WHERE name=?",(name,)).fetchone()
             if not row:
                 continue
-            demo=con.execute("SELECT demo_asset FROM exercise_form_demos WHERE exercise_id=?",(row["id"],)).fetchone()
-            if demo and demo["demo_asset"]==asset:
+            demo=con.execute("SELECT demo_asset,demo_type FROM exercise_form_demos WHERE exercise_id=?",(row["id"],)).fetchone()
+            # SVGs are now legacy fallbacks. Never replace a registered video/3D asset.
+            if demo and demo["demo_asset"]:
                 continue
             con.execute("""UPDATE exercise_form_demos
-                SET demo_asset=?,demo_type='svg',animation_status='asset_ready',reviewed=0,
+                SET demo_asset=?,demo_type='svg',animation_status='legacy_vector',reviewed=0,
                     updated_at=CURRENT_TIMESTAMP
                 WHERE exercise_id=?""",(asset,row["id"]))
             updated += 1
     return {"updated":updated,"bundled":len(BUNDLED_EXERCISE_DEMOS)}
+
+THREE_D_REVIEW_FIELDS=(
+    "correct_exercise","equipment_interaction","range_of_motion","joint_path",
+    "primary_view","secondary_view","loop_quality","mobile_tested"
+)
+
+def get_exercise_3d_demo_asset(exercise_id:int,db_path=DEFAULT_DB_PATH) -> dict[str,Any]|None:
+    with session(db_path) as con:
+        row=con.execute("SELECT * FROM exercise_demo_3d_assets WHERE exercise_id=?",(exercise_id,)).fetchone()
+    if not row:
+        return None
+    d=dict(row)
+    d["ready"]=bool(d.get("primary_webm")) and d.get("status") in {"asset_ready","reviewed"}
+    d["has_secondary"]=bool(d.get("secondary_webm"))
+    return d
+
+def register_exercise_3d_demo_asset(exercise_id:int,primary_webm:str,
+                                    secondary_webm:str|None=None,poster_asset:str|None=None,
+                                    primary_view:str="side",secondary_view:str="front",
+                                    status:str="asset_ready",db_path=DEFAULT_DB_PATH) -> dict[str,Any]:
+    if not primary_webm or not str(primary_webm).lower().endswith(".webm"):
+        raise ValueError("Primary 3D demo must be a .webm asset")
+    if secondary_webm and not str(secondary_webm).lower().endswith(".webm"):
+        raise ValueError("Secondary 3D demo must be a .webm asset")
+    if status not in {"planned","asset_ready","reviewed"}:
+        raise ValueError("Invalid 3D demo status")
+    with session(db_path) as con:
+        ex=con.execute("SELECT id FROM exercises WHERE id=?",(exercise_id,)).fetchone()
+        if not ex: raise ValueError("Exercise not found")
+        con.execute("""INSERT INTO exercise_demo_3d_assets
+            (exercise_id,primary_webm,secondary_webm,poster_asset,primary_view,secondary_view,render_version,status,source_kind,updated_at)
+            VALUES (?,?,?,?,?,?,? ,?,'original_3d',CURRENT_TIMESTAMP)
+            ON CONFLICT(exercise_id) DO UPDATE SET
+              primary_webm=excluded.primary_webm,secondary_webm=excluded.secondary_webm,
+              poster_asset=excluded.poster_asset,primary_view=excluded.primary_view,
+              secondary_view=excluded.secondary_view,render_version=excluded.render_version,
+              status=excluded.status,updated_at=CURRENT_TIMESTAMP""",
+            (exercise_id,primary_webm,secondary_webm,poster_asset,primary_view,secondary_view,"forge_3d_v1",status))
+        # Make 3D video the primary Form Guide media. Legacy SVG remains stored on disk only.
+        con.execute("""UPDATE exercise_form_demos SET demo_asset=?,demo_type='webm',
+            secondary_asset=?,primary_view=?,animation_status=?,reviewed=0,
+            demo_version=demo_version+1,updated_at=CURRENT_TIMESTAMP
+            WHERE exercise_id=?""",
+            (primary_webm,secondary_webm,primary_view,status,exercise_id))
+    return get_exercise_3d_demo_asset(exercise_id,db_path)
+
+def get_exercise_3d_review(exercise_id:int,db_path=DEFAULT_DB_PATH) -> dict[str,Any]:
+    with session(db_path) as con:
+        ex=con.execute("SELECT id,name FROM exercises WHERE id=?",(exercise_id,)).fetchone()
+        if not ex: raise ValueError("Exercise not found")
+        con.execute("INSERT OR IGNORE INTO exercise_demo_3d_reviews(exercise_id) VALUES (?)",(exercise_id,))
+        row=con.execute("SELECT * FROM exercise_demo_3d_reviews WHERE exercise_id=?",(exercise_id,)).fetchone()
+        media=con.execute("SELECT secondary_webm FROM exercise_demo_3d_assets WHERE exercise_id=?",(exercise_id,)).fetchone()
+    d=dict(row)
+    for field in THREE_D_REVIEW_FIELDS:d[field]=bool(d[field])
+    # A secondary view is required by the v1 3D standard. No silent pass when absent.
+    d["has_secondary_asset"]=bool(media and media["secondary_webm"])
+    d["complete"]=all(d[x] for x in THREE_D_REVIEW_FIELDS) and d["has_secondary_asset"]
+    d["exercise_name"]=ex["name"]
+    return d
+
+def update_exercise_3d_review(exercise_id:int,values:dict[str,Any],db_path=DEFAULT_DB_PATH) -> dict[str,Any]:
+    with session(db_path) as con:
+        ex=con.execute("SELECT id FROM exercises WHERE id=?",(exercise_id,)).fetchone()
+        if not ex: raise ValueError("Exercise not found")
+        con.execute("INSERT OR IGNORE INTO exercise_demo_3d_reviews(exercise_id) VALUES (?)",(exercise_id,))
+        for field in THREE_D_REVIEW_FIELDS:
+            if field in values:
+                con.execute(f"UPDATE exercise_demo_3d_reviews SET {field}=? WHERE exercise_id=?",
+                            (1 if values[field] else 0,exercise_id))
+        if "notes" in values:
+            con.execute("UPDATE exercise_demo_3d_reviews SET notes=? WHERE exercise_id=?",
+                        (str(values.get("notes") or ""),exercise_id))
+        con.execute("UPDATE exercise_demo_3d_reviews SET updated_at=CURRENT_TIMESTAMP WHERE exercise_id=?",(exercise_id,))
+    review=get_exercise_3d_review(exercise_id,db_path)
+    with session(db_path) as con:
+        media=con.execute("SELECT primary_webm FROM exercise_demo_3d_assets WHERE exercise_id=?",(exercise_id,)).fetchone()
+        if media and media["primary_webm"]:
+            status="reviewed" if review["complete"] else "asset_ready"
+            con.execute("UPDATE exercise_demo_3d_assets SET status=?,updated_at=CURRENT_TIMESTAMP WHERE exercise_id=?",
+                        (status,exercise_id))
+            con.execute("UPDATE exercise_form_demos SET animation_status=?,reviewed=?,updated_at=CURRENT_TIMESTAMP WHERE exercise_id=?",
+                        (status,1 if review["complete"] else 0,exercise_id))
+    return get_exercise_3d_review(exercise_id,db_path)
+
+def get_3d_demo_coverage(db_path=DEFAULT_DB_PATH) -> dict[str,Any]:
+    with session(db_path) as con:
+        total=int(con.execute("SELECT COUNT(*) FROM exercises").fetchone()[0])
+        planned=int(con.execute("SELECT COUNT(*) FROM exercise_demo_3d_assets").fetchone()[0])
+        ready=int(con.execute("""SELECT COUNT(*) FROM exercise_demo_3d_assets
+            WHERE primary_webm IS NOT NULL AND status IN ('asset_ready','reviewed')""").fetchone()[0])
+        dual=int(con.execute("""SELECT COUNT(*) FROM exercise_demo_3d_assets
+            WHERE primary_webm IS NOT NULL AND secondary_webm IS NOT NULL
+              AND status IN ('asset_ready','reviewed')""").fetchone()[0])
+        reviewed=int(con.execute("SELECT COUNT(*) FROM exercise_demo_3d_assets WHERE status='reviewed'").fetchone()[0])
+    return {"total_exercises":total,"planned":planned,"three_d_ready":ready,"dual_view_ready":dual,
+            "reviewed":reviewed,"coverage_percent":round(ready/total*100,1) if total else 0}
 
 def register_exercise_form_demo_asset(exercise_id: int, demo_asset: str, demo_type: str="video",
                                       secondary_asset: str|None=None, reviewed: bool=False,
@@ -3079,8 +3184,11 @@ def audit_exercise_form_demos(db_path=DEFAULT_DB_PATH) -> list[dict[str, Any]]:
     out=[]
     for r in rows:
         d=dict(r)
-        d["has_animation"]=bool(d.get("demo_asset")) and d.get("demo_type")!="placeholder"
-        d["reviewed"]=bool(d.get("reviewed"))
+        three_d=get_exercise_3d_demo_asset(d["id"],db_path)
+        d["three_d"]=three_d
+        d["has_3d"]=bool(three_d and three_d.get("ready"))
+        d["has_animation"]=bool(d.get("demo_asset")) and d.get("demo_type") in {"video","mp4","webm","gif","image"}
+        d["reviewed"]=bool(d.get("reviewed")) and d["has_3d"]
         try:d["review"]=get_exercise_demo_review(d["id"],db_path)
         except Exception:d["review"]=None
         d["has_form_cues"]=bool(json.loads(d.get("form_cues_json") or "[]"))

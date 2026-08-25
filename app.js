@@ -6,7 +6,7 @@ let authToken = localStorage.getItem("forge_auth_token") || "";
 let account = null;
 let plan = null, session = null;
 const profile = {goal:"build_muscle",experience:"intermediate",days_per_week:4,minutes_per_workout:45,equipment:["full_gym"],preferred_exercises:[],excluded_exercises:[],priority_muscles:[],recovery_level:"normal",cardio_preference:"moderate",workout_split:"auto",sport:"general",core_workouts_per_week:2,cardio_workouts_per_week:2,seed:42};
-const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0};
+const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0,demoAngle:"primary"};
 const V=document.querySelector("#view"),toastEl=document.querySelector("#toast"),nav=document.querySelector("#bottomNav"),topbar=document.querySelector("#topbar");
 const toast=t=>{toastEl.textContent=t;toastEl.classList.add("show");setTimeout(()=>toastEl.classList.remove("show"),1800)};
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
@@ -28,12 +28,12 @@ function moreSheet(){
       <button data-a=open-equipment-log><span>▣</span><div><b>Equipment Log</b><small>Manage available gym equipment</small></div><em>›</em></button>
       <button data-a=open-calendar-settings><span>▦</span><div><b>Calendar & Time</b><small>${S.calendarStatus?.connected?"Google Calendar connected":"Schedule and timezone"}</small></div><em>›</em></button>
       <button class=more-signout data-a=signout><span>↪</span><div><b>Sign Out</b><small>Your Forge data stays saved</small></div></button>
-      <div class=more-version>Forge Fitness v14.36.10</div>
+      <div class=more-version>Forge Fitness v14.37.0</div>
     </div>
   </div>`;
 }
 function finalPolishSettingsCard(){
-  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.36.10</span></div>
+  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.37.0</span></div>
     <div class=settings-status-row><span>Connection</span><b>${S.online?"Online":"Offline"}</b></div>
     <div class=settings-status-row><span>Install mode</span><b>${isStandalonePWA()?"Installed app":"Browser"}</b></div>
     <div class=settings-status-row><span>Calendar</span><b>${S.calendarStatus?.connected?"Connected":"Not connected"}</b></div>
@@ -707,20 +707,34 @@ async function getDemoOfflineStatus(){
   }catch{return null}
 }
 function exerciseDemoPlayer(demo){
- if(!demo)return `<div class="exercise-demo-player demo-placeholder"><strong>Loading form guide…</strong></div>`;
+ if(!demo)return `<div class="exercise-demo-player demo-placeholder"><strong>Loading 3D form guide…</strong></div>`;
  const reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
- if(demo.has_animation&&demo.demo_asset&&(demo.demo_type==="video"||demo.demo_type==="mp4"||demo.demo_type==="webm"))
-   return `<div class=exercise-demo-player><video src="${esc(demo.demo_asset)}" ${reduced?"":"autoplay"} loop muted playsinline controls preload=metadata></video></div>`;
- if(demo.has_animation&&demo.demo_asset)return `<div class=exercise-demo-player><img src="${esc(demo.demo_asset)}" alt="${esc(demo.name)} form demonstration"><span class=demo-quality-badge>${demo.animation_status==="reviewed"?"Reviewed":"Asset Ready"}</span></div>`;
- return `<div class="exercise-demo-player demo-placeholder"><div class=demo-figure><i></i><b></b><span></span></div><strong>${esc(demo.name)}</strong><small>Animation asset coming soon</small><p>Written form guidance is ready now.</p></div>`;
+ const td=demo.three_d||null;
+ if(td&&td.ready&&td.primary_webm){
+   const secondary=td.secondary_webm||null;
+   const selected=(S.demoAngle==="secondary"&&secondary)?secondary:td.primary_webm;
+   const viewName=(S.demoAngle==="secondary"&&secondary)?(td.secondary_view||"Front"):(td.primary_view||"Side");
+   return `<div class="exercise-demo-player three-d-demo-player">
+     <video src="${esc(selected)}" poster="${esc(td.poster_asset||"")}" ${reduced?"":"autoplay"} loop muted playsinline controls preload=metadata></video>
+     <span class=demo-quality-badge>${td.status==="reviewed"?"3D • Reviewed":"3D • Asset Ready"}</span>
+     ${secondary?`<div class=demo-angle-switch><button class="${S.demoAngle==="primary"?"active":""}" data-demo-angle=primary>${esc(td.primary_view||"Side")}</button><button class="${S.demoAngle==="secondary"?"active":""}" data-demo-angle=secondary>${esc(td.secondary_view||"Front")}</button></div>`:""}
+     <small class=three-d-view-label>${esc(viewName)} view</small>
+   </div>`;
+ }
+ return `<div class="exercise-demo-player demo-placeholder three-d-pending">
+   <div class=three-d-pending-mark>3D</div>
+   <strong>${esc(demo.name)}</strong>
+   <small>High-quality 3D demo in production</small>
+   <p>Forge has retired the SVG diagram for this exercise. Setup, form cues, breathing, and mistakes remain available while the 3D loop is produced and reviewed.</p>
+ </div>`;
 }
-async function openFormDemo(id,ret="exercise"){S.formDemoExercise=Number(id);S.formDemoReturn=ret;S.formDemo=null;S.formDemoTab="demo";go("formdemo");try{S.formDemo=await api(`/me/exercises/${id}/form-demo`);if(S.route==="formdemo")render()}catch(e){toast(e.message)}}
+async function openFormDemo(id,ret="exercise"){S.formDemoExercise=Number(id);S.formDemoReturn=ret;S.formDemo=null;S.formDemoTab="demo";S.demoAngle="primary";go("formdemo");try{S.formDemo=await api(`/me/exercises/${id}/form-demo`);if(S.route==="formdemo")render()}catch(e){toast(e.message)}}
 async function openDemoAudit(){
   S.demoAudit=null;go("demoaudit");
   try{const d=await api("/me/exercise-demos/audit");S.demoAudit=d.items||[];if(S.route==="demoaudit")render()}catch(e){toast(e.message)}
 }
 async function openDemoReview(id){
- const ready=(S.demoAudit||[]).filter(x=>x.has_animation&&!x.reviewed);
+ const ready=(S.demoAudit||[]).filter(x=>x.has_3d&&!x.reviewed);
  S.demoReviewQueue=ready.map(x=>Number(x.id));
  S.demoReviewQueueIndex=Math.max(0,S.demoReviewQueue.indexOf(Number(id)));
  S.demoReviewExercise=Number(id);S.demoReview=null;go("demoreview");
@@ -749,12 +763,12 @@ function demoaudit(){
   const rows=S.demoAudit;
   if(!rows)return `<p class=eyebrow>DEMO LIBRARY</p><h2>Checking exercise coverage…</h2>`;
   const total=rows.length,animated=rows.filter(x=>x.has_animation).length,reviewed=rows.filter(x=>x.reviewed).length;
-  return `<p class=eyebrow>EXERCISE DEMOS</p><h2>Animation Coverage</h2>
-  ${rows.some(x=>x.has_animation&&!x.reviewed)?`<button class=btn data-a=start-demo-review-queue>Review Asset-Ready Queue</button><div class=spacer></div>`:""}
-  <div class=demo-audit-stats><div><b>${animated}/${total}</b><span>Animations</span></div><div><b>${reviewed}/${total}</b><span>Reviewed</span></div><div><b>${total?Math.round(animated/total*100):0}%</b><span>Coverage</span></div></div>
+  return `<p class=eyebrow>EXERCISE DEMOS</p><h2>3D Demo Coverage</h2>
+  ${rows.some(x=>x.has_3d&&!x.reviewed)?`<button class=btn data-a=start-demo-review-queue>Review Asset-Ready Queue</button><div class=spacer></div>`:""}
+  <div class=demo-audit-stats><div><b>${animated}/${total}</b><span>3D Ready</span></div><div><b>${reviewed}/${total}</b><span>Reviewed</span></div><div><b>${total?Math.round(animated/total*100):0}%</b><span>Coverage</span></div></div>
   <div class=spacer></div><div class=demo-audit-list>${rows.map(x=>`<div class=demo-audit-row>
     <div><strong>${esc(x.name)}</strong><small>${esc(x.primary_muscle)} • ${esc(x.equipment)}</small></div>
-    <span class="${x.reviewed?"ok":x.has_animation?"ready":"missing"}" ${x.has_animation?`data-demo-review-open="${x.id}"`:""}>${x.reviewed?"Reviewed":x.has_animation?"Review →":"Needs animation"}</span>
+    <span class="${x.reviewed?"ok":x.has_animation?"ready":"missing"}" ${x.has_3d?`data-demo-review-open="${x.id}"`:""}>${x.reviewed?"Reviewed":x.has_3d?"Review →":"Needs 3D demo"}</span>
   </div>`).join("")}</div>`;
 }
 function formdemo(){
@@ -1959,6 +1973,7 @@ if(dirDifficulty)dirDifficulty.onchange=()=>{S.exerciseDirectoryDifficulty=dirDi
 document.querySelectorAll("[data-demo-review-open]").forEach(b=>b.onclick=()=>openDemoReview(b.dataset.demoReviewOpen));
 document.querySelectorAll("[data-form-demo]").forEach(b=>b.onclick=()=>openFormDemo(b.dataset.formDemo,b.dataset.formReturn||S.route));
 document.querySelectorAll("[data-form-demo-tab]").forEach(b=>b.onclick=()=>{S.formDemoTab=b.dataset.formDemoTab;render()});
+document.querySelectorAll("[data-demo-angle]").forEach(b=>b.onclick=()=>{S.demoAngle=b.dataset.demoAngle;render()});
 document.querySelectorAll("[data-directory-exercise]").forEach(b=>b.onclick=async()=>{
   try{S.exerciseDirectorySelected=await api(`/me/exercises/${b.dataset.directoryExercise}/directory`);go("exercisedetail")}catch(e){toast(e.message)}
 });
@@ -2209,7 +2224,7 @@ async function act(a){
     if(a==="startworkout")await startWorkout();
     if(a==="openexercise")go("exercise");if(a==="swap-exercise")go("swapexercise");
     if(a==="start-demo-review-queue"){
-      const ready=(S.demoAudit||[]).filter(x=>x.has_animation&&!x.reviewed);
+      const ready=(S.demoAudit||[]).filter(x=>x.has_3d&&!x.reviewed);
       if(!ready.length){toast("No asset-ready demos need review");return}
       await openDemoReview(ready[0].id);return
     }
@@ -2307,7 +2322,7 @@ document.querySelector("#backBtn").onclick=()=>{
   const dest=S.route==="demoreview"?"demoaudit":S.route==="demoaudit"?"formdemo":S.route==="formdemo"?(S.formDemoReturn||"exercise"):{register:"welcome",login:"welcome",history:"progress",prs:"history",exercisehistory:"prs",swapexercise:"exercise",cardioswap:"workout",modulemove:"workout",coretracker:"workout",cardiotracker:"workout",nutritionadd:"nutrition",experience:"goal",schedule:"experience",equipment:"schedule",equipmentlog:plan?"plan":"equipment",equipmentdetails:S.equipmentReturn==="onboarding"?"equipment":"equipmentlog",exercisedirectory:plan?"plan":"preferences",exercisedetail:"exercisedirectory",preferences:"equipment",yourplan:"preferences",workout:"home",exercise:"workout",timer:"exercise",complete:"home",plan:"home",calendarsettings:"trainingsettings",adjustplan:"plan"}[S.route]||"home";
   go(dest);
 };
-document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.36.10")};
+document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.37.0")};
 const calendarParams=new URLSearchParams(location.search);
 const calendarJustConnected=calendarParams.get("calendar_connected")==="1";
 const calendarSyncWarning=calendarParams.get("calendar_sync_warning")==="1";
@@ -2341,5 +2356,5 @@ document.addEventListener("click",async(e)=>{
   }catch(err){ alert("Could not check nutrition provider status: "+err.message); }
 });
 
-// v14.36.10: keep current-week form media warm without blocking the workout UI.
+// v14.37.0: keep current-week form media warm without blocking the workout UI.
 window.addEventListener("online",()=>{if(token&&plan)cacheCurrentPlanDemos(true)});
