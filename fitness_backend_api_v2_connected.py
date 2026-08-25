@@ -1457,6 +1457,16 @@ def me_exercise_directory_item(exercise_id: int, authorization: Optional[str]=He
         raise HTTPException(404,str(e))
 
 
+@app.get("/me/exercises/{exercise_id}/form-demo")
+def me_exercise_form_demo(exercise_id:int,authorization:Optional[str]=Header(None)):
+    _current_account(authorization)
+    try:return database.get_exercise_form_demo(exercise_id,DB_PATH)
+    except ValueError as e:raise HTTPException(404,str(e))
+
+@app.get("/me/exercise-demos/coverage")
+def me_exercise_demo_coverage(authorization:Optional[str]=Header(None)):
+    _current_account(authorization);return database.get_exercise_demo_coverage(DB_PATH)
+
 @app.put("/me/exercises/{exercise_id}/preference")
 def me_exercise_preference(exercise_id: int, request: ExercisePreferenceRequest,
                            authorization: Optional[str]=Header(None)):

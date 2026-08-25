@@ -1,2 +1,2 @@
-Forge Fitness v14.35.10
-Sequential Core Complete Set button spacing
+Forge Fitness v14.36.2
+Exercise Form Demo Foundation + Player + Form Detail

@@ -443,3 +443,13 @@ CREATE TABLE IF NOT EXISTS training_module_exercise_logs (
     FOREIGN KEY(module_session_id) REFERENCES training_module_sessions(id) ON DELETE CASCADE,
     FOREIGN KEY(exercise_id) REFERENCES exercises(id)
 );
+
+CREATE TABLE IF NOT EXISTS exercise_form_demos (
+ exercise_id INTEGER PRIMARY KEY, demo_asset TEXT, demo_type TEXT NOT NULL DEFAULT 'placeholder',
+ demo_version INTEGER NOT NULL DEFAULT 1, primary_view TEXT NOT NULL DEFAULT 'side',
+ secondary_asset TEXT, animation_status TEXT NOT NULL DEFAULT 'metadata_ready',
+ form_cues_json TEXT NOT NULL DEFAULT '[]', setup_cues_json TEXT NOT NULL DEFAULT '[]',
+ common_mistakes_json TEXT NOT NULL DEFAULT '[]', breathing_cue TEXT, safety_note TEXT,
+ reviewed INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
+);

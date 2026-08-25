@@ -227,6 +227,7 @@ def ensure_schema(db_path: str | Path = DEFAULT_DB_PATH) -> None:
         if ne_cols and "source_url" not in ne_cols:
             con.execute("ALTER TABLE nutrition_entries ADD COLUMN source_url TEXT")
     ensure_expanded_exercise_directory(db_path)
+    ensure_exercise_form_demo_metadata(db_path)
 
 def create_user(db_path=DEFAULT_DB_PATH) -> int:
     with session(db_path) as con:
@@ -2950,6 +2951,60 @@ def ensure_expanded_exercise_directory(db_path=DEFAULT_DB_PATH) -> dict[str, int
                 substitutions += max(cur.rowcount,0)
     return {"inserted":inserted,"substitutions_added":substitutions}
 
+
+def _default_form_package(ex):
+    pattern=str(ex.get("movement_pattern") or "").lower()
+    equipment=str(ex.get("equipment") or "")
+    cues=["Move through a controlled range of motion.","Keep your torso and joints stable throughout the rep."]
+    setup=[f"Set up the {equipment.lower()} securely." if equipment and equipment.lower()!="bodyweight" else "Use a stable stance and clear training space."]
+    mistakes=["Rushing the movement or losing control.","Using a range of motion you cannot control."]
+    breathing="Breathe out through the hardest part of the rep and inhale during the easier return."
+    if "squat" in pattern:cues=["Brace before descending.","Keep the knees tracking with the toes.","Maintain balanced pressure through the feet."];mistakes=["Knees collapsing inward.","Losing torso position or foot pressure."]
+    elif "hinge" in pattern or "hip extension" in pattern:cues=["Brace the trunk before moving.","Push the hips back while keeping the load close.","Finish with the hips without overextending the low back."];mistakes=["Turning the hinge into a squat.","Rounding or hyperextending the spine."]
+    elif "horizontal push" in pattern:cues=["Set the shoulder blades before the rep.","Lower under control.","Press while keeping wrists stacked over the forearms."];mistakes=["Flaring the elbows excessively.","Losing shoulder or wrist position."]
+    elif "vertical push" in pattern:cues=["Brace the trunk and glutes.","Press smoothly without excessive back arch.","Finish with the arms controlled overhead."];mistakes=["Overarching the low back.","Pressing around an unstable shoulder position."]
+    elif "horizontal pull" in pattern:cues=["Start from a stable torso.","Drive the elbow back without shrugging.","Control the reach on the return."];mistakes=["Using momentum from the torso.","Shrugging instead of pulling with the back."]
+    elif "vertical pull" in pattern:cues=["Begin from a controlled shoulder position.","Drive the elbows down.","Lower under control to the start."];mistakes=["Swinging or kicking for momentum.","Cutting the range short without a reason."]
+    elif "lunge" in pattern:cues=["Keep the front foot planted.","Track the knee with the toes.","Lower under control and drive through the working leg."];mistakes=["Front knee collapsing inward.","Losing balance by using too narrow a stance."]
+    elif any(x in pattern for x in ("anti-extension","anti-rotation","anti-lateral","spinal flexion","rotation","hip flexion")):
+        cues=["Brace before beginning.","Keep the movement controlled rather than using momentum.","Stop when you can no longer maintain the intended trunk position."];mistakes=["Using momentum instead of the core.","Continuing after trunk position breaks down."];breathing="Keep breathing behind the brace; do not hold your breath for the entire set."
+    return {"form_cues":cues,"setup_cues":setup,"common_mistakes":mistakes,"breathing_cue":breathing,"safety_note":"Use a load and range you can control. Stop if the movement causes sharp or unusual pain."}
+
+def ensure_exercise_form_demo_metadata(db_path=DEFAULT_DB_PATH):
+    inserted=0
+    with session(db_path) as con:
+        exercises=[dict(r) for r in con.execute("SELECT * FROM exercises ORDER BY id")]
+        for ex in exercises:
+            p=_default_form_package(ex)
+            cur=con.execute("""INSERT OR IGNORE INTO exercise_form_demos
+                (exercise_id,demo_asset,demo_type,demo_version,primary_view,animation_status,form_cues_json,setup_cues_json,common_mistakes_json,breathing_cue,safety_note,reviewed)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,0)""",
+                (ex["id"],None,"placeholder",1,"side","metadata_ready",_json(p["form_cues"]),_json(p["setup_cues"]),_json(p["common_mistakes"]),p["breathing_cue"],p["safety_note"]))
+            inserted+=max(cur.rowcount,0)
+    return {"inserted":inserted,"total":len(exercises)}
+
+def get_exercise_form_demo(exercise_id,db_path=DEFAULT_DB_PATH):
+    with session(db_path) as con:
+        row=con.execute("""SELECT d.*,e.name,e.primary_muscle,e.secondary_muscles,e.movement_pattern,e.equipment
+            FROM exercise_form_demos d JOIN exercises e ON e.id=d.exercise_id WHERE d.exercise_id=?""",(exercise_id,)).fetchone()
+    if not row:
+        ensure_exercise_form_demo_metadata(db_path)
+        with session(db_path) as con:
+            row=con.execute("""SELECT d.*,e.name,e.primary_muscle,e.secondary_muscles,e.movement_pattern,e.equipment
+                FROM exercise_form_demos d JOIN exercises e ON e.id=d.exercise_id WHERE d.exercise_id=?""",(exercise_id,)).fetchone()
+    if not row: raise ValueError("Exercise not found")
+    d=dict(row)
+    for k in ("form_cues_json","setup_cues_json","common_mistakes_json"):d[k[:-5]]=json.loads(d.pop(k) or "[]")
+    d["reviewed"]=bool(d["reviewed"]);d["has_animation"]=bool(d.get("demo_asset")) and d.get("demo_type")!="placeholder"
+    return d
+
+def get_exercise_demo_coverage(db_path=DEFAULT_DB_PATH):
+    with session(db_path) as con:
+        total=con.execute("SELECT COUNT(*) FROM exercises").fetchone()[0]
+        metadata=con.execute("SELECT COUNT(*) FROM exercise_form_demos").fetchone()[0]
+        animations=con.execute("SELECT COUNT(*) FROM exercise_form_demos WHERE demo_asset IS NOT NULL AND demo_type!='placeholder'").fetchone()[0]
+        reviewed=con.execute("SELECT COUNT(*) FROM exercise_form_demos WHERE reviewed=1").fetchone()[0]
+    return {"total_exercises":total,"metadata_ready":metadata,"animations_ready":animations,"reviewed":reviewed,"coverage_percent":round(animations/total*100,1) if total else 0}
 
 def _is_bodyweight_loaded_exercise(exercise: dict[str, Any]) -> bool:
     """True when body mass is the primary resistance even if equipment is required."""
