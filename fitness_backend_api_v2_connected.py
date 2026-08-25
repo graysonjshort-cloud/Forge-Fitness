@@ -1493,6 +1493,11 @@ def me_current_plan_demo_assets(authorization: Optional[str]=Header(None)):
             pass
     return {"exercise_ids":ids,"assets":assets,"count":len(assets)}
 
+@app.get("/me/exercise-demos/audit")
+def me_exercise_demo_audit(authorization: Optional[str]=Header(None)):
+    _current_account(authorization)
+    return {"items":database.audit_exercise_form_demos(DB_PATH)}
+
 @app.get("/me/exercise-demos/coverage")
 def me_exercise_demo_coverage(authorization:Optional[str]=Header(None)):
     _current_account(authorization);return database.get_exercise_demo_coverage(DB_PATH)

@@ -1,0 +1,331 @@
+{
+  "version": "14.36.5",
+  "format_version": 1,
+  "assets": [
+    {
+      "exercise_name": "Barbell Back Squat",
+      "slug": "barbell-back-squat",
+      "primary_asset": "/assets/exercise_demos/barbell-back-squat.svg",
+      "secondary_asset": null,
+      "status": "asset_ready",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": true,
+        "mobile_tested": false
+      },
+      "asset_origin": "original_forge_svg"
+    },
+    {
+      "exercise_name": "Barbell Bench Press",
+      "slug": "barbell-bench-press",
+      "primary_asset": "/assets/exercise_demos/barbell-bench-press.svg",
+      "secondary_asset": null,
+      "status": "asset_ready",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": true,
+        "mobile_tested": false
+      },
+      "asset_origin": "original_forge_svg"
+    },
+    {
+      "exercise_name": "Romanian Deadlift",
+      "slug": "romanian-deadlift",
+      "primary_asset": "/assets/exercise_demos/romanian-deadlift.svg",
+      "secondary_asset": null,
+      "status": "asset_ready",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": true,
+        "mobile_tested": false
+      },
+      "asset_origin": "original_forge_svg"
+    },
+    {
+      "exercise_name": "Deadlift",
+      "slug": "deadlift",
+      "primary_asset": "/assets/exercise_demos/deadlift.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "Overhead Press",
+      "slug": "overhead-press",
+      "primary_asset": "/assets/exercise_demos/overhead-press.svg",
+      "secondary_asset": null,
+      "status": "asset_ready",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": true,
+        "mobile_tested": false
+      },
+      "asset_origin": "original_forge_svg"
+    },
+    {
+      "exercise_name": "Pull-Up",
+      "slug": "pull-up",
+      "primary_asset": "/assets/exercise_demos/pull-up.svg",
+      "secondary_asset": null,
+      "status": "asset_ready",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": true,
+        "mobile_tested": false
+      },
+      "asset_origin": "original_forge_svg"
+    },
+    {
+      "exercise_name": "Chin-Up",
+      "slug": "chin-up",
+      "primary_asset": "/assets/exercise_demos/chin-up.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "Lat Pulldown",
+      "slug": "lat-pulldown",
+      "primary_asset": "/assets/exercise_demos/lat-pulldown.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "Barbell Row",
+      "slug": "barbell-row",
+      "primary_asset": "/assets/exercise_demos/barbell-row.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "One-Arm Dumbbell Row",
+      "slug": "one-arm-dumbbell-row",
+      "primary_asset": "/assets/exercise_demos/one-arm-dumbbell-row.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "Push-Up",
+      "slug": "push-up",
+      "primary_asset": "/assets/exercise_demos/push-up.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "Dip",
+      "slug": "dip",
+      "primary_asset": "/assets/exercise_demos/dip.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "Leg Press",
+      "slug": "leg-press",
+      "primary_asset": "/assets/exercise_demos/leg-press.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "Lying Leg Curl",
+      "slug": "lying-leg-curl",
+      "primary_asset": "/assets/exercise_demos/lying-leg-curl.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "Leg Extension",
+      "slug": "leg-extension",
+      "primary_asset": "/assets/exercise_demos/leg-extension.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "Plank",
+      "slug": "plank",
+      "primary_asset": "/assets/exercise_demos/plank.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "Side Plank",
+      "slug": "side-plank",
+      "primary_asset": "/assets/exercise_demos/side-plank.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "Hanging Knee Raise",
+      "slug": "hanging-knee-raise",
+      "primary_asset": "/assets/exercise_demos/hanging-knee-raise.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "Hollow Body Hold",
+      "slug": "hollow-body-hold",
+      "primary_asset": "/assets/exercise_demos/hollow-body-hold.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    },
+    {
+      "exercise_name": "Cable Crunch",
+      "slug": "cable-crunch",
+      "primary_asset": "/assets/exercise_demos/cable-crunch.webm",
+      "secondary_asset": null,
+      "status": "planned",
+      "reviewed": false,
+      "review_checklist": {
+        "correct_exercise": false,
+        "setup": false,
+        "range_of_motion": false,
+        "joint_alignment": false,
+        "loop_quality": false,
+        "mobile_tested": false
+      }
+    }
+  ]
+}

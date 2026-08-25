@@ -2998,6 +2998,44 @@ def get_exercise_form_demo(exercise_id,db_path=DEFAULT_DB_PATH):
     d["reviewed"]=bool(d["reviewed"]);d["has_animation"]=bool(d.get("demo_asset")) and d.get("demo_type")!="placeholder"
     return d
 
+def register_exercise_form_demo_asset(exercise_id: int, demo_asset: str, demo_type: str="video",
+                                      secondary_asset: str|None=None, reviewed: bool=False,
+                                      db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    allowed={"video","mp4","webm","gif","image","svg"}
+    if demo_type not in allowed:
+        raise ValueError(f"Unsupported demo type: {demo_type}")
+    if not demo_asset:
+        raise ValueError("demo_asset is required")
+    ensure_exercise_form_demo_metadata(db_path)
+    with session(db_path) as con:
+        exists=con.execute("SELECT id FROM exercises WHERE id=?",(exercise_id,)).fetchone()
+        if not exists: raise ValueError("Exercise not found")
+        con.execute("""UPDATE exercise_form_demos
+            SET demo_asset=?,demo_type=?,secondary_asset=?,animation_status=?,
+                reviewed=?,demo_version=demo_version+1,updated_at=CURRENT_TIMESTAMP
+            WHERE exercise_id=?""",
+            (demo_asset,demo_type,secondary_asset,"reviewed" if reviewed else "asset_ready",
+             1 if reviewed else 0,exercise_id))
+    return get_exercise_form_demo(exercise_id,db_path)
+
+def audit_exercise_form_demos(db_path=DEFAULT_DB_PATH) -> list[dict[str, Any]]:
+    ensure_exercise_form_demo_metadata(db_path)
+    with session(db_path) as con:
+        rows=con.execute("""SELECT e.id,e.name,e.primary_muscle,e.equipment,d.demo_asset,d.demo_type,
+            d.animation_status,d.reviewed,d.form_cues_json,d.setup_cues_json,d.common_mistakes_json
+            FROM exercises e LEFT JOIN exercise_form_demos d ON d.exercise_id=e.id ORDER BY e.name""").fetchall()
+    out=[]
+    for r in rows:
+        d=dict(r)
+        d["has_animation"]=bool(d.get("demo_asset")) and d.get("demo_type")!="placeholder"
+        d["reviewed"]=bool(d.get("reviewed"))
+        d["has_form_cues"]=bool(json.loads(d.get("form_cues_json") or "[]"))
+        d["has_setup_cues"]=bool(json.loads(d.get("setup_cues_json") or "[]"))
+        d["has_mistakes"]=bool(json.loads(d.get("common_mistakes_json") or "[]"))
+        for k in ("form_cues_json","setup_cues_json","common_mistakes_json"): d.pop(k,None)
+        out.append(d)
+    return out
+
 def get_exercise_demo_coverage(db_path=DEFAULT_DB_PATH):
     with session(db_path) as con:
         total=con.execute("SELECT COUNT(*) FROM exercises").fetchone()[0]
