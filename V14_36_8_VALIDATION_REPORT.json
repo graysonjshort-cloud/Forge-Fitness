@@ -1,0 +1,19 @@
+{
+  "version": "v14.36.8",
+  "status": "passed",
+  "tests": {
+    "backend_health": "passed",
+    "43_demo_assets_registered": "passed",
+    "new_svg_assets_served": "passed",
+    "review_queue_ui": "passed",
+    "previous_next_review_navigation": "passed",
+    "auto_advance_after_completed_review": "passed",
+    "new_assets_unreviewed_by_default": "passed",
+    "manifest_validation": "passed",
+    "javascript_syntax": "passed",
+    "python_syntax": "passed",
+    "pwa_update_delivery": "passed"
+  },
+  "animations_ready": 43,
+  "coverage_percent": 30.3
+}

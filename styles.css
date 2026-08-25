@@ -1351,3 +1351,6 @@ input,select,textarea{border-radius:9px!important}
 /* v14.36.6 demo review workflow */
 .demo-review-item{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid #2b333b}.demo-review-item:last-child{border-bottom:0}.demo-review-item input{width:22px;height:22px;accent-color:var(--red,#ef233c)}.demo-review-item span{display:flex;flex-direction:column;gap:2px}.demo-review-item small{color:#9da8b3}.demo-reviewed-banner{margin-top:14px;border-color:#2c694b}.demo-reviewed-banner b{color:#75d9a4}.demo-review-warning{text-align:center;margin-top:12px}
 .field textarea{width:100%;margin-top:7px;box-sizing:border-box;background:#11161b;color:#fff;border:1px solid #35404a;border-radius:10px;padding:10px;resize:vertical}
+
+/* v14.36.8 scaled demo library + review queue */
+.demo-review-queue-bar{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin:12px 0 14px}.demo-review-queue-bar button{border:1px solid #343f49;background:#1b2229;color:#fff;border-radius:9px;padding:9px;font-weight:800}.demo-review-queue-bar button:disabled{opacity:.35}.demo-review-queue-bar span{text-align:center;font-size:11px;color:#aeb8c2;font-weight:800}

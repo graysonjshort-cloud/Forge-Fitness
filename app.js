@@ -6,7 +6,7 @@ let authToken = localStorage.getItem("forge_auth_token") || "";
 let account = null;
 let plan = null, session = null;
 const profile = {goal:"build_muscle",experience:"intermediate",days_per_week:4,minutes_per_workout:45,equipment:["full_gym"],preferred_exercises:[],excluded_exercises:[],priority_muscles:[],recovery_level:"normal",cardio_preference:"moderate",workout_split:"auto",sport:"general",core_workouts_per_week:2,cardio_workouts_per_week:2,seed:42};
-const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null};
+const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0};
 const V=document.querySelector("#view"),toastEl=document.querySelector("#toast"),nav=document.querySelector("#bottomNav"),topbar=document.querySelector("#topbar");
 const toast=t=>{toastEl.textContent=t;toastEl.classList.add("show");setTimeout(()=>toastEl.classList.remove("show"),1800)};
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
@@ -28,12 +28,12 @@ function moreSheet(){
       <button data-a=open-equipment-log><span>▣</span><div><b>Equipment Log</b><small>Manage available gym equipment</small></div><em>›</em></button>
       <button data-a=open-calendar-settings><span>▦</span><div><b>Calendar & Time</b><small>${S.calendarStatus?.connected?"Google Calendar connected":"Schedule and timezone"}</small></div><em>›</em></button>
       <button class=more-signout data-a=signout><span>↪</span><div><b>Sign Out</b><small>Your Forge data stays saved</small></div></button>
-      <div class=more-version>Forge Fitness v14.36.7</div>
+      <div class=more-version>Forge Fitness v14.36.8</div>
     </div>
   </div>`;
 }
 function finalPolishSettingsCard(){
-  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.36.7</span></div>
+  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.36.8</span></div>
     <div class=settings-status-row><span>Connection</span><b>${S.online?"Online":"Offline"}</b></div>
     <div class=settings-status-row><span>Install mode</span><b>${isStandalonePWA()?"Installed app":"Browser"}</b></div>
     <div class=settings-status-row><span>Calendar</span><b>${S.calendarStatus?.connected?"Connected":"Not connected"}</b></div>
@@ -720,8 +720,18 @@ async function openDemoAudit(){
   try{const d=await api("/me/exercise-demos/audit");S.demoAudit=d.items||[];if(S.route==="demoaudit")render()}catch(e){toast(e.message)}
 }
 async function openDemoReview(id){
+ const ready=(S.demoAudit||[]).filter(x=>x.has_animation&&!x.reviewed);
+ S.demoReviewQueue=ready.map(x=>Number(x.id));
+ S.demoReviewQueueIndex=Math.max(0,S.demoReviewQueue.indexOf(Number(id)));
  S.demoReviewExercise=Number(id);S.demoReview=null;go("demoreview");
  try{S.demoReview=await api(`/me/exercises/${id}/demo-review`);if(S.route==="demoreview")render()}catch(e){toast(e.message)}
+}
+async function moveDemoReviewQueue(delta){
+ if(!S.demoReviewQueue.length)return;
+ const next=Math.max(0,Math.min(S.demoReviewQueue.length-1,S.demoReviewQueueIndex+delta));
+ if(next===S.demoReviewQueueIndex)return;
+ S.demoReviewQueueIndex=next;S.demoReviewExercise=S.demoReviewQueue[next];S.demoReview=null;render();
+ try{S.demoReview=await api(`/me/exercises/${S.demoReviewExercise}/demo-review`);render()}catch(e){toast(e.message)}
 }
 function demoreview(){
  const r=S.demoReview;if(!r)return `<p class=eyebrow>DEMO REVIEW</p><h2>Loading checklist…</h2>`;
@@ -729,6 +739,7 @@ function demoreview(){
  const reviewPreview=auditItem?.demo_asset?`<div class=exercise-demo-player><img src="${esc(auditItem.demo_asset)}" alt="${esc(r.exercise_name)} review animation"></div><div class=spacer></div>`:"";
  const fields=[["correct_exercise","Correct exercise"],["setup","Setup & equipment"],["range_of_motion","Range of motion"],["joint_alignment","Joint alignment"],["loop_quality","Loop quality"],["mobile_tested","Tested on phone"]];
  return `<p class=eyebrow>DEMO REVIEW</p><h2>${esc(r.exercise_name)}</h2><p class=muted>Only mark items passed after checking the actual animation.</p>
+ <div class=demo-review-queue-bar><button data-a=demo-review-prev ${S.demoReviewQueueIndex<=0?"disabled":""}>‹ Previous</button><span>${S.demoReviewQueue.length?`${S.demoReviewQueueIndex+1}/${S.demoReviewQueue.length}`:"Review"}</span><button data-a=demo-review-next ${S.demoReviewQueueIndex>=S.demoReviewQueue.length-1?"disabled":""}>Next ›</button></div>
  ${reviewPreview}<div class=card>${fields.map(([k,n])=>`<label class=demo-review-item><input type=checkbox data-demo-review="${k}" ${r[k]?"checked":""}><span><b>${n}</b><small>${r[k]?"Passed":"Needs review"}</small></span></label>`).join("")}</div>
  <div class=spacer></div><label class=field>Review notes<textarea data-demo-review-notes rows=4 placeholder="Record anything that should be corrected…">${esc(r.notes||"")}</textarea></label>
  <button class=btn data-a=save-demo-review>Save Review</button>
@@ -739,6 +750,7 @@ function demoaudit(){
   if(!rows)return `<p class=eyebrow>DEMO LIBRARY</p><h2>Checking exercise coverage…</h2>`;
   const total=rows.length,animated=rows.filter(x=>x.has_animation).length,reviewed=rows.filter(x=>x.reviewed).length;
   return `<p class=eyebrow>EXERCISE DEMOS</p><h2>Animation Coverage</h2>
+  ${rows.some(x=>x.has_animation&&!x.reviewed)?`<button class=btn data-a=start-demo-review-queue>Review Asset-Ready Queue</button><div class=spacer></div>`:""}
   <div class=demo-audit-stats><div><b>${animated}/${total}</b><span>Animations</span></div><div><b>${reviewed}/${total}</b><span>Reviewed</span></div><div><b>${total?Math.round(animated/total*100):0}%</b><span>Coverage</span></div></div>
   <div class=spacer></div><div class=demo-audit-list>${rows.map(x=>`<div class=demo-audit-row>
     <div><strong>${esc(x.name)}</strong><small>${esc(x.primary_muscle)} • ${esc(x.equipment)}</small></div>
@@ -2196,11 +2208,24 @@ async function act(a){
     if(a==="gohome")go("home");
     if(a==="startworkout")await startWorkout();
     if(a==="openexercise")go("exercise");if(a==="swap-exercise")go("swapexercise");
+    if(a==="start-demo-review-queue"){
+      const ready=(S.demoAudit||[]).filter(x=>x.has_animation&&!x.reviewed);
+      if(!ready.length){toast("No asset-ready demos need review");return}
+      await openDemoReview(ready[0].id);return
+    }
+    if(a==="demo-review-prev"){await moveDemoReviewQueue(-1);return}
+    if(a==="demo-review-next"){await moveDemoReviewQueue(1);return}
     if(a==="save-demo-review"){
       const payload={};
       document.querySelectorAll("[data-demo-review]").forEach(x=>payload[x.dataset.demoReview]=x.checked);
       payload.notes=document.querySelector("[data-demo-review-notes]")?.value||"";
-      try{S.demoReview=await api(`/me/exercises/${S.demoReviewExercise}/demo-review`,{method:"PUT",body:JSON.stringify(payload)});toast(S.demoReview.complete?"Demo marked Reviewed":"Review saved");render()}catch(e){toast(e.message)}
+      try{
+        S.demoReview=await api(`/me/exercises/${S.demoReviewExercise}/demo-review`,{method:"PUT",body:JSON.stringify(payload)});
+        toast(S.demoReview.complete?"Demo marked Reviewed":"Review saved");
+        if(S.demoReview.complete&&S.demoReviewQueueIndex<S.demoReviewQueue.length-1){
+          await moveDemoReviewQueue(1);
+        }else render();
+      }catch(e){toast(e.message)}
       return
     }
     if(a==="open-demo-audit"){await openDemoAudit();return}
@@ -2282,7 +2307,7 @@ document.querySelector("#backBtn").onclick=()=>{
   const dest=S.route==="demoreview"?"demoaudit":S.route==="demoaudit"?"formdemo":S.route==="formdemo"?(S.formDemoReturn||"exercise"):{register:"welcome",login:"welcome",history:"progress",prs:"history",exercisehistory:"prs",swapexercise:"exercise",cardioswap:"workout",modulemove:"workout",coretracker:"workout",cardiotracker:"workout",nutritionadd:"nutrition",experience:"goal",schedule:"experience",equipment:"schedule",equipmentlog:plan?"plan":"equipment",equipmentdetails:S.equipmentReturn==="onboarding"?"equipment":"equipmentlog",exercisedirectory:plan?"plan":"preferences",exercisedetail:"exercisedirectory",preferences:"equipment",yourplan:"preferences",workout:"home",exercise:"workout",timer:"exercise",complete:"home",plan:"home",calendarsettings:"trainingsettings",adjustplan:"plan"}[S.route]||"home";
   go(dest);
 };
-document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.36.7")};
+document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.36.8")};
 const calendarParams=new URLSearchParams(location.search);
 const calendarJustConnected=calendarParams.get("calendar_connected")==="1";
 const calendarSyncWarning=calendarParams.get("calendar_sync_warning")==="1";
@@ -2316,5 +2341,5 @@ document.addEventListener("click",async(e)=>{
   }catch(err){ alert("Could not check nutrition provider status: "+err.message); }
 });
 
-// v14.36.7: keep current-week form media warm without blocking the workout UI.
+// v14.36.8: keep current-week form media warm without blocking the workout UI.
 window.addEventListener("online",()=>{if(token&&plan)cacheCurrentPlanDemos(true)});

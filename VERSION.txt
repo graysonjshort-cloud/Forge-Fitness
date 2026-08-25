@@ -1,2 +1,2 @@
-Forge Fitness v14.36.7
-Refined Exercise Demo Standard + 15 Original Demo Assets
+Forge Fitness v14.36.8
+Scaled Demo Library + Review Queue
