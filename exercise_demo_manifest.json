@@ -1,5 +1,5 @@
 {
-  "version": "14.36.9",
+  "version": "14.36.10",
   "format_version": 1,
   "assets": [
     {
@@ -17,8 +17,8 @@
       "primary_asset": "/assets/exercise_demos/back-squat.svg",
       "status": "asset_ready",
       "reviewed": false,
-      "asset_origin": "original_forge_svg_v3_articulated",
-      "visual_standard": "forge_articulated_demo_v2"
+      "asset_origin": "original_forge_svg_v4_high_fidelity",
+      "visual_standard": "forge_high_fidelity_vector_v3"
     },
     {
       "exercise_name": "Barbell Bench Press",
@@ -35,8 +35,8 @@
         "loop_quality": false,
         "mobile_tested": false
       },
-      "asset_origin": "original_forge_svg_v3_articulated",
-      "visual_standard": "forge_articulated_demo_v2"
+      "asset_origin": "original_forge_svg_v4_high_fidelity",
+      "visual_standard": "forge_high_fidelity_vector_v3"
     },
     {
       "exercise_name": "Romanian Deadlift",
@@ -53,8 +53,8 @@
         "loop_quality": false,
         "mobile_tested": false
       },
-      "asset_origin": "original_forge_svg_v3_articulated",
-      "visual_standard": "forge_articulated_demo_v2"
+      "asset_origin": "original_forge_svg_v4_high_fidelity",
+      "visual_standard": "forge_high_fidelity_vector_v3"
     },
     {
       "exercise_name": "Barbell Overhead Press",
@@ -71,8 +71,8 @@
       "primary_asset": "/assets/exercise_demos/barbell-overhead-press.svg",
       "status": "asset_ready",
       "reviewed": false,
-      "asset_origin": "original_forge_svg_v3_articulated",
-      "visual_standard": "forge_articulated_demo_v2"
+      "asset_origin": "original_forge_svg_v4_high_fidelity",
+      "visual_standard": "forge_high_fidelity_vector_v3"
     },
     {
       "exercise_name": "Pull-Up",
@@ -89,8 +89,8 @@
         "loop_quality": false,
         "mobile_tested": false
       },
-      "asset_origin": "original_forge_svg_v3_articulated",
-      "visual_standard": "forge_articulated_demo_v2"
+      "asset_origin": "original_forge_svg_v4_high_fidelity",
+      "visual_standard": "forge_high_fidelity_vector_v3"
     },
     {
       "exercise_name": "Chin-Up",
@@ -826,5 +826,5 @@
     }
   ],
   "visual_standard": "forge_motion_diagram_v1",
-  "active_visual_standard": "forge_articulated_demo_v2"
+  "active_visual_standard": "forge_high_fidelity_vector_v3"
 }

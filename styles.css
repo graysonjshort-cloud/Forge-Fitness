@@ -1358,3 +1358,8 @@ input,select,textarea{border-radius:9px!important}
 /* v14.36.9 articulated demo v2 */
 .exercise-demo-player{position:relative}
 .demo-quality-badge{position:absolute;top:12px;right:12px;border:1px solid #4a5661;background:rgba(12,17,22,.88);color:#dce3e9;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
+
+/* v14.36.10 high fidelity demo presentation */
+.exercise-demo-player{min-height:330px;padding:8px;background:radial-gradient(circle at 50% 45%,#172028 0,#0d1217 72%);border-color:#3a4650}
+.exercise-demo-player img{width:100%;max-height:440px;object-fit:contain}
+@media(max-width:420px){.exercise-demo-player{min-height:315px;padding:5px}}

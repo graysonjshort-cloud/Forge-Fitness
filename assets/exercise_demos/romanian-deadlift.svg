@@ -1,25 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420" role="img" aria-label="Romanian Deadlift articulated form demonstration">
-<rect width="420" height="420" rx="30" fill="#0d1217"/>
-<circle cx="210" cy="190" r="158" fill="none" stroke="#202a34" stroke-width="2"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" role="img" aria-label="Romanian Deadlift high fidelity form demonstration">
+<defs>
+<linearGradient id="skin"><stop offset="0" stop-color="#f2f5f7"/><stop offset="1" stop-color="#aab4be"/></linearGradient>
+<linearGradient id="body"><stop offset="0" stop-color="#dce3e8"/><stop offset="1" stop-color="#76828e"/></linearGradient>
+</defs>
+<rect width="480" height="480" rx="34" fill="#0b1015"/><circle cx="240" cy="220" r="185" fill="none" stroke="#1d2630" stroke-width="2"/>
 
-<path d="M78 335 H342" stroke="#7e8994" stroke-width="5"/>
-<path d="M240 135 L305 268" stroke="#ef233c" stroke-width="3" stroke-dasharray="7 7" opacity=".5"/>
-<g>
-<circle cx="210" cy="78" r="22" fill="#1b232a" stroke="#eef2f5" stroke-width="5"/>
-<polygon points="180,105 240,105 248,205 172,205" fill="#27313a" stroke="#eef2f5" stroke-width="4"/>
-<line x1="190" y1="130" x2="155" y2="225" stroke="#eef2f5" stroke-width="13" stroke-linecap="round"/>
-<line x1="230" y1="130" x2="265" y2="225" stroke="#eef2f5" stroke-width="13" stroke-linecap="round"/>
-<animateTransform attributeName="transform" type="rotate" values="0 210 205;37 210 205;37 210 205;0 210 205" keyTimes="0;.34;.54;1" dur="3.1s" repeatCount="indefinite"/>
-</g>
-<!-- legs remain comparatively fixed -->
-<line x1="188" y1="205" x2="180" y2="325" stroke="#eef2f5" stroke-width="15" stroke-linecap="round"/>
-<line x1="232" y1="205" x2="242" y2="325" stroke="#eef2f5" stroke-width="15" stroke-linecap="round"/>
-<circle cx="188" cy="205" r="8" fill="#ef233c"/><circle cx="232" cy="205" r="8" fill="#ef233c"/>
-<!-- bar -->
-<g><line x1="118" y1="228" x2="302" y2="228" stroke="#ef233c" stroke-width="9"/><rect x="102" y="213" width="15" height="30" rx="3" fill="#ef233c"/><rect x="303" y="213" width="15" height="30" rx="3" fill="#ef233c"/>
-<animateTransform attributeName="transform" type="translate" values="0 0;0 74;0 74;0 0" keyTimes="0;.34;.54;1" dur="3.1s" repeatCount="indefinite"/></g>
-<text x="210" y="356" text-anchor="middle" fill="#9eabb6" font-family="system-ui,sans-serif" font-size="11">Hips travel back • bar stays close • knees remain softly bent</text>
-
-<text x="210" y="386" text-anchor="middle" fill="#f1f4f7" font-family="system-ui,sans-serif" font-size="15" font-weight="800">Romanian Deadlift</text>
-<text x="210" y="405" text-anchor="middle" fill="#7f8b96" font-family="system-ui,sans-serif" font-size="10">ARTICULATED FORM DEMO • V2</text>
+<path d="M76 374H404" stroke="#7c8792" stroke-width="6"/><path d="M215 225L203 360M265 225L279 360" stroke="url(#skin)" stroke-width="24" stroke-linecap="round"/>
+<g><ellipse cx="240" cy="88" rx="24" ry="28" fill="#202831" stroke="#eef2f5" stroke-width="5"/><path d="M204 119Q240 103 276 119L284 226Q240 242 196 226Z" fill="url(#body)" stroke="#eef2f5" stroke-width="4"/>
+<path d="M210 145L172 250M270 145L308 250" stroke="url(#skin)" stroke-width="20" stroke-linecap="round"/><animateTransform attributeName="transform" type="rotate" values="0 240 225;34 240 225;34 240 225;0 240 225" keyTimes="0;.34;.54;1" dur="3.4s" repeatCount="indefinite"/></g>
+<g><line x1="118" y1="260" x2="362" y2="260" stroke="#ff2747" stroke-width="10"/><rect x="92" y="240" width="24" height="40" rx="5" fill="#ff2747"/><rect x="364" y="240" width="24" height="40" rx="5" fill="#ff2747"/><animateTransform attributeName="transform" type="translate" values="0 0;0 77;0 77;0 0" keyTimes="0;.34;.54;1" dur="3.4s" repeatCount="indefinite"/></g>
+<text x="240" y="417" text-anchor="middle" fill="#a9b4be" font-family="system-ui,sans-serif" font-size="11">Push hips back • keep bar close • maintain a long neutral torso</text>
+<text x="240" y="444" text-anchor="middle" fill="#f2f5f7" font-family="system-ui,sans-serif" font-size="17" font-weight="800">Romanian Deadlift</text>
+<text x="240" y="464" text-anchor="middle" fill="#73808b" font-family="system-ui,sans-serif" font-size="10">HIGH-FIDELITY VECTOR DEMO • V3</text>
 </svg>

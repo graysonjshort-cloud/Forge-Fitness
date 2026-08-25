@@ -1,48 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420" role="img" aria-label="Back Squat articulated form demonstration">
-<rect width="420" height="420" rx="30" fill="#0d1217"/>
-<circle cx="210" cy="190" r="158" fill="none" stroke="#202a34" stroke-width="2"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" role="img" aria-label="Back Squat high fidelity form demonstration">
+<defs>
+<linearGradient id="skin"><stop offset="0" stop-color="#f2f5f7"/><stop offset="1" stop-color="#aab4be"/></linearGradient>
+<linearGradient id="body"><stop offset="0" stop-color="#dce3e8"/><stop offset="1" stop-color="#76828e"/></linearGradient>
+</defs>
+<rect width="480" height="480" rx="34" fill="#0b1015"/><circle cx="240" cy="220" r="185" fill="none" stroke="#1d2630" stroke-width="2"/>
 
-<path d="M70 335 H350" stroke="#7e8994" stroke-width="5"/>
-<path d="M190 105 V255" stroke="#ef233c" stroke-width="3" stroke-dasharray="7 7" opacity=".45"/>
-<!-- head -->
-<circle cx="210" cy="80" r="22" fill="#1b232a" stroke="#eef2f5" stroke-width="5">
- <animate attributeName="cy" values="80;133;133;80" dur="3.2s" repeatCount="indefinite"/>
-</circle>
-<!-- torso -->
-<polygon points="180,105 240,105 254,205 166,205" fill="#27313a" stroke="#eef2f5" stroke-width="4">
- <animate attributeName="points" values="180,105 240,105 254,205 166,205;178,158 242,158 260,244 160,244;178,158 242,158 260,244 160,244;180,105 240,105 254,205 166,205" dur="3.2s" repeatCount="indefinite"/>
-</polygon>
-<!-- bar -->
-<g><line x1="105" y1="118" x2="315" y2="118" stroke="#ef233c" stroke-width="9"/>
-<rect x="88" y="104" width="16" height="28" rx="3" fill="#ef233c"/><rect x="316" y="104" width="16" height="28" rx="3" fill="#ef233c"/>
-<animateTransform attributeName="transform" type="translate" values="0 0;0 53;0 53;0 0" dur="3.2s" repeatCount="indefinite"/></g>
-<!-- thighs -->
-<line x1="187" y1="205" x2="162" y2="270" stroke="#eef2f5" stroke-width="15" stroke-linecap="round">
- <animate attributeName="x1" values="187;178;178;187" dur="3.2s" repeatCount="indefinite"/>
- <animate attributeName="y1" values="205;244;244;205" dur="3.2s" repeatCount="indefinite"/>
- <animate attributeName="x2" values="162;128;128;162" dur="3.2s" repeatCount="indefinite"/>
- <animate attributeName="y2" values="270;260;260;270" dur="3.2s" repeatCount="indefinite"/>
-</line>
-<line x1="233" y1="205" x2="258" y2="270" stroke="#eef2f5" stroke-width="15" stroke-linecap="round">
- <animate attributeName="x1" values="233;242;242;233" dur="3.2s" repeatCount="indefinite"/>
- <animate attributeName="y1" values="205;244;244;205" dur="3.2s" repeatCount="indefinite"/>
- <animate attributeName="x2" values="258;292;292;258" dur="3.2s" repeatCount="indefinite"/>
- <animate attributeName="y2" values="270;260;260;270" dur="3.2s" repeatCount="indefinite"/>
-</line>
-<!-- shins -->
-<line x1="162" y1="270" x2="150" y2="330" stroke="#eef2f5" stroke-width="13" stroke-linecap="round">
- <animate attributeName="x1" values="162;128;128;162" dur="3.2s" repeatCount="indefinite"/>
- <animate attributeName="y1" values="270;260;260;270" dur="3.2s" repeatCount="indefinite"/>
-</line>
-<line x1="258" y1="270" x2="270" y2="330" stroke="#eef2f5" stroke-width="13" stroke-linecap="round">
- <animate attributeName="x1" values="258;292;292;258" dur="3.2s" repeatCount="indefinite"/>
- <animate attributeName="y1" values="270;260;260;270" dur="3.2s" repeatCount="indefinite"/>
-</line>
-<!-- knees -->
-<circle cx="162" cy="270" r="8" fill="#ef233c"><animate attributeName="cx" values="162;128;128;162" dur="3.2s" repeatCount="indefinite"/><animate attributeName="cy" values="270;260;260;270" dur="3.2s" repeatCount="indefinite"/></circle>
-<circle cx="258" cy="270" r="8" fill="#ef233c"><animate attributeName="cx" values="258;292;292;258" dur="3.2s" repeatCount="indefinite"/><animate attributeName="cy" values="270;260;260;270" dur="3.2s" repeatCount="indefinite"/></circle>
-<text x="210" y="356" text-anchor="middle" fill="#9eabb6" font-family="system-ui,sans-serif" font-size="11">Knees track with toes • torso stays braced • feet stay planted</text>
-
-<text x="210" y="386" text-anchor="middle" fill="#f1f4f7" font-family="system-ui,sans-serif" font-size="15" font-weight="800">Back Squat</text>
-<text x="210" y="405" text-anchor="middle" fill="#7f8b96" font-family="system-ui,sans-serif" font-size="10">ARTICULATED FORM DEMO • V2</text>
+<path d="M72 374H408" stroke="#7c8792" stroke-width="6"/>
+<g><ellipse cx="240" cy="89" rx="24" ry="28" fill="#202831" stroke="#eef2f5" stroke-width="5"/><path d="M205 120Q240 105 275 120L287 229Q240 249 193 229Z" fill="url(#body)" stroke="#eef2f5" stroke-width="4"/>
+<path d="M214 225L180 298" stroke="url(#skin)" stroke-width="24" stroke-linecap="round"><animate attributeName="d" values="M214 225L180 298;M205 274L150 286;M205 274L150 286;M214 225L180 298" dur="3.5s" repeatCount="indefinite"/></path>
+<path d="M266 225L300 298" stroke="url(#skin)" stroke-width="24" stroke-linecap="round"><animate attributeName="d" values="M266 225L300 298;M275 274L330 286;M275 274L330 286;M266 225L300 298" dur="3.5s" repeatCount="indefinite"/></path>
+<path d="M180 298L168 361M300 298L312 361" stroke="url(#skin)" stroke-width="20" stroke-linecap="round"/><animateTransform attributeName="transform" type="translate" values="0 0;0 48;0 48;0 0" keyTimes="0;.34;.54;1" dur="3.5s" repeatCount="indefinite"/></g>
+<g><line x1="112" y1="139" x2="368" y2="139" stroke="#ff2747" stroke-width="10"/><rect x="86" y="119" width="24" height="40" rx="5" fill="#ff2747"/><rect x="370" y="119" width="24" height="40" rx="5" fill="#ff2747"/><animateTransform attributeName="transform" type="translate" values="0 0;0 48;0 48;0 0" keyTimes="0;.34;.54;1" dur="3.5s" repeatCount="indefinite"/></g>
+<text x="240" y="417" text-anchor="middle" fill="#a9b4be" font-family="system-ui,sans-serif" font-size="11">Brace first • knees track with toes • keep the whole foot planted</text>
+<text x="240" y="444" text-anchor="middle" fill="#f2f5f7" font-family="system-ui,sans-serif" font-size="17" font-weight="800">Back Squat</text>
+<text x="240" y="464" text-anchor="middle" fill="#73808b" font-family="system-ui,sans-serif" font-size="10">HIGH-FIDELITY VECTOR DEMO • V3</text>
 </svg>
