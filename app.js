@@ -9,7 +9,11 @@ const profile = {goal:"build_muscle",experience:"intermediate",days_per_week:4,m
 const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0,demoAngle:"primary"};
 const V=document.querySelector("#view"),toastEl=document.querySelector("#toast"),nav=document.querySelector("#bottomNav"),topbar=document.querySelector("#topbar");
 const toast=t=>{toastEl.textContent=t;toastEl.classList.add("show");setTimeout(()=>toastEl.classList.remove("show"),1800)};
-const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+const esc=ForgeCore.esc;
+const requestId=ForgeCore.requestId;
+
+const PWA=ForgePWA.create({state:S,toast,render:()=>render()});
+const {isStandalonePWA,isIOSDevice,pwaInstallCard,installForgePWA,setupPWA}=PWA;
 
 function networkBanner(){
   if(S.online)return "";
@@ -28,12 +32,12 @@ function moreSheet(){
       <button data-a=open-equipment-log><span>▣</span><div><b>Equipment Log</b><small>Manage available gym equipment</small></div><em>›</em></button>
       <button data-a=open-calendar-settings><span>▦</span><div><b>Calendar & Time</b><small>${S.calendarStatus?.connected?"Google Calendar connected":"Schedule and timezone"}</small></div><em>›</em></button>
       <button class=more-signout data-a=signout><span>↪</span><div><b>Sign Out</b><small>Your Forge data stays saved</small></div></button>
-      <div class=more-version>Forge Fitness v14.38.1</div>
+      <div class=more-version>Forge Fitness v14.38.6</div>
     </div>
   </div>`;
 }
 function finalPolishSettingsCard(){
-  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.38.1</span></div>
+  return `<div class="card final-settings-card"><div class=row><div><p class=eyebrow>FORGE APP</p><h3>App & account</h3></div><span class=version-pill>v14.38.6</span></div>
     <div class=settings-status-row><span>Connection</span><b>${S.online?"Online":"Offline"}</b></div>
     <div class=settings-status-row><span>Install mode</span><b>${isStandalonePWA()?"Installed app":"Browser"}</b></div>
     <div class=settings-status-row><span>Calendar</span><b>${S.calendarStatus?.connected?"Connected":"Not connected"}</b></div>
@@ -41,193 +45,11 @@ function finalPolishSettingsCard(){
 }
 
 
-function isStandalonePWA(){
-  return window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone===true;
-}
-function isIOSDevice(){
-  return /iphone|ipad|ipod/i.test(navigator.userAgent||"");
-}
-function pwaInstallCard(){
-  if(isStandalonePWA()||S.pwaInstalled)return `<div class="card pwa-install-card installed"><div class=pwa-install-icon>✓</div><div><p class=eyebrow>PHONE APP</p><h3>Forge is installed</h3><p class=muted>Forge is running as a standalone home-screen app.</p></div></div>`;
-  if(isIOSDevice())return `<div class="card pwa-install-card apple-pwa-card"><div class=pwa-install-icon></div><div><p class=eyebrow>IPHONE / IPAD</p><h3>Install Forge on Apple</h3><p class=muted>Open Forge in Safari, tap <b>Share</b>, choose <b>Add to Home Screen</b>, turn on <b>Open as Web App</b>, then tap <b>Add</b>.</p><div class=apple-install-steps><span>1</span><b>Share</b><span>2</span><b>Add to Home Screen</b><span>3</span><b>Open as Web App</b></div></div></div>`;
-  if(S.pwaInstallPrompt)return `<div class="card pwa-install-card"><div class=pwa-install-icon>⌂</div><div><p class=eyebrow>ANDROID APP</p><h3>Install Forge</h3><p class=muted>Add Forge to your home screen and open it like a normal app.</p><button class=btn data-a=pwa-install>Install Forge</button></div></div>`;
-  return `<div class="card pwa-install-card"><div class=pwa-install-icon>⌂</div><div><p class=eyebrow>PHONE APP</p><h3>Install Forge</h3><p class=muted>Use your browser's Install app option. On iPhone/iPad, use Safari → Share → Add to Home Screen.</p></div></div>`;
-}
-async function installForgePWA(){
-  const prompt=S.pwaInstallPrompt;
-  if(!prompt){toast(isIOSDevice()?"Use Safari Share → Add to Home Screen":"Install option is not available in this browser yet");return;}
-  prompt.prompt();
-  const choice=await prompt.userChoice.catch(()=>({outcome:"dismissed"}));
-  if(choice.outcome==="accepted")toast("Forge installation started");
-  S.pwaInstallPrompt=null;
-  render();
-}
-function setupPWA(){
-  S.pwaInstalled=isStandalonePWA();
-  document.documentElement.classList.toggle("ios-device",isIOSDevice());
-  document.documentElement.classList.toggle("standalone-pwa",isStandalonePWA());
-  window.addEventListener("beforeinstallprompt",event=>{
-    event.preventDefault();
-    S.pwaInstallPrompt=event;
-    if(S.route==="trainingsettings")render();
-  });
-  window.addEventListener("appinstalled",()=>{
-    S.pwaInstalled=true;S.pwaInstallPrompt=null;toast("Forge installed");
-    if(S.route==="trainingsettings")render();
-  });
-  if("serviceWorker" in navigator){
-    navigator.serviceWorker.register("/sw.js",{scope:"/"}).then(reg=>{
-      reg.addEventListener("updatefound",()=>{
-        const worker=reg.installing;
-        if(!worker)return;
-        worker.addEventListener("statechange",()=>{
-          if(worker.state==="installed"&&navigator.serviceWorker.controller){
-            S.updateReady=true;
-            render();
-          }
-        });
-      });
-    }).catch(err=>console.warn("Forge service worker registration failed",err));
-  }
-  window.addEventListener("online",()=>{S.online=true;render();toast("Forge is back online")});
-  window.addEventListener("offline",()=>{S.online=false;render()});
-}
+function equipmentIcon(key,name="",category=""){return ForgeEquipment.icon(key,name,category)}
 
-
-function equipmentIcon(key,name="",category=""){
-  key=String(key||"").toLowerCase().replace(/[^a-z0-9_]/g,"");
-  const known=new Set([
-    "dumbbells",
-    "barbell",
-    "ez_curl_bar",
-    "trap_bar",
-    "weight_plates",
-    "kettlebells",
-    "medicine_ball",
-    "bench",
-    "adjustable_bench",
-    "squat_rack",
-    "power_rack",
-    "preacher_bench",
-    "dip_station",
-    "pull_up_bar",
-    "cable_machine",
-    "lat_pulldown",
-    "seated_row_machine",
-    "chest_press_machine",
-    "shoulder_press_machine",
-    "leg_press_machine",
-    "leg_extension_machine",
-    "leg_curl_machine",
-    "pec_deck",
-    "calf_raise_machine",
-    "smith_machine",
-    "machine",
-    "rope_attachment",
-    "straight_bar_attachment",
-    "lat_bar_attachment",
-    "ankle_strap",
-    "bands",
-    "ab_wheel",
-    "foam_roller",
-    "yoga_mat",
-    "stability_ball",
-    "landmine_attachment",
-    "bodyweight",
-    "rings",
-    "suspension_trainer",
-    "treadmill",
-    "bike",
-    "rowing_machine",
-    "elliptical",
-    "stair_climber",
-    "jump_rope",
-    "sled",
-    "safety_squat_bar",
-    "swiss_bar",
-    "cambered_bar",
-    "axle_bar",
-    "fixed_barbells",
-    "sandbag",
-    "weighted_vest",
-    "clubs_maces",
-    "deadlift_platform",
-    "half_rack",
-    "wall_rack",
-    "glute_ham_developer",
-    "roman_chair",
-    "hyperextension_bench",
-    "decline_bench",
-    "hack_squat_machine",
-    "pendulum_squat",
-    "belt_squat_machine",
-    "v_squat_machine",
-    "hip_thrust_machine",
-    "hip_abductor_machine",
-    "hip_adductor_machine",
-    "standing_leg_curl",
-    "lying_leg_curl",
-    "seated_leg_curl",
-    "donkey_calf_machine",
-    "tibialis_machine",
-    "incline_press_machine",
-    "decline_press_machine",
-    "chest_supported_row_machine",
-    "high_row_machine",
-    "pullover_machine",
-    "lateral_raise_machine",
-    "rear_delt_machine",
-    "biceps_curl_machine",
-    "triceps_extension_machine",
-    "assisted_dip_pullup",
-    "v_bar_attachment",
-    "single_d_handle",
-    "triceps_v_bar",
-    "multi_grip_lat_bar",
-    "lifting_belt",
-    "lifting_straps",
-    "wrist_wraps",
-    "knee_sleeves",
-    "dip_belt",
-    "fractional_plates",
-    "barbell_collars",
-    "blocks",
-    "plyo_box",
-    "parallettes",
-    "pushup_handles",
-    "climbing_rope",
-    "monkey_bars",
-    "air_bike",
-    "spin_bike",
-    "recumbent_bike",
-    "ski_erg",
-    "arc_trainer",
-    "stepmill",
-    "curved_treadmill",
-  ]);
-  const asset=known.has(key)?key:"generic";
-  return `<img class="equipment-image" src="assets/equipment/${asset}.svg" alt="" aria-hidden="true" loading="lazy" onerror="this.onerror=null;this.src='assets/equipment/generic.svg'">`;
-}
 
 const w=()=>plan?.workouts?.[S.wi]||null;
-async function api(path,opt={}){
-  const headers={"Content-Type":"application/json",...(opt.headers||{})};
-  if(authToken)headers["Authorization"]=`Bearer ${authToken}`;
-  let r;
-  try{
-    r=await fetch(API+path,{...opt,headers});
-  }catch(err){
-    S.online=navigator.onLine;
-    if(!S.online)throw Error("You're offline. Forge will reconnect when your internet returns.");
-    throw Error("Forge couldn't reach the server. Try again in a moment.");
-  }
-  let d={};try{d=await r.json()}catch{}
-  if(!r.ok){
-    if(r.status===401&&authToken)throw Error("Your session expired. Please sign in again.");
-    throw Error(d.detail||`Request failed (${r.status})`);
-  }
-  return d;
-}
+async function api(path,opt={}){return ForgeApi.request(API,()=>authToken,S,path,opt)}
 
 async function loadExisting(){
   if(!authToken)return;
@@ -272,7 +94,6 @@ async function persistPosition(){
   if(!session)return;
   try{await api("/me/session/position",{method:"POST",body:JSON.stringify({session_id:session.session_id,exercise_index:S.ei,set_index:S.set})})}catch(e){console.warn(e)}
 }
-function requestId(){return globalThis.crypto?.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`}
 async function beginPersistentRest(seconds){
   S.restRemaining=seconds;S.restTotal=seconds;
   if(session){try{await api("/me/session/rest/start",{method:"POST",body:JSON.stringify({session_id:session.session_id,duration_seconds:seconds})})}catch(e){console.warn(e)}}
@@ -1946,7 +1767,11 @@ ${connected
 </div>
 <div class=big-spacer></div><button class=btn data-a=calendar-settings-save>Save Calendar & Time Settings</button>`;
 }
-function render(){const map={welcome,register,login,goal,experience,schedule,equipment,preferences,preferencepicker,cardiopicker,cardiofrequencypicker,splitpicker,sportpicker,corepicker,trainingsettings,adjustplan,calendarsettings,generating,yourplan,home,workout,exercise,timer,complete,progress,nutrition,nutritionadd,history,prs,exercisehistory,swapexercise,cardioswap,modulemove,coretracker,cardiotracker,coach,notifications:notificationCenter,equipmentlog,equipmentdetails,exercisedirectory,exercisedetail,formdemo,demoaudit,demoreview,plan:planScreen};V.innerHTML=networkBanner()+updateBanner()+map[S.route]()+floatingRestTimer()+moreSheet();const onboarding=["welcome","register","login","goal","experience","schedule","equipment","equipmentdetails","preferences","preferencepicker","cardiopicker","cardiofrequencypicker","splitpicker","sportpicker","corepicker","generating","yourplan"].includes(S.route)&&!plan;nav.classList.toggle("hidden",onboarding);document.querySelector("#backBtn").style.visibility=["welcome","home","progress","nutrition","coach"].includes(S.route)?"hidden":"visible";document.querySelectorAll("[data-plan-tab]").forEach(b=>b.onclick=()=>{S.planTab=b.dataset.planTab;render()});document.querySelectorAll("[data-coach-route]").forEach(b=>b.onclick=()=>go(b.dataset.coachRoute));
+window.ForgeLegacyViews=Object.assign(window.ForgeLegacyViews||{},{nutrition:()=>nutrition(),nutritionadd:()=>nutritionadd()});
+window.ForgeLegacyViews=Object.assign(window.ForgeLegacyViews||{},{workout:()=>workout(),exercise:()=>exercise(),timer:()=>timer(),complete:()=>complete(),swapexercise:()=>swapexercise(),cardioswap:()=>cardioswap(),modulemove:()=>modulemove(),coretracker:()=>coretracker(),cardiotracker:()=>cardiotracker()});
+window.ForgeLegacyViews=Object.assign(window.ForgeLegacyViews||{},{planScreen:()=>planScreen(),adjustplan:()=>adjustplan(),trainingsettings:()=>trainingsettings(),calendarsettings:()=>calendarsettings()});
+window.ForgeLegacyViews=Object.assign(window.ForgeLegacyViews||{},{progress:()=>progress(),history:()=>history(),prs:()=>prs(),exercisehistory:()=>exercisehistory()});
+function render(){const map={welcome,register,login,goal,experience,schedule,equipment,preferences,preferencepicker,cardiopicker,cardiofrequencypicker,splitpicker,sportpicker,corepicker,trainingsettings,adjustplan,calendarsettings,generating,yourplan,home,workout,exercise,timer,complete,progress,nutrition,nutritionadd,history,prs,exercisehistory,swapexercise,cardioswap,modulemove,coretracker,cardiotracker,coach,notifications:notificationCenter,equipmentlog,equipmentdetails,exercisedirectory,exercisedetail,formdemo,demoaudit,demoreview,plan:planScreen};V.innerHTML=networkBanner()+updateBanner()+(ForgeFeatures.has(S.route)?ForgeFeatures.view(S.route):map[S.route]())+floatingRestTimer()+moreSheet();const onboarding=["welcome","register","login","goal","experience","schedule","equipment","equipmentdetails","preferences","preferencepicker","cardiopicker","cardiofrequencypicker","splitpicker","sportpicker","corepicker","generating","yourplan"].includes(S.route)&&!plan;nav.classList.toggle("hidden",onboarding);document.querySelector("#backBtn").style.visibility=["welcome","home","progress","nutrition","coach"].includes(S.route)?"hidden":"visible";document.querySelectorAll("[data-plan-tab]").forEach(b=>b.onclick=()=>{S.planTab=b.dataset.planTab;render()});document.querySelectorAll("[data-coach-route]").forEach(b=>b.onclick=()=>go(b.dataset.coachRoute));
 document.querySelectorAll("[data-nav]").forEach(b=>{b.classList.toggle("active",b.dataset.nav===S.route);b.onclick=()=>go(b.dataset.nav)});document.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>act(b.dataset.a));document.querySelectorAll("[data-goal]").forEach(b=>b.onclick=()=>{profile.goal=b.dataset.goal;render()});document.querySelectorAll("[data-exp]").forEach(b=>b.onclick=()=>{profile.experience=b.dataset.exp;render()});document.querySelectorAll("[data-days]").forEach(b=>b.onclick=()=>{profile.days_per_week=+b.dataset.days;profile.core_workouts_per_week=Math.min(profile.core_workouts_per_week,profile.days_per_week);profile.cardio_workouts_per_week=Math.min(profile.cardio_workouts_per_week,profile.days_per_week);render()});document.querySelectorAll("[data-mins]").forEach(b=>b.onclick=()=>{profile.minutes_per_workout=+b.dataset.mins;render()});document.querySelectorAll("[data-setchange]").forEach(b=>b.onclick=async()=>{const ex=w()?.exercises?.[S.ei];if(!ex)return;const next=Math.max(S.set+1,Math.min(12,Number(ex.sets)+Number(b.dataset.setchange)));if(next===ex.sets)return;try{await api(`/me/workouts/${w().workout_id}/exercise-sets`,{method:"PUT",body:JSON.stringify({exercise_id:ex.exercise_id,sets:next})});ex.sets=next;toast(`${next} sets planned`);render()}catch(e){toast(e.message)}});document.querySelectorAll("[data-adjust-days]").forEach(b=>b.onclick=()=>{profile.days_per_week=+b.dataset.adjustDays;profile.core_workouts_per_week=Math.min(profile.core_workouts_per_week,profile.days_per_week);profile.cardio_workouts_per_week=Math.min(profile.cardio_workouts_per_week,profile.days_per_week);S.preferredDays=S.preferredDays.slice(0,profile.days_per_week);render()});document.querySelectorAll("[data-adjust-mins]").forEach(b=>b.onclick=()=>{profile.minutes_per_workout=+b.dataset.adjustMins;render()});document.querySelectorAll("[data-preferred-day]").forEach(b=>b.onclick=()=>{const d=+b.dataset.preferredDay,i=S.preferredDays.indexOf(d);if(i>=0)S.preferredDays.splice(i,1);else if(S.preferredDays.length<profile.days_per_week)S.preferredDays.push(d);else{toast(`Choose ${profile.days_per_week} days`);return}render()});document.querySelectorAll("[data-cardio]").forEach(b=>b.onclick=()=>{profile.cardio_preference=b.dataset.cardio;render()});document.querySelectorAll("[data-split]").forEach(b=>b.onclick=()=>{profile.workout_split=b.dataset.split;render()});document.querySelectorAll("[data-sport]").forEach(b=>b.onclick=()=>{profile.sport=b.dataset.sport;render()});document.querySelectorAll("[data-core-frequency]").forEach(b=>b.onclick=()=>{profile.core_workouts_per_week=Math.min(+b.dataset.coreFrequency,+profile.days_per_week);render()});document.querySelectorAll("[data-cardio-frequency]").forEach(b=>b.onclick=()=>{profile.cardio_workouts_per_week=Math.min(+b.dataset.cardioFrequency,+profile.days_per_week);if(!["light","moderate","high","extended"].includes(profile.cardio_preference))profile.cardio_preference="moderate";render()});const nutritionDate=document.querySelector("#nutritionDate");
 if(nutritionDate)nutritionDate.onchange=()=>{S.nutritionDate=nutritionDate.value;S.nutrition=null;loadNutrition();};
 document.querySelectorAll("[data-nutrition-delete]").forEach(b=>b.onclick=async()=>{if(confirm("Delete this food entry?")){await api(`/me/nutrition/entries/${b.dataset.nutritionDelete}`,{method:"DELETE"});S.nutrition=null;await loadNutrition();}});
@@ -2322,7 +2147,7 @@ document.querySelector("#backBtn").onclick=()=>{
   const dest=S.route==="demoreview"?"demoaudit":S.route==="demoaudit"?"formdemo":S.route==="formdemo"?(S.formDemoReturn||"exercise"):{register:"welcome",login:"welcome",history:"progress",prs:"history",exercisehistory:"prs",swapexercise:"exercise",cardioswap:"workout",modulemove:"workout",coretracker:"workout",cardiotracker:"workout",nutritionadd:"nutrition",experience:"goal",schedule:"experience",equipment:"schedule",equipmentlog:plan?"plan":"equipment",equipmentdetails:S.equipmentReturn==="onboarding"?"equipment":"equipmentlog",exercisedirectory:plan?"plan":"preferences",exercisedetail:"exercisedirectory",preferences:"equipment",yourplan:"preferences",workout:"home",exercise:"workout",timer:"exercise",complete:"home",plan:"home",calendarsettings:"trainingsettings",adjustplan:"plan"}[S.route]||"home";
   go(dest);
 };
-document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.38.1")};
+document.querySelector("#moreBtn").onclick=()=>{if(authToken){S.moreOpen=!S.moreOpen;render()}else toast("Forge Fitness v14.38.6")};
 const calendarParams=new URLSearchParams(location.search);
 const calendarJustConnected=calendarParams.get("calendar_connected")==="1";
 const calendarSyncWarning=calendarParams.get("calendar_sync_warning")==="1";
@@ -2355,5 +2180,5 @@ document.addEventListener("click",async(e)=>{
   }catch(err){ alert("Could not check nutrition provider status: "+err.message); }
 });
 
-// v14.38.1: keep current-week form media warm without blocking the workout UI.
+// v14.38.6: keep current-week form media warm without blocking the workout UI.
 window.addEventListener("online",()=>{if(authToken&&plan)cacheCurrentPlanDemos(true)});

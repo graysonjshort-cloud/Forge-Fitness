@@ -43,6 +43,6 @@ for m in re.finditer(r'\bfetch\s*\(([^\n;]{1,240})',APP):
         raw_fetch.append(snippet[:220])
 
 report={'status':'passed' if not missing and not raw_fetch else 'failed','frontend_api_calls_checked':len(calls),'backend_routes_found':len(routes),'missing_contracts':missing,'raw_fetch_bypasses':raw_fetch}
-(ROOT/'V14_38_1_FRONTEND_CONTRACT_REPORT.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
+(ROOT/'V14_38_2_FRONTEND_CONTRACT_REPORT.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
 print(json.dumps(report,indent=2))
 if report['status']!='passed': sys.exit(1)

@@ -1,6 +1,6 @@
-const CACHE="forge-v14-38-1-general-browser-gate-v1";
+const CACHE="forge-v14-38-2-frontend-modules-v1";
 const APP_SHELL=[
-  "/","/index.html","/styles.css?v=14.38.1","/app.js?v=14.38.1","/manifest.webmanifest?v=14.38.1",
+  "/","/index.html","/styles.css?v=14.38.6","/js/forge_core.js?v=14.38.6","/js/forge_api.js?v=14.38.6","/js/forge_equipment.js?v=14.38.6","/js/forge_pwa.js?v=14.38.6","/app.js?v=14.38.6","/manifest.webmanifest?v=14.38.6",
   "/assets/pwa/forge-icon-192-v14343.png","/assets/pwa/forge-icon-512-v14343.png",
   "/assets/pwa/forge-icon-maskable-192-v14343.png","/assets/pwa/forge-icon-maskable-512-v14343.png",
   "/assets/pwa/apple-touch-icon.png"

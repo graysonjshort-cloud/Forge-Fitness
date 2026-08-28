@@ -66,10 +66,13 @@ def main():
             page.on('console', lambda msg: console_errors.append(msg.text) if msg.type=='error' else None)
             page.on('requestfailed', lambda r: failed_requests.append(f'{r.method} {r.url}: {r.failure}'))
             html=(runtime/'app'/'index.html').read_text(encoding='utf-8')
-            html=re.sub(r'<link rel="manifest"[^>]*>','',html); html=re.sub(r'<link rel="apple-touch-icon"[^>]*>','',html); html=re.sub(r'<link rel="stylesheet"[^>]*>','',html); html=re.sub(r'<script src="/app\.js[^"]*"></script>','',html)
+            html=re.sub(r'<link rel="manifest"[^>]*>','',html); html=re.sub(r'<link rel="apple-touch-icon"[^>]*>','',html); html=re.sub(r'<link rel="stylesheet"[^>]*>','',html); html=re.sub(r'<script src="/(?:js/[^"]+|app\.js[^"]*)"></script>','',html)
             css=(runtime/'app'/'styles.css').read_text(encoding='utf-8')
             html=html.replace('</head>',f'<style>{css}</style></head>')
             page.set_content(html,wait_until='domcontentloaded')
+            for module in ['forge_core.js', 'forge_api.js', 'forge_equipment.js', 'forge_pwa.js', 'forge_features.js', 'forge_nutrition.js', 'forge_workout.js', 'forge_plan.js', 'forge_progress.js']:
+                page.add_script_tag(content=(runtime/'app'/'js'/module).read_text(encoding='utf-8'))
+            assert page.evaluate("typeof ForgeCore==='object' && typeof ForgeApi.request==='function' && typeof ForgeEquipment.icon==='function' && typeof ForgePWA.create==='function'")
             js=(runtime/'app'/'app.js').read_text(encoding='utf-8')
             js=js.replace('const API = localStorage.getItem("forge_api_url") || (\n  location.protocol==="https:" ? location.origin : `http://${location.hostname}:8000`\n);', 'const API = "http://forge.test";')
             js=js.replace('let authToken = localStorage.getItem("forge_auth_token") || "";', 'let authToken = '+json.dumps(token)+';')
@@ -106,9 +109,9 @@ def main():
         bad_requests=[x for x in failed_requests if not any(ok in x for ok in ['favicon.ico'])]
         if fatal or bad_console or bad_requests:
             raise AssertionError(json.dumps({'page_errors':fatal,'console_errors':bad_console,'failed_requests':bad_requests},indent=2))
-        report={'status':'passed','viewport':'390x844','routes':screens,'checks':['authenticated startup','primary nav rendering','no page errors','no console errors','no failed requests','nutrition provider status regression','online-event regression','More sheet']}
+        report={'status':'passed','viewport':'390x844','routes':screens,'checks':['authenticated startup','primary nav rendering','no page errors','no console errors','no failed requests','nutrition provider status regression','online-event regression','More sheet','frontend module namespaces']}
         print(json.dumps(report,indent=2))
-        (SOURCE/'V14_38_1_BROWSER_SMOKE_REPORT.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
+        (SOURCE/'V14_38_2_BROWSER_SMOKE_REPORT.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     finally:
         p.terminate()
         try:p.wait(timeout=5)

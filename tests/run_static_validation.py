@@ -4,6 +4,8 @@ ROOT=Path(__file__).resolve().parents[1]
 app=(ROOT/"app.js").read_text(encoding="utf-8")
 css=(ROOT/"styles.css").read_text(encoding="utf-8")
 index=(ROOT/"index.html").read_text(encoding="utf-8")
+modules={p.name:p.read_text(encoding="utf-8") for p in (ROOT/"js").glob("*.js")}
+all_frontend=app+"\n"+"\n".join(modules.values())
 
 required_routes=[
 "welcome","register","login","goal","experience","schedule","equipment","preferences",
@@ -23,7 +25,7 @@ for token in [
 'data-coachprompt="Check my calendar availability','class="equipment-image"',
 'floatingRestTimer()','loadExerciseRecall()'
 ]:
-    assert token in app, token
+    assert token in all_frontend, token
 
 # Equipment assets and exact active catalog coverage.
 sys.path.insert(0,str(ROOT))
@@ -45,17 +47,25 @@ for rule in ["@media(max-width:390px)","@media(max-width:340px)",":focus-visible
     assert rule in css,rule
 
 # Runtime-regression guards for known browser-only failures.
-assert "API_BASE" not in app, "Undefined API_BASE reference reintroduced"
-assert 'if(token&&plan)' not in app, "Undefined token reference reintroduced"
+assert "API_BASE" not in all_frontend, "Undefined API_BASE reference reintroduced"
+assert 'if(token&&plan)' not in all_frontend, "Undefined token reference reintroduced"
 assert 'api("/nutrition/providers/status")' in app, "Nutrition provider status must use shared API helper"
 assert 'if(authToken&&plan)cacheCurrentPlanDemos(true)' in app, "Online demo warmup must use authToken"
 
 # JS parser validation.
 subprocess.run(["node","--check",str(ROOT/"app.js")],check=True,capture_output=True,text=True)
+for module in sorted((ROOT/"js").glob("*.js")):
+    subprocess.run(["node","--check",str(module)],check=True,capture_output=True,text=True)
+for name in ["forge_core.js","forge_api.js","forge_equipment.js","forge_pwa.js"]:
+    assert f'/js/{name}?v=14.38.6' in index, f"Missing module script: {name}"
+assert '/app.js?v=14.38.6' in index
+assert len(app) < 185000, "app.js modularization regression"
 print(json.dumps({
   "status":"passed",
   "routes_checked":len(required_routes),
   "equipment_assets_checked":len(catalog),
   "responsive_breakpoints":["390px","340px","700px"],
-  "critical_actions_checked":8
+  "critical_actions_checked":8,
+  "frontend_modules_checked":len(modules),
+  "app_js_bytes":len(app)
 },indent=2))
