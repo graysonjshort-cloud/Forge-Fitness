@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "viewport": "390x844",
+  "routes": [
+    "home",
+    "plan",
+    "workout",
+    "progress",
+    "nutrition",
+    "coach"
+  ],
+  "checks": [
+    "authenticated startup",
+    "primary nav rendering",
+    "no page errors",
+    "no console errors",
+    "no failed requests",
+    "nutrition provider status regression",
+    "online-event regression",
+    "More sheet"
+  ]
+}

@@ -1,6 +1,6 @@
-const CACHE="forge-v14-37-4-1-mpfb-bench-review-v1";
+const CACHE="forge-v14-38-1-general-browser-gate-v1";
 const APP_SHELL=[
-  "/","/index.html","/styles.css?v=14.36.3","/app.js?v=14.36.3","/manifest.webmanifest?v=14.36.3",
+  "/","/index.html","/styles.css?v=14.38.1","/app.js?v=14.38.1","/manifest.webmanifest?v=14.38.1",
   "/assets/pwa/forge-icon-192-v14343.png","/assets/pwa/forge-icon-512-v14343.png",
   "/assets/pwa/forge-icon-maskable-192-v14343.png","/assets/pwa/forge-icon-maskable-512-v14343.png",
   "/assets/pwa/apple-touch-icon.png"
@@ -26,7 +26,10 @@ self.addEventListener("fetch", event => {
   // API and OAuth data must always come from the server.
   if(url.pathname.startsWith("/me/") ||
      url.pathname.startsWith("/auth/") ||
-     url.pathname.startsWith("/health")) return;
+     url.pathname.startsWith("/health") ||
+     url.pathname.startsWith("/nutrition/") ||
+     url.pathname.startsWith("/persistence/") ||
+     url.pathname.startsWith("/users/")) return;
 
   if(req.mode==="navigate"){
     event.respondWith(
