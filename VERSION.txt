@@ -1,2 +1,2 @@
-Forge Fitness v14.37.2
-First Procedural 3D Source Scene — Bench Press
+Forge Fitness v14.37.6.2
+Stage B Pass 2 — Foot-Target Leg IK

@@ -1,5 +1,5 @@
 {
-  "version": "14.37.2",
+  "version": "14.37.4",
   "pipeline": "forge_3d_v1",
   "delivery_format": "webm",
   "review_requires_dual_view": true,
@@ -25,12 +25,12 @@
       "primary_webm": "/assets/exercise_demos_3d/barbell-bench-press-side.webm",
       "secondary_webm": "/assets/exercise_demos_3d/barbell-bench-press-front.webm",
       "poster_asset": "/assets/exercise_demos_3d/barbell-bench-press-poster.webp",
-      "status": "source_ready",
+      "status": "mpfb_review_ready",
       "source_kind": "original_3d",
       "render_version": "forge_3d_v1",
       "reviewed": false,
-      "source_scene_builder": "/3d_pipeline/blender/build_bench_press_scene.py",
-      "source_validation": "/3d_pipeline/blender/validate_bench_press_source.py"
+      "source_scene_builder": "/3d_pipeline/blender/build_bench_press_mpfb.py",
+      "source_validation": "/3d_pipeline/blender/validate_mpfb_bench_press.py"
     },
     {
       "exercise_name": "Romanian Deadlift",
@@ -75,5 +75,5 @@
   "production_standard": "forge_3d_v1",
   "delivery_resolution": "720x720",
   "delivery_fps": 30,
-  "source_pipeline": "procedural_blender_v1"
+  "source_pipeline": "mpfb_standard_rig_review_v1"
 }

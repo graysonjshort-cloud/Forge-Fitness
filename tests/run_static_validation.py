@@ -44,6 +44,12 @@ assert "Recovery & Mobility" not in categories
 for rule in ["@media(max-width:390px)","@media(max-width:340px)",":focus-visible","adaptation-card"]:
     assert rule in css,rule
 
+# Runtime-regression guards for known browser-only failures.
+assert "API_BASE" not in app, "Undefined API_BASE reference reintroduced"
+assert 'if(token&&plan)' not in app, "Undefined token reference reintroduced"
+assert 'api("/nutrition/providers/status")' in app, "Nutrition provider status must use shared API helper"
+assert 'if(authToken&&plan)cacheCurrentPlanDemos(true)' in app, "Online demo warmup must use authToken"
+
 # JS parser validation.
 subprocess.run(["node","--check",str(ROOT/"app.js")],check=True,capture_output=True,text=True)
 print(json.dumps({

@@ -4,7 +4,7 @@ ROOT=Path(__file__).resolve().parents[1]
 m=json.loads((ROOT/"exercise_demo_3d_manifest.json").read_text())
 errors=[]
 for a in m.get("assets",[]):
-    if a.get("status") not in {"planned","production_queued","source_ready","asset_ready","reviewed"}:
+    if a.get("status") not in {"planned","production_queued","source_ready","awaiting_humanoid","asset_ready","reviewed"}:
         errors.append(f'{a.get("exercise_name")}: invalid status')
     for key in ("primary_webm","secondary_webm"):
         value=a.get(key)
