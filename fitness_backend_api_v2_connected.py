@@ -957,7 +957,9 @@ def performance(user_id: int, request: PerformanceRequest):
             if not timed and not bodyweight and float(current.get("best_e1rm",0))>float(prior.get("best_e1rm",0)): prs.append({"type":"best_e1rm","label":"Estimated 1RM PR","exercise_name":name,"value":current["best_e1rm"],"unit":"lb"})
             if int(current.get("best_reps",0))>int(prior.get("best_reps",0)): prs.append({"type":"best_duration" if timed else "best_reps","label":"Duration PR" if timed else "Rep PR","exercise_name":name,"value":current["best_reps"],"unit":"sec" if timed else "reps"})
             if not timed and not bodyweight and float(current.get("best_volume_set",0))>float(prior.get("best_volume_set",0)): prs.append({"type":"best_volume_set","label":"Set Volume PR","exercise_name":name,"value":current["best_volume_set"],"unit":"lb"})
-        return {"performance_id":pid,"status":"recorded","duplicate":duplicate,"pr_events":prs,"exercise_prs":current}
+        next_target=database.get_latest_exercise_targets(user_id,request.exercise_id,DB_PATH,load_mode=request.load_mode)
+        session_intelligence=database.get_session_intelligence(user_id,request.session_id,request.exercise_id,DB_PATH)
+        return {"performance_id":pid,"status":"recorded","duplicate":duplicate,"pr_events":prs,"exercise_prs":current,"next_target":next_target,"session_intelligence":session_intelligence}
     except ValueError as e:
         raise HTTPException(400,str(e))
 
@@ -1630,13 +1632,15 @@ def me_exercise_preference(exercise_id: int, request: ExercisePreferenceRequest,
 
 
 @app.get("/me/exercises/{exercise_id}/history")
-def me_exercise_history(exercise_id: int, authorization: Optional[str] = Header(None)):
+def me_exercise_history(exercise_id: int, min_reps: Optional[int]=None, max_reps: Optional[int]=None,
+                        load_mode: Optional[str]=None, authorization: Optional[str] = Header(None)):
     user = _current_account(authorization)
     try:
         data = database.get_exercise_history(user["user_id"], exercise_id, 100, DB_PATH)
     except ValueError as e:
         raise HTTPException(404, str(e))
-    data["progression_suggestion"] = database.get_latest_exercise_targets(user["user_id"], exercise_id, DB_PATH)
+    data["progression_suggestion"] = database.get_latest_exercise_targets(
+        user["user_id"], exercise_id, DB_PATH, min_reps=min_reps, max_reps=max_reps, load_mode=load_mode)
     return data
 
 
@@ -1840,7 +1844,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.55.0"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.58.0"}
 
 
 @app.get("/me/coach/briefing")

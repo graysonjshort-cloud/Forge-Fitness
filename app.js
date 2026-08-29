@@ -6,7 +6,7 @@ let authToken = localStorage.getItem("forge_auth_token") || "";
 let account = null;
 let plan = null, session = null;
 const profile = {goal:"build_muscle",experience:"intermediate",days_per_week:4,minutes_per_workout:45,equipment:["full_gym"],preferred_exercises:[],excluded_exercises:[],priority_muscles:[],recovery_level:"normal",cardio_preference:"moderate",workout_split:"auto",sport:"general",core_workouts_per_week:2,cardio_workouts_per_week:2,seed:42};
-const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,coachBriefing:null,coachStack:null,systemHealth:null,progressHub:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,sessionStartedAt:null,completedWorkoutSummary:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,calendarIntelligence:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0,demoAngle:"primary",readinessCheckin:null,todayAdjustment:null,liveAdjustment:null,readinessReturn:"home",swapReason:"preference",recoveryIntelligence:null,exerciseDirectoryEquipment:"All",exerciseDirectoryMovement:"All",exerciseDirectoryFavorites:false,workoutBuilderExercise:null};
+const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,coachBriefing:null,coachStack:null,systemHealth:null,progressHub:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,sessionStartedAt:null,completedWorkoutSummary:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,calendarIntelligence:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0,demoAngle:"primary",readinessCheckin:null,todayAdjustment:null,liveAdjustment:null,sessionIntelligence:null,readinessReturn:"home",swapReason:"preference",recoveryIntelligence:null,exerciseDirectoryEquipment:"All",exerciseDirectoryMovement:"All",exerciseDirectoryFavorites:false,workoutBuilderExercise:null};
 const V=document.querySelector("#view"),toastEl=document.querySelector("#toast"),nav=document.querySelector("#bottomNav"),topbar=document.querySelector("#topbar");
 const toast=t=>{toastEl.textContent=t;toastEl.classList.add("show");setTimeout(()=>toastEl.classList.remove("show"),1800)};
 const esc=ForgeCore.esc;
@@ -1329,7 +1329,8 @@ async function loadExerciseRecall(){
   try{
     const e=w()?.exercises?.[S.ei];
     if(!e)return;
-    const data=await api(`/me/exercises/${e.exercise_id}/history`);
+    const recallMode=isTimedExercise(e)?"timed":(isBodyweightExercise(e)?"bodyweight":"weight");
+    const data=await api(`/me/exercises/${e.exercise_id}/history?min_reps=${encodeURIComponent(e.min_reps||6)}&max_reps=${encodeURIComponent(e.max_reps||12)}&load_mode=${recallMode}`);
     S.exerciseRecall=data;
     const sets=data.sets||[];
     const last=sets.length?sets[sets.length-1]:null;
@@ -1338,8 +1339,9 @@ async function loadExerciseRecall(){
     const reps=document.querySelector("#reps");
     const rpe=document.querySelector("#rpe");
     if(last){
-      if(weight)weight.value=last.weight;
-      if(reps)reps.value=last.reps;
+      if(weight)weight.value=(suggestion?.suggested_weight??last.weight??"");
+      if(reps)reps.value=(suggestion?.suggested_reps??last.reps??e.min_reps??"");
+      if(suggestion?.suggested_duration_seconds)S.exerciseTimerTarget=suggestion.suggested_duration_seconds;
       if(rpe&&last.rpe!=null)rpe.value=last.rpe;
     }
     const card=document.querySelector("#recallCard");
@@ -1348,10 +1350,11 @@ async function loadExerciseRecall(){
         card.innerHTML=`<p class=eyebrow>FIRST SESSION</p><h3>No previous sets yet</h3><p class=muted>Log this exercise and Forge will remember it next time.</p>`;
       }else{
         const action=suggestion?suggestion.action.replaceAll("_"," "):"repeat";
+        const targetLabel=suggestion?.load_mode==="timed"?`${suggestion.suggested_duration_seconds} sec`:suggestion?.load_mode==="bodyweight"?`${suggestion.suggested_reps} reps`:suggestion?`${Number(suggestion.suggested_weight||0).toFixed(1).replace(/\.0$/,'')} lb × ${suggestion.suggested_reps||e.min_reps}`:`${last.weight??0} lb`;
         const recent=sets.slice(-4).reverse();
         card.innerHTML=`<div class=row><div><p class=eyebrow>LAST TIME</p><h3>${last.weight} lb × ${last.reps}</h3><p class=muted>RPE ${last.rpe??"—"}</p></div>
-          <div style="text-align:right"><p class=eyebrow>NEXT TARGET</p><h3>${suggestion?suggestion.suggested_weight:last.weight} lb</h3><p class=muted>${action}</p></div></div>
-          <div class=previous-set-strip>${recent.map((s,i)=>`<span class="${i===0?"latest":""}"><b>${Number(s.weight||0).toFixed(1).replace(/\.0$/,"")} lb × ${s.reps}</b><small>RPE ${s.rpe??"—"}</small></span>`).join("")}</div><div class=recall-actions><button class="btn dark compact" data-a=repeat-last-set>Repeat Last Set</button><button class="btn dark compact" data-a=current-exercise-history>Full History</button></div>${suggestion?`<div class=progression-why><b>Why this target?</b><span>${suggestion.action==="increase_load"?`Recent sets averaged RPE ${suggestion.recent_average_rpe} with ${suggestion.recent_best_reps} reps at your best, so Forge recommends a small load increase.`:suggestion.action==="repeat_or_reduce"?`Recent effort averaged RPE ${suggestion.recent_average_rpe}. Forge is holding the load steady so you can recover and improve rep quality.`:`Recent effort averaged RPE ${suggestion.recent_average_rpe}. Keep the load and build reps before adding weight.`}</span></div>`:""}</div>`;
+          <div style="text-align:right"><p class=eyebrow>ADAPTIVE TARGET</p><h3>${targetLabel}</h3><p class=muted>${action}${suggestion?.confidence?` • ${suggestion.confidence} confidence`:""}</p></div></div>
+          <div class=previous-set-strip>${recent.map((s,i)=>`<span class="${i===0?"latest":""}"><b>${Number(s.weight||0).toFixed(1).replace(/\.0$/,"")} lb × ${s.reps}</b><small>RPE ${s.rpe??"—"}</small></span>`).join("")}</div><div class=recall-actions><button class="btn dark compact" data-a=repeat-last-set>Repeat Last Set</button><button class="btn dark compact" data-a=current-exercise-history>Full History</button></div>${suggestion?`<div class=progression-why><b>Why this target?</b><span>${esc(suggestion.reason||`Recent effort averaged RPE ${suggestion.recent_average_rpe}.`)}</span><small class=muted>Based on ${suggestion.sample_count||1} recent logged set${Number(suggestion.sample_count||1)===1?"":"s"}.</small></div>`:""}</div>`;
       }
     }
   }catch(e){
@@ -2080,7 +2083,14 @@ async function saveSet(){
     payload.load_mode=mode;
   }
   const result=await api("/me/performance",{method:"POST",body:JSON.stringify(payload)});
-  if(rpe>=9)S.liveAdjustment={title:"Protect the next sets",detail:"That set was very hard. Hold the load, stay inside the rep target, and stop the set before technique breaks."}; else if(rpe<=6)S.liveAdjustment={title:"You have room today",detail:"That set moved easily. Keep the programmed reps; if the next set is equally clean, Forge will have strong evidence for progression."}; else S.liveAdjustment=null;
+  S.sessionIntelligence=result.session_intelligence||null;
+  if(S.sessionIntelligence){
+    const si=S.sessionIntelligence;
+    const rest=si.recommended_rest_seconds?` • Rest ${Math.round(si.recommended_rest_seconds)}s`:"";
+    const volume=si.recommended_total_sets!==si.planned_sets?` • ${si.recommended_total_sets} sets today`:"";
+    S.liveAdjustment={title:si.title||"Session adjustment",detail:`${si.reason||"Forge adjusted the session from your latest set."}${rest}${volume}`};
+    if(Number.isFinite(Number(si.recommended_total_sets))&&Number(si.recommended_total_sets)>=Number(si.completed_sets||0))e.sets=Number(si.recommended_total_sets);
+  }else if(result.next_target){const t=result.next_target;const target=t.load_mode==="timed"?`${t.suggested_duration_seconds}s`:t.load_mode==="bodyweight"?`${t.suggested_reps} reps`:`${Number(t.suggested_weight||0).toFixed(1).replace(/\.0$/,'')} lb × ${t.suggested_reps||e.min_reps}`;S.liveAdjustment={title:`Next target: ${target}`,detail:t.reason||"Forge adjusted the next target from your latest set."};} else if(rpe>=9)S.liveAdjustment={title:"Protect the next sets",detail:"That set was very hard. Hold the load, stay inside the rep target, and stop the set before technique breaks."}; else if(rpe<=6)S.liveAdjustment={title:"You have room today",detail:"That set moved easily. Keep the programmed reps; if the next set is equally clean, Forge will have strong evidence for progression."}; else S.liveAdjustment=null;
   if(result.pr_events?.length){S.workoutPRs.push(...result.pr_events);toast(`🏆 ${result.pr_events[0].label}: ${result.pr_events[0].exercise_name}`)}
   S.exerciseElapsed=0;stopExerciseTimer();
   S.set++;
@@ -2089,8 +2099,8 @@ async function saveSet(){
     if(S.ei>=w().exercises.length){
       await persistPosition();await api("/me/workout/complete",{method:"POST",body:JSON.stringify({session_id:session.session_id,completed:true})});
       S.lastSessionId=session.session_id;plan=await api("/me/plan/current");session=null;S.ei=0;S.set=0;go("complete");loadCompletedWorkoutSummary();
-    }else{await persistPosition();await beginPersistentRest(e.rest_seconds||60)}
-  }else{await persistPosition();await beginPersistentRest(e.rest_seconds||60)}
+    }else{await persistPosition();await beginPersistentRest(Number(S.sessionIntelligence?.recommended_rest_seconds||e.rest_seconds||60))}
+  }else{await persistPosition();await beginPersistentRest(Number(S.sessionIntelligence?.recommended_rest_seconds||e.rest_seconds||60))}
 }
 function stopTimer(){if(S.timer){clearInterval(S.timer);S.timer=null}}function startTimer(){stopTimer();const update=()=>{const mm=String(Math.floor(S.restRemaining/60)).padStart(2,"0"),ss=String(S.restRemaining%60).padStart(2,"0");const el=document.querySelector("#restClock");if(el)el.textContent=`${mm}:${ss}`;const floating=document.querySelector("#floatingRestClock");if(floating)floating.textContent=`${mm}:${ss}`;const ring=document.querySelector(".ring");if(ring&&S.restTotal)ring.style.setProperty("--rest-pct",`${S.restRemaining/S.restTotal*100}%`)};update();S.timer=setInterval(()=>{S.restRemaining=Math.max(0,S.restRemaining-1);update();if(S.restRemaining<=0){stopTimer();clearPersistentRest();toast("Rest complete");if(S.route==="timer")go("exercise");else render()}},1000)}
 function saveEquipmentDetailForm(){
@@ -2226,7 +2236,7 @@ async function act(a){
     if(a==="startplan")go("home");
     if(a==="viewplan"){S.planTab="workouts";go("plan");}
     if(a==="gohome")go("home");
-    if(a==="startworkout"){S.readinessCheckin=null;S.todayAdjustment=null;S.liveAdjustment=null;S.readinessReturn=S.route;go("readiness");return}
+    if(a==="startworkout"){S.readinessCheckin=null;S.todayAdjustment=null;S.liveAdjustment=null;S.sessionIntelligence=null;S.readinessReturn=S.route;go("readiness");return}
     if(a==="openexercise")go("exercise");if(a==="swap-exercise")go("swapexercise");
     if(a==="start-demo-review-queue"){
       const ready=(S.demoAudit||[]).filter(x=>x.has_3d&&!x.reviewed);

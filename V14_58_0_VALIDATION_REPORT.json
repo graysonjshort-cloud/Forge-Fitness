@@ -1,0 +1,56 @@
+{
+  "version": "14.58.0",
+  "status": "passed",
+  "release": "Session Intelligence",
+  "validation": {
+    "static": {
+      "status": "passed",
+      "routes_checked": 29,
+      "equipment_assets_checked": 107,
+      "responsive_breakpoints": ["390px", "340px", "700px"],
+      "critical_actions_checked": 8,
+      "frontend_modules_checked": 10,
+      "app_js_bytes": 209204
+    },
+    "frontend_contract": {
+      "status": "passed",
+      "frontend_api_calls_checked": 119,
+      "backend_routes_found": 113,
+      "missing_contracts": [],
+      "raw_fetch_bypasses": []
+    },
+    "e2e": {
+      "status": "passed",
+      "tested": [
+        "health",
+        "register/login session",
+        "profile",
+        "equipment catalog/log",
+        "plan generation/current plan",
+        "workout start/resume/set logging + session intelligence",
+        "position persistence",
+        "persistent rest",
+        "nutrition targets/food logging",
+        "AI Coach fallback/actionable exercise swap",
+        "week completion",
+        "adaptive next-week generation",
+        "history/progress intelligence"
+      ],
+      "equipment_catalog_count": 107,
+      "workouts_generated": 4,
+      "history_rows": 4,
+      "adaptation": "progress"
+    }
+  },
+  "features": [
+    "dynamic rest recommendations",
+    "live exercise fatigue score",
+    "within-session performance decay detection",
+    "session-only volume trimming",
+    "early exercise stop guidance",
+    "optional bonus set logic",
+    "live workout UI adjustments",
+    "persistent adaptive rest timer",
+    "v14.58 system and PWA version sync"
+  ]
+}

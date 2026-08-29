@@ -84,6 +84,8 @@ def main():
             "completed_sets":1,"reps":[max(1,ex["min_reps"])],"difficulty":7.5,"weight":100,"skipped":False
         },token)
         assert perf["status"]=="recorded"
+        assert perf.get("session_intelligence") and perf["session_intelligence"]["recommended_rest_seconds"] >= 30
+        assert perf["session_intelligence"]["recommended_total_sets"] >= 1
         req("POST","/me/session/position",{"session_id":sid,"exercise_index":0,"set_index":1},token)
         req("POST","/me/session/rest/start",{"session_id":sid,"duration_seconds":60},token)
         _,resume2=req("GET","/me/session/resume",token=token)
@@ -133,7 +135,7 @@ def main():
             "status":"passed",
             "tested":[
                 "health","register/login session","profile","equipment catalog/log",
-                "plan generation/current plan","workout start/resume/set logging",
+                "plan generation/current plan","workout start/resume/set logging + session intelligence",
                 "position persistence","persistent rest","nutrition targets/food logging",
                 "AI Coach fallback/actionable exercise swap","week completion","adaptive next-week generation",
                 "history/progress intelligence"

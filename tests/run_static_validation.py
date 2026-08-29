@@ -57,8 +57,8 @@ subprocess.run(["node","--check",str(ROOT/"app.js")],check=True,capture_output=T
 for module in sorted((ROOT/"js").glob("*.js")):
     subprocess.run(["node","--check",str(module)],check=True,capture_output=True,text=True)
 for name in ["forge_core.js","forge_api.js","forge_equipment.js","forge_pwa.js"]:
-    assert f'/js/{name}?v=14.56.0' in index, f"Missing module script: {name}"
-assert '/app.js?v=14.56.0' in index
+    assert f'/js/{name}?v=14.58.0' in index, f"Missing module script: {name}"
+assert '/app.js?v=14.58.0' in index
 assert len(app) < 240000, "app.js modularization regression"
 print(json.dumps({
   "status":"passed",
@@ -94,3 +94,10 @@ assert "WEEKLY INSIGHTS" in app
 assert "homeQuickActions" in app
 assert "api(\"/me/history\")" in app
 assert "NEXT BEST ACTION" in app
+
+# v14.57 adaptive set target regression guards
+assert "ADAPTIVE TARGET" in app
+assert "suggested_reps" in app
+assert "suggested_duration_seconds" in app
+assert "next_target" in (ROOT/"fitness_backend_api_v2_connected.py").read_text(encoding="utf-8")
+assert "confidence" in (ROOT/"database.py").read_text(encoding="utf-8")

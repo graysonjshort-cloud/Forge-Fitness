@@ -856,30 +856,224 @@ def get_personal_records(user_id: int, limit: int = 100, db_path=DEFAULT_DB_PATH
     return records[:limit]
 
 
-def get_latest_exercise_targets(user_id: int, exercise_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any] | None:
+def get_latest_exercise_targets(user_id: int, exercise_id: int, db_path=DEFAULT_DB_PATH,
+                                min_reps: int | None=None, max_reps: int | None=None,
+                                load_mode: str | None=None) -> dict[str, Any] | None:
+    """Build an adaptive next-set target from recent logged performance.
+
+    v14.57 uses the programmed rep range plus recent RPE/performance instead of
+    a fixed +5 lb rule. It also supports bodyweight and timed exercises.
+    """
     history = get_exercise_history(user_id, exercise_id, 100, db_path)
-    sets = history["sets"]
+    sets = [x for x in history["sets"] if x.get("reps") is not None or x.get("duration_seconds")]
     if not sets:
         return None
     latest = sets[-1]
-    recent = sets[-3:]
-    avg_rpe = sum(float(x["rpe"] or 0) for x in recent) / max(1, len(recent))
-    max_reps = max(int(x["reps"]) for x in recent)
-    weight = float(latest["weight"])
-    if avg_rpe <= 7 and max_reps >= 8:
-        suggestion = {"action": "increase_load", "suggested_weight": round(weight + 5, 2)}
-    elif avg_rpe >= 9:
-        suggestion = {"action": "repeat_or_reduce", "suggested_weight": weight}
+    mode = (load_mode or latest.get("load_mode") or "weight").lower()
+    recent = sets[-5:]
+    valid_rpes=[float(x["rpe"]) for x in recent if x.get("rpe") is not None and float(x["rpe"])>0]
+    avg_rpe = sum(valid_rpes)/len(valid_rpes) if valid_rpes else 8.0
+    sample_count=len(recent)
+    confidence="high" if sample_count>=4 else "medium" if sample_count>=2 else "low"
+
+    if mode == "timed" or latest.get("duration_seconds"):
+        durations=[int(x.get("duration_seconds") or 0) for x in recent if int(x.get("duration_seconds") or 0)>0]
+        last_duration=int(latest.get("duration_seconds") or (durations[-1] if durations else 0))
+        if avg_rpe <= 7.25:
+            target=max(5,last_duration+10); action="increase_duration"
+            reason="Recent holds are controlled, so add a small amount of time."
+        elif avg_rpe >= 9.25:
+            target=max(5,last_duration-5); action="reduce_duration"
+            reason="Recent effort is very high, so trim the hold slightly and protect form."
+        else:
+            target=max(5,last_duration+5 if avg_rpe < 8.25 else last_duration); action="hold_duration" if target==last_duration else "increase_duration"
+            reason="Build the hold gradually while keeping effort repeatable."
+        return {"exercise_id":exercise_id,"load_mode":"timed","action":action,
+                "suggested_duration_seconds":target,"last_duration_seconds":last_duration,
+                "recent_average_rpe":round(avg_rpe,2),"confidence":confidence,
+                "sample_count":sample_count,"reason":reason}
+
+    lo=max(1,int(min_reps or 6)); hi=max(lo,int(max_reps or max(lo,12)))
+    recent_reps=[int(x.get("reps") or 0) for x in recent if x.get("reps") is not None]
+    last_reps=int(latest.get("reps") or lo)
+    best_recent=max(recent_reps or [last_reps])
+
+    if mode == "bodyweight":
+        if avg_rpe <= 7.5:
+            target=min(hi,max(lo,last_reps+1)); action="add_reps" if target>last_reps else "hold_reps"
+            reason="Recent bodyweight sets are controlled, so progress by adding a rep before adding load."
+        elif avg_rpe >= 9.25 or last_reps < lo:
+            target=max(lo,min(last_reps,hi)); action="hold_reps"
+            reason="Effort is high, so hold the rep target and prioritize clean repetitions."
+        else:
+            target=max(lo,min(hi,last_reps)); action="hold_reps"
+            reason="Keep this rep target until it becomes consistently easier."
+        return {"exercise_id":exercise_id,"load_mode":"bodyweight","action":action,
+                "suggested_reps":target,"last_reps":last_reps,"recent_best_reps":best_recent,
+                "recent_average_rpe":round(avg_rpe,2),"confidence":confidence,
+                "sample_count":sample_count,"reason":reason}
+
+    weight=float(latest.get("weight") or 0)
+    # Small, gym-realistic increments; lower loads get finer jumps.
+    increment=2.5 if weight < 80 else 5.0
+    if avg_rpe >= 9.25 or last_reps < lo:
+        suggested=max(0.0,round((weight*0.95)/2.5)*2.5)
+        target_reps=lo; action="reduce_load"
+        reason="Recent effort or reps suggest the current load is too aggressive for the programmed range."
+    elif avg_rpe <= 7.5 and best_recent >= hi:
+        suggested=round((weight+increment)*2)/2
+        target_reps=lo; action="increase_load"
+        reason="You reached the top of the programmed rep range with controlled effort, so add a small amount of load."
+    elif last_reps < hi:
+        suggested=weight
+        target_reps=min(hi,max(lo,last_reps+1 if avg_rpe <= 8.5 else last_reps))
+        action="add_reps" if target_reps>last_reps else "hold_load"
+        reason="Keep the load steady and build reps inside the programmed range before increasing weight."
     else:
-        suggestion = {"action": "repeat_and_add_reps", "suggested_weight": weight}
+        suggested=weight; target_reps=max(lo,min(hi,last_reps)); action="hold_load"
+        reason="Hold this load until the top of the rep range is repeatable at a manageable effort."
+    return {"exercise_id":exercise_id,"load_mode":"weight","action":action,
+            "suggested_weight":round(suggested,2),"suggested_reps":target_reps,
+            "last_weight":weight,"last_reps":last_reps,"recent_best_reps":best_recent,
+            "rep_range":{"min":lo,"max":hi},"recent_average_rpe":round(avg_rpe,2),
+            "confidence":confidence,"sample_count":sample_count,"reason":reason}
+
+
+
+def get_session_intelligence(user_id: int, session_id: int, exercise_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    """Return live, session-only coaching after a logged set.
+
+    v14.58 combines within-session RPE, rep/duration decay and planned volume to
+    recommend rest and whether to continue, trim, or optionally extend an exercise.
+    It never rewrites the saved program; recommendations apply only to the active session.
+    """
+    with session(db_path) as con:
+        plan = con.execute(
+            """SELECT we.sets,we.min_reps,we.max_reps,we.rest_seconds,we.exercise_order,
+                      e.name,e.exercise_type,e.movement_pattern,
+                      ws.workout_id
+               FROM workout_sessions ws
+               JOIN workouts w ON w.id=ws.workout_id
+               JOIN program_weeks pw ON pw.id=w.program_week_id
+               JOIN programs p ON p.id=pw.program_id
+               JOIN workout_exercises we ON we.workout_id=ws.workout_id AND we.exercise_id=?
+               JOIN exercises e ON e.id=we.exercise_id
+               WHERE ws.id=? AND p.user_id=?""",
+            (exercise_id, session_id, user_id),
+        ).fetchone()
+        if not plan:
+            raise ValueError("Exercise is not part of this active workout")
+    rows = get_exercise_performance_for_session(session_id, exercise_id, db_path)
+    valid = [r for r in rows if not bool(r.get("skipped"))]
+    completed = len(valid)
+    planned = max(1, int(plan["sets"] or 1))
+    base_rest = max(15, int(plan["rest_seconds"] or 60))
+    rpes = [float(r["difficulty"]) for r in valid if r.get("difficulty") is not None]
+    recent_rpe = rpes[-1] if rpes else 7.0
+    avg_rpe = sum(rpes) / len(rpes) if rpes else 7.0
+    mode = (valid[-1].get("load_mode") if valid else "weight") or "weight"
+
+    def effort_value(row):
+        if (row.get("load_mode") or mode) == "timed":
+            return float(row.get("duration_seconds") or 0)
+        try:
+            reps = json.loads(row.get("reps_json") or "[]")
+        except Exception:
+            reps = []
+        return float(reps[0] if reps else 0)
+
+    values = [effort_value(r) for r in valid]
+    first = next((v for v in values if v > 0), 0.0)
+    last = values[-1] if values else 0.0
+    decay = ((first-last)/first*100.0) if first > 0 and last > 0 else 0.0
+    high_rpe_streak = 0
+    for r in reversed(rpes):
+        if r >= 9.0: high_rpe_streak += 1
+        else: break
+
+    fatigue = 0.0
+    fatigue += max(0.0, (avg_rpe-7.0)*1.6)
+    fatigue += max(0.0, decay/12.0)
+    fatigue += max(0.0, high_rpe_streak-1)*1.2
+    fatigue = round(max(0.0, min(10.0, fatigue)), 1)
+
+    rest_mult = 1.0
+    if recent_rpe >= 9.5: rest_mult += .50
+    elif recent_rpe >= 9.0: rest_mult += .30
+    elif recent_rpe >= 8.0: rest_mult += .15
+    elif recent_rpe <= 6.5: rest_mult -= .15
+    if decay >= 20: rest_mult += .20
+    elif decay >= 12: rest_mult += .10
+    if str(plan["movement_pattern"] or "").lower() in {"squat","hinge","horizontal push","vertical push","horizontal pull","vertical pull"}:
+        rest_mult += .05
+    suggested_rest = int(round(base_rest * rest_mult / 15.0) * 15)
+    suggested_rest = max(30, min(300, suggested_rest))
+
+    remaining = max(0, planned-completed)
+    action = "continue"
+    title = "Stay on plan"
+    reason = "Performance is stable enough to continue the programmed sets."
+    total_sets = planned
+    stop = False
+    optional = False
+
+    severe = (recent_rpe >= 10 and decay >= 20) or (high_rpe_streak >= 2 and decay >= 25)
+    high_fatigue = fatigue >= 7.0 or (high_rpe_streak >= 2 and decay >= 15)
+    strong = completed >= planned and avg_rpe <= 6.5 and decay <= 5
+
+    if severe and completed >= 2:
+        action = "stop_exercise"
+        title = "End this exercise here"
+        reason = "Effort and performance drop suggest more sets are unlikely to be productive today. Move on while technique is still protected."
+        total_sets = completed
+        stop = True
+    elif high_fatigue and remaining >= 2:
+        action = "trim_volume"
+        total_sets = max(completed + 1, planned - 1)
+        title = "Trim one set today"
+        reason = "Fatigue is accumulating faster than expected, so one fewer set should preserve useful work without adding low-quality volume."
+    elif completed >= planned:
+        if strong and planned < 8:
+            action = "optional_set"
+            total_sets = planned + 1
+            title = "Optional bonus set"
+            reason = "You finished the planned work with low effort and almost no performance drop. One extra clean set is reasonable, but not required."
+            optional = True
+        else:
+            action = "move_on"
+            title = "Exercise complete"
+            reason = "You completed the planned sets. Move to the next exercise rather than adding unnecessary fatigue."
+            total_sets = planned
+            stop = True
+    elif recent_rpe >= 9.5:
+        action = "continue_cautiously"
+        title = "Recover longer before the next set"
+        reason = "That set was near your limit. Take the full recovery recommendation and keep the next set technically clean."
+    elif recent_rpe <= 6.5 and decay <= 5:
+        action = "continue_strong"
+        title = "Performance is holding well"
+        reason = "Effort is controlled and output is stable, so continue the planned volume."
+
     return {
         "exercise_id": exercise_id,
-        "last_weight": weight,
-        "recent_average_rpe": round(avg_rpe, 2),
-        "recent_best_reps": max_reps,
-        **suggestion,
+        "exercise_name": plan["name"],
+        "action": action,
+        "title": title,
+        "reason": reason,
+        "fatigue_score": fatigue,
+        "recent_rpe": round(recent_rpe, 1),
+        "average_rpe": round(avg_rpe, 2),
+        "performance_drop_percent": round(max(0.0, decay), 1),
+        "completed_sets": completed,
+        "planned_sets": planned,
+        "recommended_total_sets": total_sets,
+        "remaining_sets": max(0, total_sets-completed),
+        "base_rest_seconds": base_rest,
+        "recommended_rest_seconds": suggested_rest,
+        "stop_exercise": stop,
+        "optional_extra_set": optional,
+        "load_mode": mode,
     }
-
 
 
 def _equipment_allowed(exercise_equipment: str, profile_equipment: list[str]) -> bool:
