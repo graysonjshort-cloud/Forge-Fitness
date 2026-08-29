@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Iterable, Optional
 import random
 from copy import deepcopy
+from muscle_taxonomy import MUSCLE_TAXONOMY
 
 DEFAULT_DB = Path(__file__).with_name("fitness_app_initial_database.sqlite")
 
@@ -95,6 +96,7 @@ CUSTOM_MUSCLE_TEMPLATES = {
     "Glutes": [("Hip Extension", "compound"), ("Lunge", "compound")],
     "Calves": [("Calf Raise", "isolation")],
     "Core": [("Anti-Extension", "core"), ("Anti-Rotation", "core")],
+    "Forearms": [("Elbow Flexion", "isolation")],
 }
 
 def normalize_custom_split(custom_split, days):
@@ -108,8 +110,43 @@ def normalize_custom_split(custom_split, days):
             if name in CUSTOM_MUSCLE_TEMPLATES and name not in muscles:
                 muscles.append(name)
         if muscles:
-            items.append({"name": str(raw.get("name") or f"Custom Day {i+1}").strip()[:60], "muscles": muscles})
+            raw_sub=raw.get("submuscles") or {}
+            submuscles={}
+            if isinstance(raw_sub, dict):
+                for muscle in muscles:
+                    allowed=set(MUSCLE_TAXONOMY.get(muscle,()))
+                    chosen=[str(x).strip() for x in raw_sub.get(muscle,[]) if str(x).strip() in allowed]
+                    if chosen: submuscles[muscle]=list(dict.fromkeys(chosen))
+            items.append({"name": str(raw.get("name") or f"Custom Day {i+1}").strip()[:60], "muscles": muscles, "submuscles": submuscles})
     return items[:days]
+
+
+def custom_split_intelligence(custom_days, priority_muscles=()):
+    frequency={m:0 for m in CUSTOM_MUSCLE_TEMPLATES}
+    for day in custom_days or []:
+        for m in day.get("muscles",[]):
+            if m in frequency:
+                frequency[m]+=1
+    warnings=[]
+    major=("Chest","Back","Shoulders","Quads","Hamstrings","Glutes")
+    missing=[m for m in major if frequency.get(m,0)==0]
+    if missing:
+        warnings.append(f"No weekly work assigned to {', '.join(missing)}.")
+    priority_set=set(priority_muscles or ())
+    for muscle in CUSTOM_MUSCLE_TEMPLATES:
+        indexes=[i for i,d in enumerate(custom_days or []) if muscle in d.get("muscles",[])]
+        if any(b-a==1 for a,b in zip(indexes,indexes[1:])):
+            warnings.append(f"{muscle} is assigned to back-to-back training sessions.")
+        if muscle in priority_set and frequency.get(muscle,0)==0:
+            warnings.append(f"{muscle} is high priority but is not assigned to a training day.")
+        elif muscle in priority_set and len(custom_days or [])>=3 and frequency.get(muscle,0)<2:
+            warnings.append(f"{muscle} is high priority but only trained once weekly.")
+    return {
+        "frequency": frequency,
+        "priority_muscles": [m for m in priority_muscles if m in CUSTOM_MUSCLE_TEMPLATES],
+        "warnings": list(dict.fromkeys(warnings)),
+        "balanced": not warnings,
+    }
 
 def resolve_sport_split(days, split_preference, sport):
     if split_preference and split_preference!="auto":
@@ -249,6 +286,10 @@ def dynamic_workout_name(base_name: str, profile) -> str:
         "Full Body C":"Full Body",
         "Full Body":"Full Body",
     }
+    if getattr(profile, "workout_split", "auto") == "push_pull_legs":
+        if base_name.startswith("Push"): return "Push"
+        if base_name.startswith("Pull"): return "Pull"
+        if base_name.startswith("Legs"): return "Legs"
     return names.get(base_name,base_name)
 
 @dataclass
@@ -295,6 +336,7 @@ class UserProfile:
     core_workouts_per_week: int = 2
     cardio_workouts_per_week: int = 2
     custom_split: tuple[dict[str, Any], ...] = ()
+    exercises_per_day: int = 6
 
 @dataclass
 class PlannedExercise:
@@ -308,6 +350,7 @@ class PlannedExercise:
     max_reps: int
     rest_seconds: int
     progression_method: str
+    muscle_targets: list[str] | None = None
 
 @dataclass
 class Workout:
@@ -332,7 +375,16 @@ class PlanGenerator:
     def _load_exercises(self):
         with sqlite3.connect(self.db_path) as con:
             con.row_factory = sqlite3.Row
-            return [dict(r) for r in con.execute("SELECT * FROM exercises")]
+            rows=[dict(r) for r in con.execute("SELECT * FROM exercises")]
+            links={}
+            try:
+                for r in con.execute("SELECT exercise_id,muscle_group,sub_muscle,role FROM exercise_muscles"):
+                    links.setdefault(int(r["exercise_id"]),[]).append(dict(r))
+            except sqlite3.OperationalError:
+                pass
+            for e in rows:
+                e["muscle_links"]=links.get(int(e["id"]),[])
+            return rows
 
     @staticmethod
     def _normalize(value: str) -> str:
@@ -418,6 +470,43 @@ class PlanGenerator:
             reverse=True,
         )
         return scored[0][1] if scored and scored[0][0] > 0 else None
+
+    def _matches_muscle_target(self, exercise, muscle: str, subtargets=()) -> bool:
+        links=exercise.get("muscle_links") or []
+        group=[x for x in links if x.get("muscle_group")==muscle]
+        if not group: return False
+        wanted=set(subtargets or ())
+        return not wanted or any(x.get("sub_muscle") in wanted for x in group)
+
+    def _pick_for_target(self, candidates, pattern, kind, profile, used_names, muscle: str, subtargets=()):
+        eligible=[e for e in candidates if self._matches_muscle_target(e,muscle,subtargets)]
+        if not eligible: eligible=[e for e in candidates if self._matches_muscle_target(e,muscle,())]
+        scored=[]
+        wanted=set(subtargets or ())
+        for e in eligible:
+            base=self._score(e,pattern,kind,profile,used_names)
+            if base<=0: continue
+            links=e.get("muscle_links") or []
+            bonus=max([60 if x.get("role")=="primary" else 25 for x in links if x.get("muscle_group")==muscle] or [0])
+            if wanted and any(x.get("sub_muscle") in wanted for x in links): bonus+=90
+            scored.append((base+bonus,e))
+        scored.sort(key=lambda x:x[0],reverse=True)
+        if scored: return scored[0][1]
+        # A subsection can be more specific than the broad movement template
+        # (for example Side Delts vs Vertical Push). Prefer the exact anatomical
+        # target over silently falling back to the wrong muscle section.
+        fallback=[]
+        for e in eligible:
+            if e["name"] in used_names: continue
+            links=e.get("muscle_links") or []
+            bonus=max([60 if x.get("role")=="primary" else 25 for x in links if x.get("muscle_group")==muscle] or [0])
+            if wanted and any(x.get("sub_muscle") in wanted for x in links): bonus+=90
+            fallback.append((bonus+self._exercise_quality(e,profile)+self.rng.random()*5,e))
+        fallback.sort(key=lambda x:x[0],reverse=True)
+        return fallback[0][1] if fallback else None
+
+    def _exercise_target_count(self, profile: UserProfile) -> int:
+        return max(3,min(int(getattr(profile,"exercises_per_day",6) or 6),10))
 
     def _rep_range(self, e, goal):
         low, high = GOAL_SETTINGS[goal]["compound_rep_range" if e["exercise_type"] == "Compound" else "isolation_rep_range"]
@@ -600,7 +689,11 @@ class PlanGenerator:
         return base
 
     def _fit_to_session_time(self, exercises, max_minutes):
-        """Make the selected session length materially change programmed volume."""
+        """Fit volume to time while preserving the requested exercise count when possible."""
+        exercises=exercises[:]
+        for e in reversed(exercises):
+            while e.sets>1 and self._estimate_minutes(exercises)>max_minutes:
+                e.sets-=1
         exercises=self._intelligent_trim(exercises,max_minutes)
         if not exercises:
             return exercises
@@ -658,7 +751,9 @@ class PlanGenerator:
         selected = []
         template = self._template(workout_name)
 
-        for pattern, kind in template:
+        target_count=self._exercise_target_count(profile)
+        expanded_template=(template * max(1, math.ceil(target_count/max(1,len(template)))))[:target_count]
+        for pattern, kind in expanded_template:
             e = self._pick(candidates, pattern, kind, profile, used)
             if not e:
                 continue
@@ -684,7 +779,7 @@ class PlanGenerator:
                 progression_method=self._progression_note(e, profile),
             ))
 
-        max_exercises = GOAL_SETTINGS[profile.goal]["max_exercises"]
+        max_exercises = self._exercise_target_count(profile)
         sport=SPORT_PROFILES.get(profile.sport,SPORT_PROFILES["general"])
         if len(selected)<max_exercises and sport.get("conditioning"):
             for pattern in sport["conditioning"]:
@@ -927,37 +1022,57 @@ class PlanGenerator:
 
     def generate_custom_workout(self, profile: UserProfile, day: dict[str, Any], candidates):
         muscles=list(day.get("muscles") or [])
+        submap=day.get("submuscles") or {}
         if not muscles:
             raise ValueError("Every custom split day needs at least one muscle group.")
-        template=[]
-        for muscle in muscles:
-            for slot in CUSTOM_MUSCLE_TEMPLATES.get(muscle, []):
-                if slot not in template:
-                    template.append(slot)
-        used=set()
-        selected=[]
-        for pattern, kind in template:
-            e=self._pick(candidates, pattern, kind, profile, used)
-            if not e:
-                continue
-            used.add(e["name"])
-            low, high=self._rep_range(e, profile.goal)
-            low, high=self._intelligent_reps(e, profile, low, high)
+        target_count=self._exercise_target_count(profile)
+        # Interleave muscle groups so later selections are not starved when the
+        # requested exercise count is smaller than the combined templates.
+        per_muscle={m:list(CUSTOM_MUSCLE_TEMPLATES.get(m,[])) for m in muscles}
+        slots=[]; round_index=0
+        while len(slots)<target_count and any(per_muscle.values()):
+            added=False
+            for muscle in muscles:
+                choices=per_muscle.get(muscle) or []
+                if not choices: continue
+                slots.append((choices[round_index % len(choices)],muscle)); added=True
+                if len(slots)>=target_count: break
+            if not added: break
+            round_index+=1
+        used=set(); selected=[]; priority_bonus_used=set()
+        priority={m.lower() for m in profile.priority_muscles}
+        for (pattern, kind), owner_muscle in slots:
+            targets=list(submap.get(owner_muscle,[]) or [])
+            e=self._pick_for_target(candidates,pattern,kind,profile,used,owner_muscle,targets)
+            if not e: continue
+            used.add(e["name"]); used.add(f"pattern::{e['movement_pattern']}")
+            low, high=self._rep_range(e, profile.goal); low, high=self._intelligent_reps(e, profile, low, high)
+            sets=self._intelligent_sets(e, profile)
+            if owner_muscle.lower() in priority and owner_muscle not in priority_bonus_used:
+                sets=min(5,sets+1); priority_bonus_used.add(owner_muscle)
+            matched=[x["sub_muscle"] for x in e.get("muscle_links",[]) if x.get("muscle_group")==owner_muscle and (not targets or x.get("sub_muscle") in targets)]
             selected.append(PlannedExercise(
                 exercise_id=e["id"], name=e["name"], movement_pattern=e["movement_pattern"],
-                primary_muscle=e["primary_muscle"], equipment=e["equipment"],
-                sets=self._intelligent_sets(e, profile), min_reps=low, max_reps=high,
+                primary_muscle=e["primary_muscle"], equipment=e["equipment"], sets=sets, min_reps=low, max_reps=high,
                 rest_seconds=e["default_rest_seconds"], progression_method=self._progression_note(e, profile),
+                muscle_targets=list(dict.fromkeys(matched or targets or [owner_muscle])),
             ))
         if not selected:
             raise ValueError(f"No eligible exercises could be selected for {day.get('name') or 'custom day'}.")
-        max_exercises=GOAL_SETTINGS[profile.goal]["max_exercises"]
-        selected=self._intelligent_trim(selected[:max_exercises], profile.minutes_per_workout)
-        return Workout(
-            name=str(day.get("name") or "Custom Day"),
-            estimated_minutes=self._estimate_minutes(selected),
-            exercises=selected,
-        )
+        # Fill shortfalls from any exercise that directly trains the selected muscles.
+        while len(selected)<target_count:
+            best=None
+            for muscle in muscles:
+                targets=list(submap.get(muscle,[]) or [])
+                pool=[e for e in candidates if e["name"] not in {x.name for x in selected} and self._matches_muscle_target(e,muscle,targets)]
+                if not pool: continue
+                pool.sort(key=lambda e:(any(x.get("role")=="primary" for x in e.get("muscle_links",[]) if x.get("muscle_group")==muscle),self._exercise_quality(e,profile)),reverse=True)
+                best=(pool[0],muscle,targets); break
+            if not best: break
+            e,muscle,targets=best; low,high=self._rep_range(e,profile.goal); low,high=self._intelligent_reps(e,profile,low,high)
+            selected.append(PlannedExercise(exercise_id=e["id"],name=e["name"],movement_pattern=e["movement_pattern"],primary_muscle=e["primary_muscle"],equipment=e["equipment"],sets=self._intelligent_sets(e,profile),min_reps=low,max_reps=high,rest_seconds=e["default_rest_seconds"],progression_method=self._progression_note(e,profile),muscle_targets=targets or [muscle]))
+        selected=self._fit_to_session_time(selected[:target_count], profile.minutes_per_workout)
+        return Workout(name=str(day.get("name") or "Custom Day"),estimated_minutes=self._estimate_minutes(selected),exercises=selected)
 
     def generate_plan(self, profile: UserProfile):
         if profile.days_per_week not in SPLITS:
@@ -966,6 +1081,8 @@ class PlanGenerator:
             raise ValueError(f"Unsupported goal: {profile.goal}")
         if profile.experience not in {"beginner", "intermediate", "advanced"}:
             raise ValueError("experience must be beginner, intermediate, or advanced")
+        if not 3 <= int(profile.exercises_per_day) <= 10:
+            raise ValueError("exercises_per_day must be between 3 and 10")
 
         self.rng.seed(profile.seed)
         candidates = self._eligible(profile)
@@ -973,9 +1090,11 @@ class PlanGenerator:
             raise ValueError("No exercises match the selected equipment/preferences.")
 
         custom_days=normalize_custom_split(profile.custom_split, profile.days_per_week)
+        split_intelligence=None
         if profile.workout_split == "custom":
             if len(custom_days) != profile.days_per_week:
                 raise ValueError(f"Custom split requires exactly {profile.days_per_week} configured training days.")
+            split_intelligence=custom_split_intelligence(custom_days, profile.priority_muscles)
             workouts=[self.generate_custom_workout(profile, day, candidates) for day in custom_days]
             resolved_split=[w.name for w in workouts]
         else:
@@ -1033,6 +1152,7 @@ class PlanGenerator:
             "profile": asdict(profile),
             "split": resolved_split,
             "custom_split": custom_days if profile.workout_split == "custom" else [],
+            "split_intelligence": split_intelligence,
             "cardio_preference": profile.cardio_preference,
             "workout_split": profile.workout_split,
             "sport": profile.sport,
@@ -1061,6 +1181,7 @@ def generate_plan(
     recovery_level="normal",
     core_workouts_per_week=2,
     cardio_workouts_per_week=2,
+    exercises_per_day=6,
 ):
     """Convenience function used by the app/API layer."""
     profile = UserProfile(
@@ -1077,6 +1198,7 @@ def generate_plan(
         recovery_level=recovery_level,
         core_workouts_per_week=core_workouts_per_week,
         cardio_workouts_per_week=cardio_workouts_per_week,
+        exercises_per_day=exercises_per_day,
     )
     return PlanGenerator(db_path).generate_plan(profile)
 

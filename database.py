@@ -220,6 +220,8 @@ def ensure_schema(db_path: str | Path = DEFAULT_DB_PATH) -> None:
             con.execute("ALTER TABLE user_profiles ADD COLUMN core_workouts_per_week INTEGER NOT NULL DEFAULT 2")
         if "cardio_workouts_per_week" not in cols:
             con.execute("ALTER TABLE user_profiles ADD COLUMN cardio_workouts_per_week INTEGER NOT NULL DEFAULT 2")
+        if "exercises_per_day" not in cols:
+            con.execute("ALTER TABLE user_profiles ADD COLUMN exercises_per_day INTEGER NOT NULL DEFAULT 6")
         ws_cols={r["name"] for r in con.execute("PRAGMA table_info(workout_schedule)").fetchall()}
         if ws_cols and "scheduled_time" not in ws_cols:
             con.execute("ALTER TABLE workout_schedule ADD COLUMN scheduled_time TEXT NOT NULL DEFAULT '17:00'")
@@ -229,8 +231,41 @@ def ensure_schema(db_path: str | Path = DEFAULT_DB_PATH) -> None:
         if ne_cols and "source_url" not in ne_cols:
             con.execute("ALTER TABLE nutrition_entries ADD COLUMN source_url TEXT")
     ensure_expanded_exercise_directory(db_path)
+    ensure_exercise_muscle_taxonomy(db_path)
     ensure_exercise_form_demo_metadata(db_path)
     ensure_bundled_exercise_demo_assets(db_path)
+
+
+def ensure_exercise_muscle_taxonomy(db_path=DEFAULT_DB_PATH) -> None:
+    """Maintain a normalized broad-muscle/sub-muscle map for every exercise."""
+    from muscle_taxonomy import MUSCLE_TAXONOMY, exercise_links
+    with session(db_path) as con:
+        con.execute("""CREATE TABLE IF NOT EXISTS muscle_taxonomy (
+            muscle_group TEXT NOT NULL, sub_muscle TEXT NOT NULL,
+            PRIMARY KEY(muscle_group, sub_muscle))""")
+        con.execute("""CREATE TABLE IF NOT EXISTS exercise_muscles (
+            exercise_id INTEGER NOT NULL, muscle_group TEXT NOT NULL, sub_muscle TEXT NOT NULL,
+            role TEXT NOT NULL CHECK(role IN ('primary','secondary')),
+            PRIMARY KEY(exercise_id,muscle_group,sub_muscle,role),
+            FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE)""")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_exercise_muscles_group ON exercise_muscles(muscle_group,sub_muscle)")
+        for group, subs in MUSCLE_TAXONOMY.items():
+            for sub in subs:
+                con.execute("INSERT OR IGNORE INTO muscle_taxonomy(muscle_group,sub_muscle) VALUES (?,?)",(group,sub))
+        rows=con.execute("SELECT id,name,primary_muscle,secondary_muscles FROM exercises").fetchall()
+        for row in rows:
+            d=dict(row)
+            con.execute("DELETE FROM exercise_muscles WHERE exercise_id=?",(d["id"],))
+            for link in exercise_links(d):
+                con.execute("INSERT OR IGNORE INTO exercise_muscles(exercise_id,muscle_group,sub_muscle,role) VALUES (?,?,?,?)",
+                            (d["id"],link["muscle_group"],link["sub_muscle"],link["role"]))
+
+def get_muscle_taxonomy(db_path=DEFAULT_DB_PATH) -> dict[str,list[str]]:
+    with session(db_path) as con:
+        rows=con.execute("SELECT muscle_group,sub_muscle FROM muscle_taxonomy ORDER BY muscle_group,sub_muscle").fetchall()
+    out={}
+    for row in rows: out.setdefault(row["muscle_group"],[]).append(row["sub_muscle"])
+    return out
 
 def create_user(db_path=DEFAULT_DB_PATH) -> int:
     with session(db_path) as con:
@@ -244,8 +279,8 @@ def upsert_profile(user_id: int, profile: dict[str, Any], db_path=DEFAULT_DB_PAT
             """INSERT INTO user_profiles
             (user_id, goal, experience, days_per_week, minutes_per_workout,
              equipment_json, preferred_exercises_json, excluded_exercises_json,
-             priority_muscles_json, recovery_level, cardio_preference, workout_split, custom_split_json, sport, core_workouts_per_week, cardio_workouts_per_week, seed)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             priority_muscles_json, recovery_level, cardio_preference, workout_split, custom_split_json, sport, core_workouts_per_week, cardio_workouts_per_week, exercises_per_day, seed)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
               goal=excluded.goal, experience=excluded.experience,
               days_per_week=excluded.days_per_week,
@@ -256,7 +291,7 @@ def upsert_profile(user_id: int, profile: dict[str, Any], db_path=DEFAULT_DB_PAT
               priority_muscles_json=excluded.priority_muscles_json,
               recovery_level=excluded.recovery_level,
               cardio_preference=excluded.cardio_preference,
-              workout_split=excluded.workout_split, custom_split_json=excluded.custom_split_json, sport=excluded.sport, core_workouts_per_week=excluded.core_workouts_per_week, cardio_workouts_per_week=excluded.cardio_workouts_per_week, seed=excluded.seed,
+              workout_split=excluded.workout_split, custom_split_json=excluded.custom_split_json, sport=excluded.sport, core_workouts_per_week=excluded.core_workouts_per_week, cardio_workouts_per_week=excluded.cardio_workouts_per_week, exercises_per_day=excluded.exercises_per_day, seed=excluded.seed,
               updated_at=CURRENT_TIMESTAMP""",
             (
                 user_id, profile["goal"], profile["experience"], profile["days_per_week"],
@@ -266,6 +301,7 @@ def upsert_profile(user_id: int, profile: dict[str, Any], db_path=DEFAULT_DB_PAT
                 profile.get("cardio_preference", "moderate"), profile.get("workout_split", "auto"), _json(profile.get("custom_split", [])), profile.get("sport", "general"),
                 max(0, min(int(profile.get("core_workouts_per_week", 2)), int(profile["days_per_week"]))),
                 max(0, min(int(profile.get("cardio_workouts_per_week", 2)), int(profile["days_per_week"]))),
+                max(3, min(int(profile.get("exercises_per_day", 6)), 10)),
                 profile.get("seed"),
             ),
         )
@@ -3566,6 +3602,9 @@ def list_exercise_directory(user_id: int | None = None, search: str = "",
                       default_sets,default_rest_seconds,progression_method,notes
                FROM exercises ORDER BY primary_muscle,name"""
         )]
+        muscle_links={}
+        for r in con.execute("SELECT exercise_id,muscle_group,sub_muscle,role FROM exercise_muscles"):
+            muscle_links.setdefault(int(r["exercise_id"]),[]).append(dict(r))
 
     prefs={}
     if user_id:
@@ -3580,14 +3619,17 @@ def list_exercise_directory(user_id: int | None = None, search: str = "",
     for d in rows:
         d["beginner_suitable"]=bool(d["beginner_suitable"])
         d["equipment_compatible"]=_equipment_allowed(d["equipment"],profile_equipment) if user_id else True
+        d["muscle_links"]=muscle_links.get(int(d["id"]),[])
+        d["muscle_groups"]=sorted({x["muscle_group"] for x in d["muscle_links"]})
+        d["sub_muscles"]=sorted({x["sub_muscle"] for x in d["muscle_links"]})
         d.update(_exercise_intelligence_metadata(d))
         pref=prefs.get(int(d["id"]),{})
         d["user_preference"]=pref.get("preference","neutral")
         d["preference_notes"]=pref.get("notes")
-        if q and q not in " ".join(str(d.get(k,"")) for k in
-            ("name","primary_muscle","secondary_muscles","movement_pattern","equipment")).lower():
+        if q and q not in (" ".join(str(d.get(k,"")) for k in
+            ("name","primary_muscle","secondary_muscles","movement_pattern","equipment")) + " " + " ".join(d.get("sub_muscles",[]))).lower():
             continue
-        if muscle and muscle!="All" and muscle.lower() not in d["primary_muscle"].lower():
+        if muscle and muscle!="All" and muscle.lower() not in " ".join(d.get("muscle_groups",[])+d.get("sub_muscles",[])).lower():
             continue
         if equipment and equipment!="All" and equipment.lower() not in d["equipment"].lower():
             continue
@@ -3601,7 +3643,7 @@ def list_exercise_directory(user_id: int | None = None, search: str = "",
         if len(out)>=max(1,min(int(limit),500)):
             break
 
-    muscles=sorted({r["primary_muscle"] for r in rows})
+    muscles=sorted({x for r in rows for x in ([r.get("primary_muscle","")] + [m["sub_muscle"] for m in muscle_links.get(int(r["id"]),[])]) if x})
     equipment_values=sorted({r["equipment"] for r in rows})
     difficulties=sorted({r["difficulty"] for r in rows})
     movements=sorted({r["movement_pattern"] for r in rows})
@@ -3630,6 +3672,9 @@ def get_exercise_directory_item(exercise_id: int, user_id: int | None = None,
     d["beginner_suitable"]=bool(d["beginner_suitable"])
     profile=get_profile(user_id,db_path) if user_id else None
     d["equipment_compatible"]=_equipment_allowed(d["equipment"],(profile or {}).get("equipment",["full_gym"]))
+    with session(db_path) as con:
+        links=[dict(r) for r in con.execute("SELECT muscle_group,sub_muscle,role FROM exercise_muscles WHERE exercise_id=? ORDER BY role,muscle_group,sub_muscle",(exercise_id,))]
+    d["muscle_links"]=links; d["muscle_groups"]=sorted({x["muscle_group"] for x in links}); d["sub_muscles"]=sorted({x["sub_muscle"] for x in links})
     d.update(_exercise_intelligence_metadata(d))
     pref=get_user_exercise_preference(user_id,exercise_id,db_path) if user_id else {"preference":"neutral","notes":None}
     d["user_preference"]=pref.get("preference","neutral")

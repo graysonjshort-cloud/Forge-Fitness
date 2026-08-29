@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     sport TEXT NOT NULL DEFAULT 'general',
     core_workouts_per_week INTEGER NOT NULL DEFAULT 2,
     cardio_workouts_per_week INTEGER NOT NULL DEFAULT 2,
+    exercises_per_day INTEGER NOT NULL DEFAULT 6,
     seed INTEGER,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -499,3 +500,20 @@ CREATE TABLE IF NOT EXISTS exercise_demo_3d_reviews (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
 );
+
+
+CREATE TABLE IF NOT EXISTS muscle_taxonomy (
+    muscle_group TEXT NOT NULL,
+    sub_muscle TEXT NOT NULL,
+    PRIMARY KEY(muscle_group, sub_muscle)
+);
+
+CREATE TABLE IF NOT EXISTS exercise_muscles (
+    exercise_id INTEGER NOT NULL,
+    muscle_group TEXT NOT NULL,
+    sub_muscle TEXT NOT NULL,
+    role TEXT NOT NULL CHECK(role IN ('primary','secondary')),
+    PRIMARY KEY(exercise_id, muscle_group, sub_muscle, role),
+    FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_exercise_muscles_group ON exercise_muscles(muscle_group, sub_muscle);

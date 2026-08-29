@@ -530,6 +530,7 @@ class ExercisePreferenceRequest(BaseModel):
 class PlanReconfigureRequest(BaseModel):
     days_per_week: int = Field(ge=2, le=6)
     minutes_per_workout: int = Field(ge=15, le=180)
+    exercises_per_day: int = Field(6, ge=3, le=10)
     preferred_days: list[int] = []
 
 class ProfileRequest(BaseModel):
@@ -548,6 +549,7 @@ class ProfileRequest(BaseModel):
     sport: str = "general"
     core_workouts_per_week: int = Field(2, ge=0, le=6)
     cardio_workouts_per_week: int = Field(2, ge=0, le=6)
+    exercises_per_day: int = Field(6, ge=3, le=10)
     seed: Optional[int] = 42
 
 
@@ -662,7 +664,7 @@ def _profile_from_db(user_id: int) -> UserProfile:
         excluded_exercises=tuple(p["excluded_exercises"]), seed=p["seed"],
         training_state=state, priority_muscles=tuple(p["priority_muscles"]),
         recovery_level=p["recovery_level"],
-        cardio_preference=p.get("cardio_preference","moderate"), workout_split=p.get("workout_split","auto"), custom_split=tuple(p.get("custom_split",[])), sport=p.get("sport","general"), core_workouts_per_week=p.get("core_workouts_per_week",2), cardio_workouts_per_week=p.get("cardio_workouts_per_week",2),
+        cardio_preference=p.get("cardio_preference","moderate"), workout_split=p.get("workout_split","auto"), custom_split=tuple(p.get("custom_split",[])), sport=p.get("sport","general"), core_workouts_per_week=p.get("core_workouts_per_week",2), cardio_workouts_per_week=p.get("cardio_workouts_per_week",2), exercises_per_day=p.get("exercises_per_day",6),
     )
 
 
@@ -1352,7 +1354,7 @@ PLAN_GENERATION_PROFILE_KEYS = {
     "goal","experience","days_per_week","minutes_per_workout","equipment",
     "preferred_exercises","excluded_exercises","priority_muscles","recovery_level",
     "cardio_preference","workout_split","custom_split","sport",
-    "core_workouts_per_week","cardio_workouts_per_week","seed",
+    "core_workouts_per_week","cardio_workouts_per_week","exercises_per_day","seed",
 }
 
 def _generation_profile_changed(before: dict, after: dict) -> bool:
@@ -1586,6 +1588,11 @@ def me_history(limit: int = 50, authorization: Optional[str] = Header(None)):
     user = _current_account(authorization)
     return database.get_workout_history(user["user_id"], limit, DB_PATH)
 
+
+@app.get("/me/muscles/taxonomy")
+def me_muscle_taxonomy(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return {"muscle_groups":database.get_muscle_taxonomy(DB_PATH)}
 
 @app.get("/me/exercises")
 def me_exercise_directory(search: str="", muscle: Optional[str]=None,
@@ -1854,6 +1861,7 @@ def me_reconfigure_plan(request: PlanReconfigureRequest, authorization: Optional
     updated=dict(previous)
     updated["days_per_week"]=request.days_per_week
     updated["minutes_per_workout"]=request.minutes_per_workout
+    updated["exercises_per_day"]=request.exercises_per_day
     updated["core_workouts_per_week"]=min(int(updated.get("core_workouts_per_week",2)),request.days_per_week)
     updated["cardio_workouts_per_week"]=min(int(updated.get("cardio_workouts_per_week",2)),request.days_per_week)
 
@@ -1909,7 +1917,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.59.0"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.61.0"}
 
 
 @app.get("/me/coach/briefing")

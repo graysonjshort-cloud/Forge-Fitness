@@ -56,7 +56,7 @@ def main():
             "minutes_per_workout":45,"equipment":["full_gym"],
             "preferred_exercises":[],"excluded_exercises":[],"priority_muscles":[],
             "recovery_level":"normal","cardio_preference":"moderate","workout_split":"upper_lower",
-            "sport":"general","core_workouts_per_week":2,"cardio_workouts_per_week":2,"seed":1427
+            "sport":"general","core_workouts_per_week":2,"cardio_workouts_per_week":2,"exercises_per_day":6,"seed":1427
         }
         req("POST","/me/profile",profile,token)
 
@@ -77,20 +77,28 @@ def main():
         _,saved=req("POST","/me/profile",ppl,token)
         assert saved["plan_regenerated"] is True
         assert saved["regenerated_plan"]["split"]==["Push A","Pull A","Legs A","Push B"]
+        assert [w["name"] for w in saved["regenerated_plan"]["workouts"]]==["Push","Pull","Legs","Push"]
         custom_days=[
-            {"name":"Chest + Triceps","muscles":["Chest","Triceps"]},
+            {"name":"Chest + Triceps","muscles":["Chest","Triceps"],"submuscles":{"Chest":["Upper Chest"],"Triceps":["Triceps Long Head"]}},
             {"name":"Back + Biceps","muscles":["Back","Biceps"]},
             {"name":"Quads + Calves","muscles":["Quads","Calves"]},
             {"name":"Hamstrings + Glutes + Shoulders","muscles":["Hamstrings","Glutes","Shoulders"]},
         ]
-        custom={**profile,"workout_split":"custom","custom_split":custom_days}
+        custom={**profile,"workout_split":"custom","custom_split":custom_days,"priority_muscles":["Chest"]}
         _,saved=req("POST","/me/profile",custom,token)
         assert saved["plan_regenerated"] is True
         assert saved["regenerated_plan"]["split"]==[x["name"] for x in custom_days]
-        restored={**profile,"minutes_per_workout":50}
+        split_intel=saved["regenerated_plan"].get("split_intelligence") or {}
+        assert any("Upper Chest" in (e.get("muscle_targets") or []) for e in saved["regenerated_plan"]["workouts"][0]["exercises"])
+        assert split_intel.get("frequency",{}).get("Chest")==1
+        assert "Chest" in split_intel.get("priority_muscles",[])
+        assert any("Chest is high priority" in x for x in split_intel.get("warnings",[]))
+        restored={**profile,"minutes_per_workout":50,"exercises_per_day":7}
         _,saved=req("POST","/me/profile",restored,token)
         assert saved["plan_regenerated"] is True
         assert saved["regenerated_plan"]["profile"]["minutes_per_workout"]==50
+        assert saved["regenerated_plan"]["profile"]["exercises_per_day"]==7
+        assert all(len(w["exercises"])==7 for w in saved["regenerated_plan"]["workouts"])
         profile=restored
         current=saved["regenerated_plan"]
 

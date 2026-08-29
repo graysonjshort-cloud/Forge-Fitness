@@ -212,6 +212,7 @@ class PlannedExercise:
     max_reps: int
     rest_seconds: int
     progression_method: str
+    muscle_targets: list[str] | None = None
 
 @dataclass
 class Workout:

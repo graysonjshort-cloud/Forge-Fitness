@@ -1,4 +1,4 @@
-# Forge Fitness v14.59.0 — Split Builder & Full Plan Regeneration
+# Forge Fitness v14.61.0 — Split Builder & Full Plan Regeneration
 
 v14.59 overhauls plan generation so the selected workout structure is explicit, customizable, and always kept in sync with training settings.
 
@@ -27,6 +27,6 @@ v14.59 overhauls plan generation so the selected workout structure is explicit, 
 - Manual Workout Builder edits remain intentional workout-level edits and are not immediately erased by automatic regeneration.
 
 ## Version / PWA
-- Backend system version: 14.59.0.
-- Frontend version labels synchronized to v14.59.0.
+- Backend system version: 14.61.0.
+- Frontend version labels synchronized to v14.61.0.
 - Service-worker cache bumped so installed PWAs receive the new plan-generation UI and logic.
