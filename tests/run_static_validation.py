@@ -57,8 +57,8 @@ subprocess.run(["node","--check",str(ROOT/"app.js")],check=True,capture_output=T
 for module in sorted((ROOT/"js").glob("*.js")):
     subprocess.run(["node","--check",str(module)],check=True,capture_output=True,text=True)
 for name in ["forge_core.js","forge_api.js","forge_equipment.js","forge_pwa.js"]:
-    assert f'/js/{name}?v=14.61.0' in index, f"Missing module script: {name}"
-assert '/app.js?v=14.61.0' in index
+    assert f'/js/{name}?v=14.62.0' in index, f"Missing module script: {name}"
+assert '/app.js?v=14.62.0' in index
 assert len(app) < 240000, "app.js modularization regression"
 print(json.dumps({
   "status":"passed",
@@ -118,3 +118,9 @@ generator=(ROOT/'fitness_app_plan_generator_upgraded.py').read_text(encoding='ut
 assert 'return "Push"' in generator and 'return "Pull"' in generator and 'return "Legs"' in generator, 'PPL workout naming regression'
 assert 'exercises_per_day' in generator, 'Generator exercise-count setting missing'
 assert 'exercise_muscles' in (ROOT/'database.py').read_text(encoding='utf-8'), 'Exercise-muscle link persistence missing'
+
+# v14.62 sequence integrity regression guards
+assert 'customSplitWeekday' in app
+assert 'exercise_quota_message' in (ROOT/'fitness_app_plan_generator_upgraded.py').read_text(encoding='utf-8')
+assert 'days=sorted(days)' in (ROOT/'fitness_backend_api_v2_connected.py').read_text(encoding='utf-8')
+assert 'EXERCISE_CANONICAL_ALIASES' in (ROOT/'database.py').read_text(encoding='utf-8')

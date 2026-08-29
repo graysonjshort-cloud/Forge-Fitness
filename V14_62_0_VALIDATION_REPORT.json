@@ -1,0 +1,21 @@
+{
+  "version": "14.62.0",
+  "release": "Sequence Integrity & Exercise Deduplication",
+  "status": "passed",
+  "features": [
+    "Custom split day sequence maps chronologically to selected weekdays without reordering around rest days",
+    "Exercise quotas never duplicate movements to reach the requested count",
+    "Quota shortfalls surface an explicit message",
+    "Five confirmed duplicate exercise aliases consolidated to canonical entries"
+  ],
+  "validation": {
+    "static": "passed",
+    "frontend_contract": "passed",
+    "precision_plan": "passed",
+    "e2e": "passed",
+    "canonical_exercise_count": 215,
+    "exercises_with_muscle_links": 215,
+    "exercise_muscle_links": 743,
+    "duplicate_aliases_removed": 5
+  }
+}

@@ -1857,6 +1857,9 @@ def me_reconfigure_plan(request: PlanReconfigureRequest, authorization: Optional
             days.append(d)
     if len(days) != request.days_per_week:
         raise HTTPException(400,f"Choose exactly {request.days_per_week} unique training days")
+    # Workout sequence is immutable: workout index 0 goes to the earliest selected
+    # weekday, index 1 to the next selected weekday, etc. Rest days are simply gaps.
+    days=sorted(days)
 
     updated=dict(previous)
     updated["days_per_week"]=request.days_per_week
@@ -1917,7 +1920,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.61.0"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.62.0"}
 
 
 @app.get("/me/coach/briefing")

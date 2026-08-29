@@ -99,6 +99,17 @@ CUSTOM_MUSCLE_TEMPLATES = {
     "Forearms": [("Elbow Flexion", "isolation")],
 }
 
+EXERCISE_CANONICAL_ALIASES = {
+    "Overhead Dumbbell Triceps Extension": "Dumbbell Overhead Triceps Extension",
+    "Cable Overhead Triceps Extension": "Overhead Cable Triceps Extension",
+    "Trap Bar Deadlift": "Trap-Bar Deadlift",
+    "Treadmill Incline Walk": "Incline Treadmill Walk",
+    "Farmer's Carry": "Farmer Carry",
+}
+
+def canonical_exercise_name(name: str) -> str:
+    return EXERCISE_CANONICAL_ALIASES.get(str(name or "").strip(), str(name or "").strip())
+
 def normalize_custom_split(custom_split, days):
     items=[]
     for i, raw in enumerate(custom_split or []):
@@ -366,6 +377,9 @@ class Workout:
     cardio_exercise_id: int | None = None
     cardio_movement_pattern: str | None = None
     cardio_equipment: str | None = None
+    exercise_quota_requested: int = 0
+    exercise_quota_met: bool = True
+    exercise_quota_message: str | None = None
 
 class PlanGenerator:
     def __init__(self, db_path: str | Path = DEFAULT_DB):
@@ -382,9 +396,19 @@ class PlanGenerator:
                     links.setdefault(int(r["exercise_id"]),[]).append(dict(r))
             except sqlite3.OperationalError:
                 pass
+            unique=[]; seen=set()
             for e in rows:
                 e["muscle_links"]=links.get(int(e["id"]),[])
-            return rows
+                canonical=canonical_exercise_name(e["name"])
+                key=canonical.lower()
+                if key in seen:
+                    continue
+                e["canonical_name"]=canonical
+                if e["name"] != canonical:
+                    # Keep the canonical display label even when an old database row still uses an alias.
+                    e["name"]=canonical
+                seen.add(key); unique.append(e)
+            return unique
 
     @staticmethod
     def _normalize(value: str) -> str:
@@ -464,6 +488,7 @@ class PlanGenerator:
         return score
 
     def _pick(self, candidates, pattern, kind, profile, used_names):
+        candidates=[e for e in candidates if canonical_exercise_name(e["name"]) not in used_names]
         scored = sorted(
             ((self._score(e, pattern, kind, profile, used_names), e) for e in candidates),
             key=lambda x: x[0],
@@ -479,8 +504,8 @@ class PlanGenerator:
         return not wanted or any(x.get("sub_muscle") in wanted for x in group)
 
     def _pick_for_target(self, candidates, pattern, kind, profile, used_names, muscle: str, subtargets=()):
-        eligible=[e for e in candidates if self._matches_muscle_target(e,muscle,subtargets)]
-        if not eligible: eligible=[e for e in candidates if self._matches_muscle_target(e,muscle,())]
+        eligible=[e for e in candidates if canonical_exercise_name(e["name"]) not in used_names and self._matches_muscle_target(e,muscle,subtargets)]
+        if not eligible: eligible=[e for e in candidates if canonical_exercise_name(e["name"]) not in used_names and self._matches_muscle_target(e,muscle,())]
         scored=[]
         wanted=set(subtargets or ())
         for e in eligible:
@@ -795,10 +820,14 @@ class PlanGenerator:
         selected = selected[:max_exercises]
         selected = self._fit_to_session_time(selected, profile.minutes_per_workout)
 
+        actual=len(selected)
         return Workout(
             name=dynamic_workout_name(workout_name, profile),
             estimated_minutes=self._estimate_minutes(selected),
             exercises=selected,
+            exercise_quota_requested=max_exercises,
+            exercise_quota_met=actual >= max_exercises,
+            exercise_quota_message=(None if actual >= max_exercises else f"Only {actual} unique eligible exercises were available; the requested quota was {max_exercises}."),
         )
 
     def _addon_day_indexes(self, workout_count: int, requested: int, offset: int = 0) -> list[int]:
@@ -1072,7 +1101,10 @@ class PlanGenerator:
             e,muscle,targets=best; low,high=self._rep_range(e,profile.goal); low,high=self._intelligent_reps(e,profile,low,high)
             selected.append(PlannedExercise(exercise_id=e["id"],name=e["name"],movement_pattern=e["movement_pattern"],primary_muscle=e["primary_muscle"],equipment=e["equipment"],sets=self._intelligent_sets(e,profile),min_reps=low,max_reps=high,rest_seconds=e["default_rest_seconds"],progression_method=self._progression_note(e,profile),muscle_targets=targets or [muscle]))
         selected=self._fit_to_session_time(selected[:target_count], profile.minutes_per_workout)
-        return Workout(name=str(day.get("name") or "Custom Day"),estimated_minutes=self._estimate_minutes(selected),exercises=selected)
+        actual=len(selected)
+        return Workout(name=str(day.get("name") or "Custom Day"),estimated_minutes=self._estimate_minutes(selected),exercises=selected,
+            exercise_quota_requested=target_count, exercise_quota_met=actual >= target_count,
+            exercise_quota_message=(None if actual >= target_count else f"Only {actual} unique eligible exercises were available; the requested quota was {target_count}."))
 
     def generate_plan(self, profile: UserProfile):
         if profile.days_per_week not in SPLITS:
