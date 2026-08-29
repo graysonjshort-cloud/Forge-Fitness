@@ -212,6 +212,8 @@ def ensure_schema(db_path: str | Path = DEFAULT_DB_PATH) -> None:
             con.execute("ALTER TABLE user_profiles ADD COLUMN cardio_preference TEXT NOT NULL DEFAULT 'moderate'")
         if "workout_split" not in cols:
             con.execute("ALTER TABLE user_profiles ADD COLUMN workout_split TEXT NOT NULL DEFAULT 'auto'")
+        if "custom_split_json" not in cols:
+            con.execute("ALTER TABLE user_profiles ADD COLUMN custom_split_json TEXT NOT NULL DEFAULT '[]'")
         if "sport" not in cols:
             con.execute("ALTER TABLE user_profiles ADD COLUMN sport TEXT NOT NULL DEFAULT 'general'")
         if "core_workouts_per_week" not in cols:
@@ -242,8 +244,8 @@ def upsert_profile(user_id: int, profile: dict[str, Any], db_path=DEFAULT_DB_PAT
             """INSERT INTO user_profiles
             (user_id, goal, experience, days_per_week, minutes_per_workout,
              equipment_json, preferred_exercises_json, excluded_exercises_json,
-             priority_muscles_json, recovery_level, cardio_preference, workout_split, sport, core_workouts_per_week, cardio_workouts_per_week, seed)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             priority_muscles_json, recovery_level, cardio_preference, workout_split, custom_split_json, sport, core_workouts_per_week, cardio_workouts_per_week, seed)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
               goal=excluded.goal, experience=excluded.experience,
               days_per_week=excluded.days_per_week,
@@ -254,14 +256,14 @@ def upsert_profile(user_id: int, profile: dict[str, Any], db_path=DEFAULT_DB_PAT
               priority_muscles_json=excluded.priority_muscles_json,
               recovery_level=excluded.recovery_level,
               cardio_preference=excluded.cardio_preference,
-              workout_split=excluded.workout_split, sport=excluded.sport, core_workouts_per_week=excluded.core_workouts_per_week, cardio_workouts_per_week=excluded.cardio_workouts_per_week, seed=excluded.seed,
+              workout_split=excluded.workout_split, custom_split_json=excluded.custom_split_json, sport=excluded.sport, core_workouts_per_week=excluded.core_workouts_per_week, cardio_workouts_per_week=excluded.cardio_workouts_per_week, seed=excluded.seed,
               updated_at=CURRENT_TIMESTAMP""",
             (
                 user_id, profile["goal"], profile["experience"], profile["days_per_week"],
                 profile["minutes_per_workout"], _json(profile.get("equipment", [])),
                 _json(profile.get("preferred_exercises", [])), _json(profile.get("excluded_exercises", [])),
                 _json(profile.get("priority_muscles", [])), profile.get("recovery_level", "normal"),
-                profile.get("cardio_preference", "moderate"), profile.get("workout_split", "auto"), profile.get("sport", "general"),
+                profile.get("cardio_preference", "moderate"), profile.get("workout_split", "auto"), _json(profile.get("custom_split", [])), profile.get("sport", "general"),
                 max(0, min(int(profile.get("core_workouts_per_week", 2)), int(profile["days_per_week"]))),
                 max(0, min(int(profile.get("cardio_workouts_per_week", 2)), int(profile["days_per_week"]))),
                 profile.get("seed"),
@@ -277,6 +279,7 @@ def get_profile(user_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any] | None:
     d = dict(row)
     for key in ("equipment", "preferred_exercises", "excluded_exercises", "priority_muscles"):
         d[key] = json.loads(d.pop(f"{key}_json"))
+    d["custom_split"] = json.loads(d.pop("custom_split_json", "[]") or "[]")
     return d
 
 

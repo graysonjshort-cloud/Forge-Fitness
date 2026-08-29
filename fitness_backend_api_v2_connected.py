@@ -544,6 +544,7 @@ class ProfileRequest(BaseModel):
     recovery_level: str = "normal"
     cardio_preference: str = "moderate"
     workout_split: str = "auto"
+    custom_split: list[dict] = []
     sport: str = "general"
     core_workouts_per_week: int = Field(2, ge=0, le=6)
     cardio_workouts_per_week: int = Field(2, ge=0, le=6)
@@ -661,7 +662,7 @@ def _profile_from_db(user_id: int) -> UserProfile:
         excluded_exercises=tuple(p["excluded_exercises"]), seed=p["seed"],
         training_state=state, priority_muscles=tuple(p["priority_muscles"]),
         recovery_level=p["recovery_level"],
-        cardio_preference=p.get("cardio_preference","moderate"), workout_split=p.get("workout_split","auto"), sport=p.get("sport","general"), core_workouts_per_week=p.get("core_workouts_per_week",2), cardio_workouts_per_week=p.get("cardio_workouts_per_week",2),
+        cardio_preference=p.get("cardio_preference","moderate"), workout_split=p.get("workout_split","auto"), custom_split=tuple(p.get("custom_split",[])), sport=p.get("sport","general"), core_workouts_per_week=p.get("core_workouts_per_week",2), cardio_workouts_per_week=p.get("cardio_workouts_per_week",2),
     )
 
 
@@ -1087,10 +1088,23 @@ def me_equipment(authorization: Optional[str]=Header(None)):
 
 @app.put("/me/equipment")
 def me_equipment_save(request: EquipmentLogRequest, authorization: Optional[str]=Header(None)):
-    user=_current_account(authorization)
-    return database.set_equipment_log(
-        user["user_id"],[x.model_dump() for x in request.items],DB_PATH
-    )
+    user=_current_account(authorization); uid=user["user_id"]
+    before=database.get_profile(uid,DB_PATH)
+    before_log=database.get_equipment_log(uid,DB_PATH)
+    saved=database.set_equipment_log(uid,[x.model_dump() for x in request.items],DB_PATH)
+    after=database.get_profile(uid,DB_PATH)
+    if before and database.get_current_plan(uid,DB_PATH) and before.get("equipment") != after.get("equipment"):
+        try:
+            generated=_generate_and_save(uid,_profile_from_db(uid),replace_active=True)
+            saved["plan_regenerated"]=True
+            saved["regenerated_plan"]=_hydrate_plan_workout_ids(uid,generated)
+        except Exception as exc:
+            database.set_equipment_log(uid,before_log.get("items",[]),DB_PATH)
+            database.upsert_profile(uid,before,DB_PATH)
+            raise HTTPException(500,f"Forge could not regenerate the plan for the new equipment: {exc}")
+    else:
+        saved["plan_regenerated"]=False
+    return saved
 
 
 @app.get("/me/nutrition/training-guidance")
@@ -1334,6 +1348,51 @@ def me_calendar_intelligence(authorization: Optional[str]=Header(None)):
     return {"connected":connected,"workouts":items,"conflicts":len(conflicts),"tight_recovery_gaps":len(tight),"recommendation":recommendation}
 
 
+PLAN_GENERATION_PROFILE_KEYS = {
+    "goal","experience","days_per_week","minutes_per_workout","equipment",
+    "preferred_exercises","excluded_exercises","priority_muscles","recovery_level",
+    "cardio_preference","workout_split","custom_split","sport",
+    "core_workouts_per_week","cardio_workouts_per_week","seed",
+}
+
+def _generation_profile_changed(before: dict, after: dict) -> bool:
+    return any(before.get(k) != after.get(k) for k in PLAN_GENERATION_PROFILE_KEYS)
+
+def _restore_schedule_days(user_id: int, preferred_days: list[int]) -> None:
+    if not preferred_days:
+        return
+    schedule=sorted(database.get_workout_schedule(user_id,DB_PATH),key=lambda x:x["workout_index"])
+    if len(schedule) != len(preferred_days):
+        return
+    with database.session(DB_PATH) as con:
+        for item,target in zip(schedule,preferred_days):
+            con.execute(
+                "UPDATE workout_schedule SET scheduled_day=?, original_day=?, updated_at=CURRENT_TIMESTAMP WHERE workout_id=?",
+                (int(target),int(target),item["workout_id"]),
+            )
+
+def _save_profile_with_full_regeneration(user_id: int, updated: dict) -> dict:
+    previous=database.get_profile(user_id,DB_PATH)
+    current_plan=database.get_current_plan(user_id,DB_PATH)
+    prior_schedule=sorted(database.get_workout_schedule(user_id,DB_PATH),key=lambda x:x["workout_index"]) if current_plan else []
+    prior_days=[int(x["scheduled_day"]) for x in prior_schedule]
+    database.upsert_profile(user_id,updated,DB_PATH)
+    changed=bool(previous and _generation_profile_changed(previous,updated))
+    if current_plan and changed:
+        try:
+            generated=_generate_and_save(user_id,_profile_from_db(user_id),replace_active=True)
+            if len(prior_days)==int(updated.get("days_per_week",0)):
+                _restore_schedule_days(user_id,prior_days)
+            return {
+                "profile":database.get_profile(user_id,DB_PATH),
+                "plan":_hydrate_plan_workout_ids(user_id,database.get_current_plan(user_id,DB_PATH)),
+                "regenerated":True,
+            }
+        except Exception:
+            database.upsert_profile(user_id,previous,DB_PATH)
+            raise
+    return {"profile":database.get_profile(user_id,DB_PATH),"plan":None,"regenerated":False}
+
 @app.get("/me/profile")
 def me_profile(authorization: Optional[str]=Header(None)):
     user=_current_account(authorization)
@@ -1344,8 +1403,14 @@ def me_profile(authorization: Optional[str]=Header(None)):
 @app.post("/me/profile")
 def me_save_profile(request: ProfileRequest, authorization: Optional[str]=Header(None)):
     user=_current_account(authorization)
-    database.upsert_profile(user["user_id"],request.model_dump(),DB_PATH)
-    return database.get_profile(user["user_id"],DB_PATH)
+    try:
+        result=_save_profile_with_full_regeneration(user["user_id"],request.model_dump())
+        # Preserve the historical response shape for onboarding; settings clients can
+        # use the metadata fields when an active plan was rebuilt.
+        return {**result["profile"],"plan_regenerated":result["regenerated"],"regenerated_plan":result["plan"]}
+    except Exception as exc:
+        print(f"[forge-plan] Profile-triggered rebuild failed safely for user {user['user_id']}: {type(exc).__name__}: {exc}")
+        raise HTTPException(500,f"Forge could not regenerate the plan: {exc}")
 
 @app.post("/me/plan/generate")
 def me_generate_plan(authorization: Optional[str]=Header(None)):
@@ -1844,7 +1909,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.58.0"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.59.0"}
 
 
 @app.get("/me/coach/briefing")

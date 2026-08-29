@@ -56,7 +56,7 @@ SPLITS = {
 CUSTOM_SPLITS = {
     "full_body": {2:["Full Body A","Full Body B"],3:["Full Body A","Full Body B","Full Body C"],4:["Full Body A","Full Body B","Full Body C","Full Body"],5:["Full Body A","Full Body B","Full Body C","Full Body","Full Body A"],6:["Full Body A","Full Body B","Full Body C","Full Body","Full Body A","Full Body B"]},
     "upper_lower": {2:["Upper A","Lower A"],3:["Upper A","Lower A","Full Body"],4:["Upper A","Lower A","Upper B","Lower B"],5:["Upper A","Lower A","Upper B","Lower B","Full Body"],6:["Upper A","Lower A","Upper B","Lower B","Upper A","Lower A"]},
-    "push_pull_legs": {3:["Push A","Pull A","Legs A"],4:["Push A","Pull A","Legs A","Full Body"],5:["Push A","Pull A","Legs A","Push B","Pull B"],6:["Push A","Pull A","Legs A","Push B","Pull B","Legs B"]},
+    "push_pull_legs": {3:["Push A","Pull A","Legs A"],4:["Push A","Pull A","Legs A","Push B"],5:["Push A","Pull A","Legs A","Push B","Pull B"],6:["Push A","Pull A","Legs A","Push B","Pull B","Legs B"]},
     "body_part": {2:["Upper A","Lower A"],3:["Push A","Pull A","Legs A"],4:["Upper A","Lower A","Push A","Pull A"],5:["Push A","Pull A","Legs A","Upper B","Lower B"],6:["Push A","Pull A","Legs A","Push B","Pull B","Legs B"]},
     "hybrid": {2:["Full Body A","Full Body B"],3:["Upper A","Lower A","Full Body"],4:["Upper A","Lower A","Full Body A","Full Body B"],5:["Upper A","Lower A","Push A","Pull A","Legs A"],6:["Upper A","Lower A","Push A","Pull A","Legs A","Full Body"]},
 }
@@ -83,6 +83,34 @@ SPORT_PROFILES = {
     "swimming": {"label":"Swimming","patterns":["Vertical Pull","Horizontal Pull","Shoulder Isolation","Anti-Extension"],"muscles":["Lats","Shoulders","Upper Back","Core"],"split":"upper_lower","rep_bias":1,"conditioning":["Steady-State Cardio"]},
     "lacrosse": {"label":"Lacrosse","patterns":["Lunge","Rotation","Horizontal Pull","Horizontal Push","Hinge"],"muscles":["Core","Glutes","Back","Shoulders"],"split":"hybrid","rep_bias":0,"conditioning":["Interval Cardio"]},
 }
+
+CUSTOM_MUSCLE_TEMPLATES = {
+    "Chest": [("Horizontal Push", "compound"), ("Horizontal Push", "isolation")],
+    "Back": [("Vertical Pull", "compound"), ("Horizontal Pull", "compound")],
+    "Shoulders": [("Vertical Push", "compound"), ("Shoulder Isolation", "isolation")],
+    "Biceps": [("Elbow Flexion", "isolation")],
+    "Triceps": [("Elbow Extension", "isolation")],
+    "Quads": [("Squat", "compound"), ("Knee Extension", "isolation")],
+    "Hamstrings": [("Hinge", "compound"), ("Knee Flexion", "isolation")],
+    "Glutes": [("Hip Extension", "compound"), ("Lunge", "compound")],
+    "Calves": [("Calf Raise", "isolation")],
+    "Core": [("Anti-Extension", "core"), ("Anti-Rotation", "core")],
+}
+
+def normalize_custom_split(custom_split, days):
+    items=[]
+    for i, raw in enumerate(custom_split or []):
+        if not isinstance(raw, dict):
+            continue
+        muscles=[]
+        for m in raw.get("muscles", []):
+            name=str(m).strip()
+            if name in CUSTOM_MUSCLE_TEMPLATES and name not in muscles:
+                muscles.append(name)
+        if muscles:
+            items.append({"name": str(raw.get("name") or f"Custom Day {i+1}").strip()[:60], "muscles": muscles})
+    return items[:days]
+
 def resolve_sport_split(days, split_preference, sport):
     if split_preference and split_preference!="auto":
         return resolve_split(days, split_preference)
@@ -266,6 +294,7 @@ class UserProfile:
     sport: str = "general"
     core_workouts_per_week: int = 2
     cardio_workouts_per_week: int = 2
+    custom_split: tuple[dict[str, Any], ...] = ()
 
 @dataclass
 class PlannedExercise:
@@ -896,6 +925,40 @@ class PlanGenerator:
         workout.cardio_equipment=chosen["equipment"]
         workout.estimated_minutes+=duration
 
+    def generate_custom_workout(self, profile: UserProfile, day: dict[str, Any], candidates):
+        muscles=list(day.get("muscles") or [])
+        if not muscles:
+            raise ValueError("Every custom split day needs at least one muscle group.")
+        template=[]
+        for muscle in muscles:
+            for slot in CUSTOM_MUSCLE_TEMPLATES.get(muscle, []):
+                if slot not in template:
+                    template.append(slot)
+        used=set()
+        selected=[]
+        for pattern, kind in template:
+            e=self._pick(candidates, pattern, kind, profile, used)
+            if not e:
+                continue
+            used.add(e["name"])
+            low, high=self._rep_range(e, profile.goal)
+            low, high=self._intelligent_reps(e, profile, low, high)
+            selected.append(PlannedExercise(
+                exercise_id=e["id"], name=e["name"], movement_pattern=e["movement_pattern"],
+                primary_muscle=e["primary_muscle"], equipment=e["equipment"],
+                sets=self._intelligent_sets(e, profile), min_reps=low, max_reps=high,
+                rest_seconds=e["default_rest_seconds"], progression_method=self._progression_note(e, profile),
+            ))
+        if not selected:
+            raise ValueError(f"No eligible exercises could be selected for {day.get('name') or 'custom day'}.")
+        max_exercises=GOAL_SETTINGS[profile.goal]["max_exercises"]
+        selected=self._intelligent_trim(selected[:max_exercises], profile.minutes_per_workout)
+        return Workout(
+            name=str(day.get("name") or "Custom Day"),
+            estimated_minutes=self._estimate_minutes(selected),
+            exercises=selected,
+        )
+
     def generate_plan(self, profile: UserProfile):
         if profile.days_per_week not in SPLITS:
             raise ValueError("days_per_week must be between 2 and 6")
@@ -909,10 +972,15 @@ class PlanGenerator:
         if not candidates:
             raise ValueError("No exercises match the selected equipment/preferences.")
 
-        workouts = [
-            self.generate_workout(profile, name, candidates)
-            for name in resolve_sport_split(profile.days_per_week, profile.workout_split, profile.sport)
-        ]
+        custom_days=normalize_custom_split(profile.custom_split, profile.days_per_week)
+        if profile.workout_split == "custom":
+            if len(custom_days) != profile.days_per_week:
+                raise ValueError(f"Custom split requires exactly {profile.days_per_week} configured training days.")
+            workouts=[self.generate_custom_workout(profile, day, candidates) for day in custom_days]
+            resolved_split=[w.name for w in workouts]
+        else:
+            resolved_split=resolve_sport_split(profile.days_per_week, profile.workout_split, profile.sport)
+            workouts = [self.generate_workout(profile, name, candidates) for name in resolved_split]
         core_count=max(0,min(int(profile.core_workouts_per_week),len(workouts)))
         cardio_count=max(0,min(int(profile.cardio_workouts_per_week),len(workouts)))
         if profile.cardio_preference=="none":
@@ -963,7 +1031,8 @@ class PlanGenerator:
                 "goal-aware cardio interference management",
             ],
             "profile": asdict(profile),
-            "split": resolve_sport_split(profile.days_per_week, profile.workout_split, profile.sport),
+            "split": resolved_split,
+            "custom_split": custom_days if profile.workout_split == "custom" else [],
             "cardio_preference": profile.cardio_preference,
             "workout_split": profile.workout_split,
             "sport": profile.sport,

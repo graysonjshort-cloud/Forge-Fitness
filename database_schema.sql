@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
     recovery_level TEXT NOT NULL DEFAULT 'normal',
     cardio_preference TEXT NOT NULL DEFAULT 'moderate',
     workout_split TEXT NOT NULL DEFAULT 'auto',
+    custom_split_json TEXT NOT NULL DEFAULT '[]',
     sport TEXT NOT NULL DEFAULT 'general',
     core_workouts_per_week INTEGER NOT NULL DEFAULT 2,
     cardio_workouts_per_week INTEGER NOT NULL DEFAULT 2,

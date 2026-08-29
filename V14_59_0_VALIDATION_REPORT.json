@@ -1,0 +1,26 @@
+{
+  "version": "14.59.0",
+  "release": "Split Builder & Full Plan Regeneration",
+  "status": "passed",
+  "static_validation": {
+    "status": "passed",
+    "routes_checked": 29,
+    "equipment_assets_checked": 107,
+    "frontend_modules_checked": 10
+  },
+  "frontend_contract_validation": {
+    "status": "passed",
+    "frontend_api_calls_checked": 119,
+    "backend_routes_found": 113,
+    "missing_contracts": []
+  },
+  "e2e": {
+    "status": "passed",
+    "new_regressions_verified": [
+      "Push/Pull/Legs 4-day rotation resolves as Push A, Pull A, Legs A, Push B",
+      "custom muscle-group split generates all configured days",
+      "active plan is fully regenerated after plan-impacting profile changes",
+      "session intelligence and existing workout lifecycle remain operational"
+    ]
+  }
+}

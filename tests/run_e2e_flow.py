@@ -71,6 +71,29 @@ def main():
         _,current=req("GET","/me/plan/current",token=token)
         assert current["workouts"][0]["workout_id"]
 
+        # v14.59 plan-generation regression coverage: PPL must resolve directly,
+        # custom muscle-day splits must generate, and settings changes must fully rebuild.
+        ppl={**profile,"workout_split":"push_pull_legs","custom_split":[]}
+        _,saved=req("POST","/me/profile",ppl,token)
+        assert saved["plan_regenerated"] is True
+        assert saved["regenerated_plan"]["split"]==["Push A","Pull A","Legs A","Push B"]
+        custom_days=[
+            {"name":"Chest + Triceps","muscles":["Chest","Triceps"]},
+            {"name":"Back + Biceps","muscles":["Back","Biceps"]},
+            {"name":"Quads + Calves","muscles":["Quads","Calves"]},
+            {"name":"Hamstrings + Glutes + Shoulders","muscles":["Hamstrings","Glutes","Shoulders"]},
+        ]
+        custom={**profile,"workout_split":"custom","custom_split":custom_days}
+        _,saved=req("POST","/me/profile",custom,token)
+        assert saved["plan_regenerated"] is True
+        assert saved["regenerated_plan"]["split"]==[x["name"] for x in custom_days]
+        restored={**profile,"minutes_per_workout":50}
+        _,saved=req("POST","/me/profile",restored,token)
+        assert saved["plan_regenerated"] is True
+        assert saved["regenerated_plan"]["profile"]["minutes_per_workout"]==50
+        profile=restored
+        current=saved["regenerated_plan"]
+
         # Workout lifecycle: start, restore state, log a set, persist position/rest.
         first=current["workouts"][0]
         _,sess=req("POST",f"/me/workout/{first['workout_id']}/start",{},token)
