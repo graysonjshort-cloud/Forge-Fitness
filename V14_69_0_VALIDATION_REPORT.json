@@ -1,0 +1,27 @@
+{
+  "version": "14.69.0",
+  "status": "passed",
+  "release": "Recovery & Readiness 2.0",
+  "validation": {
+    "static_validation": "passed",
+    "frontend_contract_validation": "passed",
+    "frontend_api_calls_checked": 126,
+    "backend_routes_found": 121,
+    "missing_contracts": [],
+    "e2e_flow": "passed",
+    "plan_precision_validation": "passed"
+  },
+  "regression_coverage": [
+    "custom split sequence preserved",
+    "no duplicate exercise quota filling",
+    "adaptive next-week generation",
+    "exercise locks and plan rebuild safeguards"
+  ],
+  "feature_checks": [
+    "server-side readiness evaluation",
+    "sleep/soreness/energy/motivation inputs",
+    "recent-fatigue integration",
+    "time-available adjustment",
+    "mesocycle deload awareness"
+  ]
+}

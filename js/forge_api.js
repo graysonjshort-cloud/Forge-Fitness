@@ -31,7 +31,13 @@
         }).join(" • ");
         throw Error(msg||`Request failed (${response.status})`);
       }
-      if(detail&&typeof detail==="object")throw Error(detail.message||detail.msg||JSON.stringify(detail));
+      if(detail&&typeof detail==="object"){
+        const parts=[];
+        if(detail.message||detail.msg)parts.push(detail.message||detail.msg);
+        if(Array.isArray(detail.errors))parts.push(...detail.errors.map(String));
+        if(Array.isArray(detail.warnings)&&detail.warnings.length)parts.push(`Warnings: ${detail.warnings.map(String).join(" • ")}`);
+        throw Error(parts.filter(Boolean).join(" • ")||JSON.stringify(detail));
+      }
       throw Error(detail||`Request failed (${response.status})`);
     }
     return data;

@@ -650,7 +650,14 @@ class PlanGenerator:
         elif recovery == "high":
             score += 3
 
-        # If an exercise has been skipped repeatedly, make alternatives more likely.
+        # Adaptive Programming 2.0 can explicitly keep, progress, reduce, or rotate a movement.
+        action=history.get("adaptive_action")
+        if action=="rotate": score-=35
+        elif action=="progress": score+=10
+        elif action=="hold": score+=2
+        elif action=="reduce": score-=5
+
+        # If an exercise has been skipped recently, make alternatives more likely.
         if history.get("skipped"):
             score -= 20
 
@@ -676,6 +683,9 @@ class PlanGenerator:
             sets += 1
 
         history = self._history_for(profile, e["name"])
+        action=history.get("adaptive_action")
+        if action=="progress" and profile.experience!="beginner": sets+=1
+        elif action=="reduce": sets=max(1,sets-1)
         difficulty = history.get("difficulty")
         if isinstance(difficulty, (int, float)):
             if difficulty >= INTELLIGENT_RULES["difficulty_up"]:
@@ -703,6 +713,11 @@ class PlanGenerator:
         numeric_reps = [r for r in reps if isinstance(r, (int, float))]
         if not numeric_reps:
             return low, high
+        action=history.get("adaptive_action")
+        if action=="progress":
+            low=min(int(e["max_reps"]),low+1); high=min(int(e["max_reps"]),max(low,high+1))
+        elif action=="reduce":
+            low=max(int(e["min_reps"]),low-1); high=max(low,min(int(e["max_reps"]),high-1))
 
         avg_reps = sum(numeric_reps) / len(numeric_reps)
 
@@ -1209,6 +1224,23 @@ class PlanGenerator:
                 workout_dicts[idx]["cardio_name"]=None
                 workout_dicts[idx]["cardio_minutes"]=0
 
+        # v14.68 Workout Execution 3.0: warm-ups, compatible pairings and time estimates.
+        for wi,w in enumerate(workout_dicts):
+            isolation_indexes=[]
+            for ei,ex in enumerate(w.get("exercises",[])):
+                raw=next((x for x in candidates if int(x["id"])==int(ex["exercise_id"])),None)
+                pattern=str(ex.get("movement_pattern") or "")
+                compound=bool(raw and str(raw.get("category","")).lower()=="compound") or pattern in {"Squat","Hinge","Horizontal Push","Horizontal Pull","Vertical Push","Vertical Pull","Lunge","Hip Extension"}
+                ex["warmup_sets"]=[{"percent":50,"reps":8},{"percent":70,"reps":5}] if compound else []
+                ex["execution"]={"working_sets":int(ex.get("sets",0)),"warmup_set_count":len(ex["warmup_sets"]),"rest_guidance_seconds":int(ex.get("rest_seconds") or 60)}
+                if not compound: isolation_indexes.append(ei)
+            pair=1
+            for a,b in zip(isolation_indexes[::2],isolation_indexes[1::2]):
+                w["exercises"][a]["superset_group"]=f"S{pair}"; w["exercises"][b]["superset_group"]=f"S{pair}"; pair+=1
+            total_work=sum(int(x.get("sets",0)) for x in w.get("exercises",[]))
+            total_warm=sum(len(x.get("warmup_sets",[])) for x in w.get("exercises",[]))
+            w["execution_summary"]={"working_sets":total_work,"warmup_sets":total_warm,"superset_pairs":pair-1,"estimated_minutes":int(w.get("estimated_minutes") or profile.minutes_per_workout)}
+
         # Plan Generator 4.0 audit: volume, subsection coverage, recovery warnings and redundancy.
         volume_audit={}
         redundancy=[]
@@ -1226,11 +1258,35 @@ class PlanGenerator:
                         families.setdefault(fam,[]).append(ex.get("name"))
             for fam,names in families.items():
                 if len(names)>=3: redundancy.append({"workout_index":wi,"movement_family":fam,"exercises":names,"warning":"High movement redundancy"})
-        plan_audit={"submuscle_set_equivalents":volume_audit,"redundancy_warnings":redundancy,"status":"review" if redundancy else "balanced"}
+        # v14.67: broad-muscle weekly volume budgeting. Secondary links count as half a set.
+        broad_volume={}
+        for wi,w in enumerate(workout_dicts):
+            for ex in w.get("exercises",[]):
+                raw=next((x for x in candidates if int(x["id"])==int(ex["exercise_id"])),None)
+                if not raw: continue
+                for link in raw.get("muscle_links",[]):
+                    group=link.get("muscle_group")
+                    if not group: continue
+                    weight=1.0 if link.get("role")=="primary" else 0.5
+                    broad_volume[group]=round(broad_volume.get(group,0)+float(ex.get("sets",0))*weight,1)
+        base_target={"beginner":8,"intermediate":12,"advanced":14}.get(profile.experience,12)
+        volume_budget={}
+        for muscle,actual in sorted(broad_volume.items()):
+            priority=muscle in set(profile.priority_muscles or ())
+            target=base_target+(2 if priority else 0)
+            low=max(4,target-2); high=target+2
+            status="low" if actual<low else "high" if actual>high else "on_target"
+            volume_budget[muscle]={"actual_set_equivalents":actual,"target_range":[low,high],"priority":priority,"status":status}
+        plan_audit={"submuscle_set_equivalents":volume_audit,"broad_muscle_volume":broad_volume,"weekly_volume_budget":volume_budget,"redundancy_warnings":redundancy,"status":"review" if redundancy or any(x["status"]!="on_target" for x in volume_budget.values()) else "balanced"}
 
         return {
-            "planner_version": "4.0-plan-intelligence",
+            "planner_version": "4.3-workout-execution",
             "adaptive_features": [
+                "workout execution 3.0 warm-up prescriptions",
+                "optional compatible supersets",
+                "mesocycle-aware weekly volume budgeting",
+                "deload-aware progression pressure",
+                "adaptive programming 2.0 exercise decisions",
                 "recent performance adaptation",
                 "recovery-aware set adjustment",
                 "muscle-priority weighting",

@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 import database
 import calendar_integration
 import nutrition_lookup
-from fitness_app_plan_generator_upgraded import PlanGenerator, UserProfile, TrainingState
+from fitness_app_plan_generator_upgraded import PlanGenerator, UserProfile, TrainingState, normalize_custom_split
 from fitness_app_weekly_program_controller import (
     WeeklyProgramController, WeeklyProgramState, WeeklyWorkoutResult,
 )
@@ -633,6 +633,14 @@ class PerformanceRequest(BaseModel):
     skipped: bool = False
 
 
+class ReadinessEvaluationRequest(BaseModel):
+    energy: float = Field(3, ge=1, le=5)
+    soreness: float = Field(2, ge=1, le=5)
+    motivation: float = Field(3, ge=1, le=5)
+    sleep: float = Field(3, ge=1, le=5)
+    minutes_available: int = Field(45, ge=10, le=240)
+    planned_minutes: int = Field(45, ge=10, le=240)
+
 class CompleteWorkoutRequest(BaseModel):
     session_id: int
     completed: bool = True
@@ -702,6 +710,55 @@ def _generate_and_save(user_id: int, profile: UserProfile, state: Optional[Weekl
 
 
 
+def _readiness_evaluation(user_id: int, req: ReadinessEvaluationRequest, db_path=DB_PATH) -> dict:
+    intelligence=database.get_progress_intelligence(user_id,db_path)
+    metrics=intelligence.get("metrics") or {}
+    history_fatigue=float(metrics.get("fatigue_score",0.0) or 0.0)
+    subjective=((req.energy+req.motivation+req.sleep+(6-req.soreness))/4.0)
+    history_penalty=min(1.25,history_fatigue/8.0)
+    score=max(1.0,min(5.0,subjective-history_penalty*.45))
+    time_ratio=min(1.0,req.minutes_available/max(1,req.planned_minutes))
+    if score<2.3 or history_fatigue>=8:
+        mode="recovery"; set_reduction=1; effort_cap=7.5
+    elif score<3.25 or history_fatigue>=6:
+        mode="controlled"; set_reduction=0; effort_cap=8.0
+    elif score>=4.25 and history_fatigue<5:
+        mode="push"; set_reduction=0; effort_cap=9.0
+    else:
+        mode="normal"; set_reduction=0; effort_cap=8.5
+    return {"version":"2.0","score":round(score,1),"mode":mode,"set_reduction":set_reduction,"effort_cap":effort_cap,"keep_ratio":round(time_ratio,2),"history_fatigue":round(history_fatigue,1),"signals":{"energy":req.energy,"soreness":req.soreness,"motivation":req.motivation,"sleep":req.sleep,"minutes_available":req.minutes_available,"planned_minutes":req.planned_minutes},"reason":f"Readiness {score:.1f}/5 with recent fatigue {history_fatigue:.1f}/10 and {req.minutes_available}/{req.planned_minutes} minutes available."}
+
+def _mesocycle_snapshot(user_id: int, db_path=DB_PATH) -> dict:
+    """v14.67 six-week training block derived from persisted training week state."""
+    state=database.get_training_state(user_id,db_path)
+    week=max(1,int(state.get("week_number",1) or 1))
+    block_length=6
+    block_number=((week-1)//block_length)+1
+    week_in_block=((week-1)%block_length)+1
+    fatigue=float(state.get("fatigue_score",0.0) or 0.0)
+    hard=int(state.get("consecutive_hard_weeks",0) or 0)
+    forced_deload=fatigue>=8 or hard>=3
+    if week_in_block>=6 or forced_deload:
+        phase="deload"; volume_multiplier=.72; intensity_cue="Keep loads submaximal and leave 3+ reps in reserve."
+    elif week_in_block>=4:
+        phase="intensification"; volume_multiplier=1.0; intensity_cue="Hold volume steady and progress load/reps selectively."
+    else:
+        phase="accumulation"; volume_multiplier=1.0 + .04*(week_in_block-1); intensity_cue="Build productive volume while keeping reps clean."
+    return {"version":"1.0","block_number":block_number,"block_length_weeks":block_length,"week_in_block":week_in_block,"phase":phase,"volume_multiplier":round(volume_multiplier,2),"deload_recommended":phase=="deload","fatigue_score":round(fatigue,1),"intensity_cue":intensity_cue}
+
+def _apply_mesocycle_to_plan(plan: dict, meso: dict) -> dict:
+    """Apply block-level volume pressure without changing exercise order or user locks."""
+    mult=float(meso.get("volume_multiplier",1.0) or 1.0)
+    for workout in plan.get("workouts",[]):
+        for ex in workout.get("exercises",[]):
+            sets=max(1,int(ex.get("sets",1) or 1))
+            if meso.get("phase")=="deload": ex["sets"]=max(1,round(sets*mult))
+            elif mult>1 and sets<5: ex["sets"]=min(5,sets+(1 if mult>=1.08 else 0))
+            ex["mesocycle_phase"]=meso.get("phase")
+        workout["mesocycle_phase"]=meso.get("phase")
+    plan["mesocycle"]=meso
+    return plan
+
 def _adaptive_week_snapshot(user_id: int, db_path=DB_PATH) -> dict:
     """Build a conservative next-week recommendation from recorded Forge data."""
     state=database.get_training_state(user_id,db_path)
@@ -741,7 +798,14 @@ def _adaptive_week_snapshot(user_id: int, db_path=DB_PATH) -> dict:
         set_change="Progress load/reps using logged performance"
         time_change="Keep normal session length"
 
+    exercise_decisions=_exercise_adaptation_decisions(user_id,db_path)
+    mesocycle=_mesocycle_snapshot(user_id,db_path)
+    action_counts={k:sum(1 for x in exercise_decisions if x.get("action")==k) for k in ("progress","hold","reduce","rotate")}
     return {
+        "adaptive_programming_version":"2.1-mesocycle",
+        "mesocycle":mesocycle,
+        "exercise_decisions":exercise_decisions,
+        "exercise_action_counts":action_counts,
         "recommendation":recommendation,
         "title":title,
         "reason":reason,
@@ -1379,6 +1443,97 @@ def _normalize_exercise_targets(values, days_per_week: int, global_target: int) 
         out.append(max(3,min(value,10)))
     return out
 
+def _plan_rebuild_diagnostics(user_id: int, updated: dict, preferred_days: list[int] | None = None) -> dict:
+    """Validate rebuild inputs before any active plan/profile is replaced."""
+    errors=[]; warnings=[]
+    days=int(updated.get("days_per_week",4) or 4)
+    targets=_normalize_exercise_targets(updated.get("exercises_per_workout"),days,updated.get("exercises_per_day",6))
+    if len(targets)!=days:
+        errors.append(f"Expected {days} exercise targets but received {len(targets)}.")
+    if preferred_days is not None:
+        normalized=[]
+        for raw in preferred_days:
+            try:d=int(raw)
+            except Exception: continue
+            if 0<=d<=6 and d not in normalized: normalized.append(d)
+        if len(normalized)!=days:
+            errors.append(f"Choose exactly {days} unique training days.")
+    split=str(updated.get("workout_split","auto"))
+    custom=list(updated.get("custom_split") or [])
+    if split=="custom":
+        if len(custom)!=days:
+            errors.append(f"Custom split has {len(custom)} configured days but the plan requests {days} workout days.")
+        for i,day in enumerate(custom[:days]):
+            muscles=[str(x).strip() for x in (day.get("muscles") or []) if str(x).strip()]
+            if not muscles: errors.append(f"Custom split Day {i+1} needs at least one muscle group.")
+    locks=database.get_plan_exercise_locks(user_id,DB_PATH)
+    excluded={str(x).strip().lower() for x in (updated.get("excluded_exercises") or [])}
+    if locks and excluded:
+        with database.session(DB_PATH) as con:
+            rows=con.execute("SELECT id,name FROM exercises").fetchall()
+        names={int(r["id"]):str(r["name"]) for r in rows}
+        for wi,ids in locks.items():
+            for exid in ids:
+                name=names.get(int(exid))
+                if name and name.lower() in excluded:
+                    errors.append(f"{name} is locked in Day {int(wi)+1} but is also excluded.")
+    if any(t>=9 for t in targets): warnings.append("High exercise-count targets may be limited by equipment, exclusions, session length, or redundancy protection.")
+    return {"status":"blocked" if errors else ("review" if warnings else "ready"),"errors":errors,"warnings":warnings,"normalized_exercise_targets":targets}
+
+def _generated_plan_invariants(plan: dict, profile: UserProfile) -> list[str]:
+    """Hard invariants for every generated plan. Returns human-readable failures."""
+    errors=[]
+    workouts=list(plan.get("workouts") or [])
+    if len(workouts)!=int(profile.days_per_week):
+        errors.append(f"Generator returned {len(workouts)} workouts for a {profile.days_per_week}-day plan.")
+    if profile.workout_split=="custom":
+        expected=[str(x.get("name") or "").strip() for x in normalize_custom_split(profile.custom_split,profile.days_per_week)]
+        actual=[str(x.get("name") or "").strip() for x in workouts]
+        if expected and actual!=expected: errors.append("Custom split workout sequence changed during generation.")
+    locks=getattr(profile,"locked_exercises",None) or {}
+    for wi,w in enumerate(workouts):
+        ids=[int(x.get("exercise_id") or 0) for x in (w.get("exercises") or [])]
+        names=[str(x.get("name") or "").strip().lower() for x in (w.get("exercises") or [])]
+        if len(ids)!=len(set(ids)): errors.append(f"Day {wi+1} contains a duplicate exercise ID.")
+        if len(names)!=len(set(names)): errors.append(f"Day {wi+1} contains a duplicate exercise name.")
+        missing=[int(x) for x in locks.get(wi,[]) if int(x) not in ids]
+        if missing: errors.append(f"Day {wi+1} lost {len(missing)} locked exercise(s) during generation.")
+    return errors
+
+def _plan_diff(current: dict, proposed: dict) -> list[dict]:
+    changes=[]
+    old_workouts=current.get("workouts") or []
+    for i,neww in enumerate(proposed.get("workouts") or []):
+        oldw=old_workouts[i] if i<len(old_workouts) else {}
+        old={str(x.get("name")):x for x in oldw.get("exercises",[])}
+        new={str(x.get("name")):x for x in neww.get("exercises",[])}
+        set_changes=[]
+        for name in sorted(set(old)&set(new)):
+            before=int(old[name].get("sets") or 0); after=int(new[name].get("sets") or 0)
+            if before!=after:set_changes.append({"exercise":name,"before":before,"after":after})
+        changes.append({"workout_index":i,"name":neww.get("name"),"exercise_count_before":len(old),"exercise_count_after":len(new),"kept":[x for x in new if x in old],"added":[x for x in new if x not in old],"removed":[x for x in old if x not in new],"set_changes":set_changes})
+    return changes
+
+def _exercise_adaptation_decisions(user_id: int, db_path=DB_PATH) -> list[dict]:
+    """Turn real logged performance into transparent next-week exercise decisions."""
+    history=database.aggregate_recent_exercise_history(user_id,db_path)
+    decisions=[]
+    for name,h in history.items():
+        difficulty=h.get("difficulty")
+        reps=[int(x) for x in (h.get("reps") or []) if isinstance(x,(int,float))]
+        weights=[float(x) for x in (h.get("weights") or []) if isinstance(x,(int,float))]
+        if h.get("skipped"):
+            action="rotate"; reason="Recently skipped; Forge will prefer a comparable alternative when one is available."
+        elif isinstance(difficulty,(int,float)) and difficulty>=9:
+            action="reduce"; reason="Recent effort was near limit, so next week should reduce set/rep pressure."
+        elif isinstance(difficulty,(int,float)) and difficulty<=7 and (reps or weights):
+            action="progress"; reason="Recent work was completed with manageable effort, supporting gradual progression."
+        else:
+            action="hold"; reason="Current evidence supports keeping the exercise and target stable."
+        decisions.append({"exercise":name,"action":action,"reason":reason,"latest_rpe":difficulty,"recent_reps":reps[-5:],"recent_weights":weights[-5:]})
+    order={"reduce":0,"rotate":1,"progress":2,"hold":3}
+    return sorted(decisions,key=lambda x:(order.get(x["action"],9),x["exercise"]))[:24]
+
 def _restore_schedule_days(user_id: int, preferred_days: list[int]) -> None:
     if not preferred_days:
         return
@@ -1450,6 +1605,16 @@ def me_current_plan(authorization: Optional[str]=Header(None)):
 
 
 
+@app.post("/me/readiness/evaluate")
+def evaluate_readiness(request: ReadinessEvaluationRequest, authorization: Optional[str] = Header(None)):
+    user=_require_user(authorization)
+    return _readiness_evaluation(user["user_id"],request,DB_PATH)
+
+@app.get("/me/mesocycle")
+def get_mesocycle(authorization: Optional[str] = Header(None)):
+    user=_require_user(authorization)
+    return _mesocycle_snapshot(user["user_id"],DB_PATH)
+
 @app.get("/me/recovery-intelligence")
 def me_recovery_intelligence(authorization: Optional[str]=Header(None)):
     user=_current_account(authorization)
@@ -1462,7 +1627,8 @@ def me_recovery_intelligence(authorization: Optional[str]=Header(None)):
     if rpe is not None and float(rpe)>=8.8: flags.append("Recent sets are consistently very hard")
     if intel.get("plateau_detected"): flags.append("Strength trend has flattened")
     if adherence is not None and float(adherence)<70: flags.append("Recent training consistency is low")
-    level="deload" if preview.get("recommendation")=="recovery" else "watch" if flags else "ready"
+    meso=_mesocycle_snapshot(user["user_id"],DB_PATH)
+    level="deload" if preview.get("recommendation")=="recovery" or meso.get("deload_recommended") else "watch" if flags else "ready"
     return {"level":level,"title":"Deload recommended" if level=="deload" else "Recovery watch" if level=="watch" else "Recovery supports normal training",
             "flags":flags,"fatigue_score":fatigue,"average_rpe":rpe,"adherence_percent":adherence,
             "recommendation":preview.get("reason"),"set_change":preview.get("set_change"),"time_change":preview.get("time_change")}
@@ -1483,7 +1649,12 @@ def me_apply_adaptation(authorization: Optional[str]=Header(None)):
     profile=_profile_from_db(uid)
     old=database.get_training_state(uid,DB_PATH)
     actual_history=database.aggregate_recent_exercise_history(uid,DB_PATH)
-    if actual_history: old["exercise_history"]=actual_history
+    decisions=_exercise_adaptation_decisions(uid,DB_PATH)
+    decision_by_name={x["exercise"]:x for x in decisions}
+    if actual_history:
+        for name,h in actual_history.items():
+            if name in decision_by_name: h["adaptive_action"]=decision_by_name[name]["action"]
+        old["exercise_history"]=actual_history
 
     state=WeeklyProgramState(
         week_number=int(old.get("week_number",1) or 1),
@@ -1502,6 +1673,8 @@ def me_apply_adaptation(authorization: Optional[str]=Header(None)):
     database.save_training_state(uid,asdict(new_state),DB_PATH)
     adjusted=controller._adjust_profile(profile,new_state,controller._recommendation(new_state))
     next_plan=_generate_and_save(uid,adjusted,new_state)
+    next_plan["adaptive_programming_2"]={"exercise_decisions":decisions,"weekly_recommendation":controller._recommendation(new_state),"fatigue_score":new_state.fatigue_score,"completion_rate":new_state.last_week_completion_rate}
+    next_plan=_apply_mesocycle_to_plan(next_plan,_mesocycle_snapshot(uid,DB_PATH))
     return {
         "state":asdict(new_state),
         "adaptation":_adaptive_week_snapshot(uid,DB_PATH),
@@ -1880,6 +2053,17 @@ def me_plan_lock(workout_index:int, exercise_id:int, locked:bool=True, authoriza
     user=_current_account(authorization)
     return database.set_plan_exercise_lock(user["user_id"],workout_index,exercise_id,locked,DB_PATH)
 
+@app.post("/me/plan/validate")
+def me_plan_validate(request: PlanReconfigureRequest, authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); uid=user["user_id"]
+    previous=database.get_profile(uid,DB_PATH)
+    if not previous: raise HTTPException(404,"Profile not found")
+    updated=dict(previous)
+    updated.update({"days_per_week":request.days_per_week,"minutes_per_workout":request.minutes_per_workout,"exercises_per_day":request.exercises_per_day})
+    updated["exercises_per_workout"]=_normalize_exercise_targets(request.exercises_per_workout,request.days_per_week,request.exercises_per_day)
+    if request.custom_split: updated["custom_split"]=request.custom_split[:request.days_per_week]
+    return _plan_rebuild_diagnostics(uid,updated,request.preferred_days)
+
 @app.post("/me/plan/preview")
 def me_plan_preview(request: PlanReconfigureRequest, authorization: Optional[str]=Header(None)):
     user=_current_account(authorization); uid=user["user_id"]
@@ -1890,16 +2074,22 @@ def me_plan_preview(request: PlanReconfigureRequest, authorization: Optional[str
     updated["exercises_per_workout"]=_normalize_exercise_targets(request.exercises_per_workout,request.days_per_week,request.exercises_per_day)
     if request.custom_split:
         updated["custom_split"]=request.custom_split[:request.days_per_week]
+    diagnostics=_plan_rebuild_diagnostics(uid,updated,request.preferred_days)
+    if diagnostics["errors"]:
+        raise HTTPException(400,{"message":"Plan rebuild validation failed","errors":diagnostics["errors"],"warnings":diagnostics["warnings"]})
     profile=_profile_from_dict_for_preview(uid,updated)
-    plan=PlanGenerator(DB_PATH).generate_plan(profile)
+    try:
+        plan=PlanGenerator(DB_PATH).generate_plan(profile)
+    except Exception as exc:
+        raise HTTPException(400,{"message":"Forge could not build a valid preview","errors":[str(exc)],"warnings":diagnostics["warnings"]})
+    invariant_errors=_generated_plan_invariants(plan,profile)
+    if invariant_errors:
+        raise HTTPException(409,{"message":"Generated plan failed safety checks","errors":invariant_errors})
     current=database.get_current_plan(uid,DB_PATH) or {}
-    changes=[]
-    for i,neww in enumerate(plan.get("workouts",[])):
-        oldw=(current.get("workouts") or [{}])[i] if i<len(current.get("workouts") or []) else {}
-        old_names=[x.get("name") for x in oldw.get("exercises",[])]
-        new_names=[x.get("name") for x in neww.get("exercises",[])]
-        changes.append({"workout_index":i,"name":neww.get("name"),"kept":[x for x in new_names if x in old_names],"added":[x for x in new_names if x not in old_names],"removed":[x for x in old_names if x not in new_names]})
-    return {"status":"preview","plan":plan,"changes":changes,"locks":database.get_plan_exercise_locks(uid,DB_PATH)}
+    changes=_plan_diff(current,plan)
+    diagnostics["generator_invariants"]="passed"
+    diagnostics["plan_audit"]=plan.get("plan_audit") or {}
+    return {"status":"preview","plan":plan,"changes":changes,"diagnostics":diagnostics,"locks":database.get_plan_exercise_locks(uid,DB_PATH)}
 
 def _profile_from_dict_for_preview(user_id:int,p:dict):
     base=_profile_from_db(user_id)
@@ -1940,11 +2130,19 @@ def me_reconfigure_plan(request: PlanReconfigureRequest, authorization: Optional
     updated["core_workouts_per_week"]=min(int(updated.get("core_workouts_per_week",2)),request.days_per_week)
     updated["cardio_workouts_per_week"]=min(int(updated.get("cardio_workouts_per_week",2)),request.days_per_week)
 
+    diagnostics=_plan_rebuild_diagnostics(uid,updated,days)
+    if diagnostics["errors"]:
+        raise HTTPException(400,{"message":"Plan rebuild validation failed","errors":diagnostics["errors"],"warnings":diagnostics["warnings"]})
+
     try:
         # The generator reads the stored profile. If generation fails, restore the
         # previous profile so a failed rebuild never leaves settings half changed.
         database.upsert_profile(uid,updated,DB_PATH)
-        generated=_generate_and_save(uid,_profile_from_db(uid),replace_active=True)
+        active_profile=_profile_from_db(uid)
+        generated=_generate_and_save(uid,active_profile,replace_active=True)
+        invariant_errors=_generated_plan_invariants(generated,active_profile)
+        if invariant_errors:
+            raise RuntimeError("Plan invariant failure: "+"; ".join(invariant_errors))
         plan=_hydrate_plan_workout_ids(uid,generated)
 
         # Apply the user's exact preferred schedule to the freshly created plan.
@@ -1992,7 +2190,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.64.2"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.69.0"}
 
 
 @app.get("/me/coach/briefing")

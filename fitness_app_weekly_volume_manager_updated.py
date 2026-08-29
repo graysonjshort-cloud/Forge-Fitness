@@ -810,7 +810,8 @@ class WeeklyVolumeManager:
                 for exercise, sets in zip(exercises, alloc):
                     exercise["sets"] = sets
         for workout in plan.get("workouts", []):
-            workout["estimated_minutes"] = self.generator._estimate_minutes([PlannedExercise(**e) for e in workout.get("exercises", [])])
+            allowed={"exercise_id","name","movement_pattern","primary_muscle","equipment","sets","min_reps","max_reps","rest_seconds","progression_method","muscle_targets"}
+            workout["estimated_minutes"] = self.generator._estimate_minutes([PlannedExercise(**{k:v for k,v in e.items() if k in allowed}) for e in workout.get("exercises", [])])
         return plan
 
     def apply_next_week_volume(self, plan: dict, volume_table: list[MuscleVolumeRecord]) -> dict:
