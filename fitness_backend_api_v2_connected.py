@@ -747,6 +747,12 @@ def _adaptive_week_snapshot(user_id: int, db_path=DB_PATH) -> dict:
         "recovery_signal":recovery_signal,
         "adherence_signal":adherence_signal,
         "next_week_number":int(state.get("week_number",1) or 1)+1,
+        "proposed_changes":[
+            {"area":"Strength volume","current":"Current weekly sets","proposed":set_change,"reason":reason},
+            {"area":"Session duration","current":"Current session length","proposed":time_change,"reason":"Match training stress to current recovery and consistency."},
+            {"area":"Exercise progression","current":"Current logged targets","proposed":"Use performance-based load/rep targets" if recommendation=="progress" else "Hold or reduce progression pressure","reason":"Recent performance and effort determine the safest next target."},
+        ],
+        "requires_approval":True,
     }
 
 def _recorded_week_results(user_id: int, db_path=DB_PATH) -> list[WeeklyWorkoutResult]:
@@ -1319,6 +1325,24 @@ def me_current_plan(authorization: Optional[str]=Header(None)):
     if not p: raise HTTPException(404,"No plan found")
     return _hydrate_plan_workout_ids(user["user_id"],p)
 
+
+
+@app.get("/me/recovery-intelligence")
+def me_recovery_intelligence(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    intel=database.get_progress_intelligence(user["user_id"],DB_PATH)
+    preview=_adaptive_week_snapshot(user["user_id"],DB_PATH)
+    m=intel.get("metrics",{})
+    fatigue=float(m.get("fatigue_score") or 0); rpe=m.get("recent_average_rpe"); adherence=m.get("adherence_percent")
+    flags=[]
+    if fatigue>=7: flags.append("High accumulated fatigue")
+    if rpe is not None and float(rpe)>=8.8: flags.append("Recent sets are consistently very hard")
+    if intel.get("plateau_detected"): flags.append("Strength trend has flattened")
+    if adherence is not None and float(adherence)<70: flags.append("Recent training consistency is low")
+    level="deload" if preview.get("recommendation")=="recovery" else "watch" if flags else "ready"
+    return {"level":level,"title":"Deload recommended" if level=="deload" else "Recovery watch" if level=="watch" else "Recovery supports normal training",
+            "flags":flags,"fatigue_score":fatigue,"average_rpe":rpe,"adherence_percent":adherence,
+            "recommendation":preview.get("reason"),"set_change":preview.get("set_change"),"time_change":preview.get("time_change")}
 
 @app.get("/me/program/adaptation-preview")
 def me_adaptation_preview(authorization: Optional[str]=Header(None)):

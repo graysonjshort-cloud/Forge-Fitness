@@ -6,7 +6,7 @@ let authToken = localStorage.getItem("forge_auth_token") || "";
 let account = null;
 let plan = null, session = null;
 const profile = {goal:"build_muscle",experience:"intermediate",days_per_week:4,minutes_per_workout:45,equipment:["full_gym"],preferred_exercises:[],excluded_exercises:[],priority_muscles:[],recovery_level:"normal",cardio_preference:"moderate",workout_split:"auto",sport:"general",core_workouts_per_week:2,cardio_workouts_per_week:2,seed:42};
-const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,sessionStartedAt:null,completedWorkoutSummary:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0,demoAngle:"primary",readinessCheckin:null,todayAdjustment:null,liveAdjustment:null,readinessReturn:"home",swapReason:"preference"};
+const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,sessionStartedAt:null,completedWorkoutSummary:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0,demoAngle:"primary",readinessCheckin:null,todayAdjustment:null,liveAdjustment:null,readinessReturn:"home",swapReason:"preference",recoveryIntelligence:null};
 const V=document.querySelector("#view"),toastEl=document.querySelector("#toast"),nav=document.querySelector("#bottomNav"),topbar=document.querySelector("#topbar");
 const toast=t=>{toastEl.textContent=t;toastEl.classList.add("show");setTimeout(()=>toastEl.classList.remove("show"),1800)};
 const esc=ForgeCore.esc;
@@ -479,7 +479,7 @@ async function loadExerciseDirectory(){
 
 function exercisedirectory(){
 const d=S.exerciseDirectory,rows=d?.exercises||[],filters=d?.filters||{};
-return `<p class=eyebrow>LIBRARY</p><div class=row><div><h2>Exercise Directory</h2><p class=muted>${d?`${d.directory_total} exercises available`:"Loading exercises..."}</p></div><span>▤</span></div>
+return `<p class=eyebrow>LIBRARY</p><div class=row><div><h2>Expanded Exercise Directory</h2><p class=muted>${d?`${d.directory_total} exercises available`:"Loading exercises..."}</p></div><span>▤</span></div>
 <div class=big-spacer></div>
 <input id=exerciseDirectorySearch class=directory-search value="${esc(S.exerciseDirectorySearch)}" placeholder="Search exercises, muscles, equipment...">
 <div class=directory-filter-row>
@@ -828,7 +828,7 @@ function applyTodayAdjustment(adj){
 function todayAdjustmentBanner(){
   const a=S.todayAdjustment;if(!a)return "";
   const tone=a.mode==="recovery"?"recover":a.mode==="push"?"ready":"moderate";
-  return `<div class="card today-adjustment ${tone}"><div class=row><div><p class=eyebrow>TODAY’S ADJUSTMENT</p><h3>${a.mode==="normal"?"Original session":a.mode==="recovery"?"Recovery-biased session":a.mode==="push"?"High-readiness session":"Controlled session"}</h3></div><b>${a.score}/5</b></div><p class=muted>${esc(a.reason)}</p><small>${esc(a.loadCue)}</small></div>`;
+  return `<div class="card today-adjustment ${tone}"><div class=row><div><p class=eyebrow>TODAY’S ADJUSTMENT</p><h3>${a.mode==="normal"?"Original session":a.mode==="recovery"?"Recovery-biased session":a.mode==="push"?"High-readiness session":"Controlled session"}</h3></div><b>${a.score}/5</b></div><p class=muted>${esc(a.reason)}</p>${a.proposed_changes?.length?`<div class=program-change-preview><p class=eyebrow>PROPOSED CHANGES — REVIEW BEFORE APPLYING</p>${a.proposed_changes.map(c=>`<div class=adaptation-note><span><b>${esc(c.area)}</b><small>${esc(c.reason)}</small></span><strong>${esc(c.proposed)}</strong></div>`).join("")}</div>`:""}<small>${esc(a.loadCue)}</small></div>`;
 }
 
 function weeklyInsightsCard(){
@@ -1374,7 +1374,7 @@ function renderPRExerciseList(rows){
 if(!rows.length)return `<div class=card><p class=muted>No PRs yet. Log some workouts first.</p></div>`;
 return rows.map(r=>`<button class="card pr-exercise-card" data-exhist="${r.exercise_id}">
 <div class=row><div><p class=eyebrow>${esc(r.name)}</p><h3>${Number(r.max_weight||0).toFixed(1).replace(/\.0$/,"")} lb max</h3>
-<p class=muted>Estimated 1RM ${Number(r.best_e1rm||0).toFixed(1).replace(/\.0$/,"")} lb • Best reps ${r.best_reps}</p></div><span>›</span></div></button>`).join("");
+<p class=muted>Estimated 1RM ${Number(r.best_e1rm||0).toFixed(1).replace(/\.0$/,"")} lb • Rep PR ${r.best_reps} • Set-volume PR ${Number(r.best_volume_set||0).toFixed(0)} lb</p><small>${esc((r.trend||"steady").toUpperCase())}</small></div><span>›</span></div></button>`).join("");
 }
 function renderPRLiftGroups(rows){
 let groups=PR_LIFT_GROUPS.map(g=>({...g,records:rows.filter(r=>g.patterns.includes(r.movement_pattern))}));
@@ -1685,6 +1685,7 @@ async function applyCoachAction(){
 }
 
 
+async function loadRecoveryIntelligence(){try{S.recoveryIntelligence=await api("/me/recovery-intelligence");if(S.route==="plan")render()}catch(e){console.warn("Recovery intelligence failed",e)}}
 async function loadAdaptationPreview(){
   if(!authToken||!plan)return;
   try{
@@ -1703,20 +1704,21 @@ async function applyAdaptiveWeek(){
   }catch(e){toast(e.message)}
   S.adaptationBusy=false;render();
 }
+function recoveryCard(){const r=S.recoveryIntelligence;if(!r)return `<div class="card"><p class=eyebrow>RECOVERY</p><p class=muted>Analyzing recovery…</p></div>`;return `<div class="card recovery-card ${r.level}"><p class=eyebrow>RECOVERY + DELOAD INTELLIGENCE</p><h3>${esc(r.title)}</h3><p class=muted>${esc(r.recommendation||"")}</p>${(r.flags||[]).length?`<div class=stack>${r.flags.map(x=>`<small>• ${esc(x)}</small>`).join("")}</div>`:""}<div class=adaptation-metrics><div><small>Fatigue</small><b>${Number(r.fatigue_score||0).toFixed(1)}/10</b></div><div><small>Avg effort</small><b>${r.average_rpe==null?"—":Number(r.average_rpe).toFixed(1)}</b></div><div><small>Adherence</small><b>${r.adherence_percent==null?"—":Math.round(r.adherence_percent)+"%"}</b></div></div></div>`}
 function adaptationCard(){
   const a=S.adaptationPreview;
   if(!a)return `<div class="card adaptation-card"><p class=eyebrow>ADAPTIVE PROGRAMMING</p><h3>Analyzing your week…</h3><p class=muted>Forge is checking completion, recovery, strength trend, and recent effort.</p></div>`;
   const pct=Math.round(Number(a.completion_rate||0)*100);
   return `<div class="card adaptation-card ${a.recommendation}">
     <div class=row><div><p class=eyebrow>NEXT-WEEK ADAPTATION</p><h3>${esc(a.title)}</h3></div><span class=adaptation-badge>${esc(a.recommendation.toUpperCase())}</span></div>
-    <p class=muted>${esc(a.reason)}</p>
+    <p class=muted>${esc(a.reason)}</p>${a.proposed_changes?.length?`<div class=program-change-preview><p class=eyebrow>PROPOSED CHANGES — REVIEW BEFORE APPLYING</p>${a.proposed_changes.map(c=>`<div class=adaptation-note><span><b>${esc(c.area)}</b><small>${esc(c.reason)}</small></span><strong>${esc(c.proposed)}</strong></div>`).join("")}</div>`:""}
     <div class=adaptation-metrics>
       <div><small>Completion</small><b>${pct}%</b></div>
       <div><small>Fatigue</small><b>${Number(a.fatigue_score||0).toFixed(1)}/10</b></div>
       <div><small>Volume</small><b>${esc(a.set_change)}</b></div>
     </div>
     <div class=adaptation-note><b>Session change</b><span>${esc(a.time_change)}</span></div>
-    ${a.can_apply?`<button class=btn data-a=apply-adaptation ${S.adaptationBusy?"disabled":""}>${S.adaptationBusy?"Building next week…":`Build Week ${a.next_week_number}`}</button>`:`<div class=adaptation-lock><b>${a.unfinished_workouts} workout${a.unfinished_workouts===1?"":"s"} remaining</b><span>Complete or skip the current week before Forge builds the next adaptive week.</span></div>`}
+    ${a.can_apply?`<button class=btn data-a=apply-adaptation ${S.adaptationBusy?"disabled":""}>${S.adaptationBusy?"Building next week…":`Approve & Build Week ${a.next_week_number}`}</button>`:`<div class=adaptation-lock><b>${a.unfinished_workouts} workout${a.unfinished_workouts===1?"":"s"} remaining</b><span>Complete or skip the current week before Forge builds the next adaptive week.</span></div>`}
   </div>`;
 }
 function planScreen(){
@@ -1749,7 +1751,7 @@ ${tab==="overview"?`
   </div>
 
   <div class=spacer></div>
-  ${adaptationCard()}
+  ${recoveryCard()}<div class=spacer></div>${adaptationCard()}
   <div class=spacer></div>
   <div class=plan-overview-stats>
     <div><b>${workouts.length}</b><small>Days / Week</small></div>
@@ -1954,7 +1956,7 @@ document.querySelectorAll("[data-rpe]").forEach(b=>b.onclick=()=>{
 });
 document.querySelectorAll("[data-addrest]").forEach(b=>b.onclick=()=>{S.restRemaining+=Number(b.dataset.addrest);S.restTotal=Math.max(S.restTotal,S.restRemaining);render()});
 document.querySelectorAll("[data-prefpick]").forEach(b=>b.onclick=()=>{const arr=S.prefMode==="avoid"?profile.excluded_exercises:profile.priority_muscles,v=b.dataset.prefpick,i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else arr.push(v);render()});
-const rf=document.querySelector("#registerForm");if(rf)rf.onsubmit=submitRegister;const lf=document.querySelector("#loginForm");if(lf)lf.onsubmit=submitLogin;if(S.route==="progress"&&!S.strengthTrend)loadStrengthTrend();if(S.route==="plan"&&!S.adaptationPreview)loadAdaptationPreview();if(["equipment","equipmentlog"].includes(S.route)&&!S.equipmentLoaded)loadEquipmentLog();if(["exercisedirectory","preferences","preferencepicker"].includes(S.route)&&!S.exerciseDirectory)loadExerciseDirectory();if(S.route==="coach"&&!S.coachLoaded)loadCoach();if(S.route==="exercise")loadExerciseRecall();if(S.route==="swapexercise")loadSwapOptions();if(S.route==="cardioswap")loadCardioSwapOptions();if(S.route==="timer")startTimer();if(S.route==="history")loadHistory();if(S.route==="prs")loadPRs();if(S.route==="nutrition"&&!S.nutrition)loadNutrition();
+const rf=document.querySelector("#registerForm");if(rf)rf.onsubmit=submitRegister;const lf=document.querySelector("#loginForm");if(lf)lf.onsubmit=submitLogin;if(S.route==="progress"&&!S.strengthTrend)loadStrengthTrend();if(S.route==="plan"&&!S.adaptationPreview)loadAdaptationPreview();if(S.route==="plan"&&!S.recoveryIntelligence)loadRecoveryIntelligence();if(["equipment","equipmentlog"].includes(S.route)&&!S.equipmentLoaded)loadEquipmentLog();if(["exercisedirectory","preferences","preferencepicker"].includes(S.route)&&!S.exerciseDirectory)loadExerciseDirectory();if(S.route==="coach"&&!S.coachLoaded)loadCoach();if(S.route==="exercise")loadExerciseRecall();if(S.route==="swapexercise")loadSwapOptions();if(S.route==="cardioswap")loadCardioSwapOptions();if(S.route==="timer")startTimer();if(S.route==="history")loadHistory();if(S.route==="prs")loadPRs();if(S.route==="nutrition"&&!S.nutrition)loadNutrition();
 if(S.route==="exercisehistory")loadExerciseHistory();
 if(S.route==="calendarsettings"){if(!S.calendarStatus||!S.timeSettings)loadCalendarSettings();startLiveClock()}else stopLiveClock()}
 function toggleArr(arr,v){const i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else arr.push(v);render()}
