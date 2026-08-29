@@ -3438,3 +3438,65 @@ def get_exercise_directory_item(exercise_id: int, user_id: int | None = None,
     d["user_preference"]=pref.get("preference","neutral")
     d["preference_notes"]=pref.get("notes")
     return d
+
+# v14.51-v14.53 daily-use editing helpers
+def _owned_workout_context(user_id, workout_id, db_path=DEFAULT_DB_PATH):
+    with session(db_path) as con:
+        row=con.execute("""SELECT w.id,w.workout_index,pw.id AS week_id,pw.plan_json FROM workouts w JOIN program_weeks pw ON pw.id=w.program_week_id JOIN programs p ON p.id=pw.program_id WHERE w.id=? AND p.user_id=?""",(workout_id,user_id)).fetchone()
+    if not row: raise ValueError("Workout not found")
+    return dict(row)
+
+def _sync_workout_plan(con, ctx, workout_id):
+    plan=json.loads(ctx["plan_json"]); wi=int(ctx["workout_index"])
+    rows=con.execute("""SELECT we.*,e.name,e.primary_muscle,e.secondary_muscles,e.equipment,e.exercise_type FROM workout_exercises we JOIN exercises e ON e.id=we.exercise_id WHERE we.workout_id=? ORDER BY we.exercise_order""",(workout_id,)).fetchall()
+    plan["workouts"][wi]["exercises"]=[dict(r) for r in rows]
+    con.execute("UPDATE program_weeks SET plan_json=? WHERE id=?",(_json(plan),ctx["week_id"]))
+
+def add_workout_exercise(user_id, workout_id, exercise_id, db_path=DEFAULT_DB_PATH):
+    ctx=_owned_workout_context(user_id,workout_id,db_path)
+    with session(db_path) as con:
+        e=con.execute("SELECT * FROM exercises WHERE id=?",(exercise_id,)).fetchone()
+        if not e: raise ValueError("Exercise not found")
+        if con.execute("SELECT 1 FROM workout_exercises WHERE workout_id=? AND exercise_id=?",(workout_id,exercise_id)).fetchone(): raise ValueError("Exercise already in workout")
+        order=con.execute("SELECT COALESCE(MAX(exercise_order),-1)+1 n FROM workout_exercises WHERE workout_id=?",(workout_id,)).fetchone()["n"]
+        con.execute("INSERT INTO workout_exercises(workout_id,exercise_id,exercise_order,sets,min_reps,max_reps,rest_seconds,progression_method) VALUES(?,?,?,?,?,?,?,?)",(workout_id,exercise_id,order,e["default_sets"],e["min_reps"],e["max_reps"],e["default_rest_seconds"],e["progression_method"]))
+        _sync_workout_plan(con,ctx,workout_id)
+    return {"status":"added","exercise_id":exercise_id}
+
+def edit_workout_exercise(user_id,workout_id,exercise_id,data,db_path=DEFAULT_DB_PATH):
+    ctx=_owned_workout_context(user_id,workout_id,db_path)
+    sets=max(1,min(12,int(data["sets"]))); mn=max(1,int(data["min_reps"])); mx=max(mn,int(data["max_reps"])); rest=max(15,min(600,int(data["rest_seconds"])))
+    with session(db_path) as con:
+        cur=con.execute("UPDATE workout_exercises SET sets=?,min_reps=?,max_reps=?,rest_seconds=? WHERE workout_id=? AND exercise_id=?",(sets,mn,mx,rest,workout_id,exercise_id))
+        if not cur.rowcount: raise ValueError("Exercise not found in workout")
+        _sync_workout_plan(con,ctx,workout_id)
+    return {"status":"updated"}
+
+def remove_workout_exercise(user_id,workout_id,exercise_id,db_path=DEFAULT_DB_PATH):
+    ctx=_owned_workout_context(user_id,workout_id,db_path)
+    with session(db_path) as con:
+        count=con.execute("SELECT COUNT(*) n FROM workout_exercises WHERE workout_id=?",(workout_id,)).fetchone()["n"]
+        if count<=1: raise ValueError("A workout must keep at least one exercise")
+        con.execute("DELETE FROM workout_exercises WHERE workout_id=? AND exercise_id=?",(workout_id,exercise_id))
+        rows=con.execute("SELECT id FROM workout_exercises WHERE workout_id=? ORDER BY exercise_order",(workout_id,)).fetchall()
+        for i,r in enumerate(rows): con.execute("UPDATE workout_exercises SET exercise_order=? WHERE id=?",(i,r["id"]))
+        _sync_workout_plan(con,ctx,workout_id)
+    return {"status":"removed"}
+
+def reorder_workout_exercises(user_id,workout_id,exercise_ids,db_path=DEFAULT_DB_PATH):
+    ctx=_owned_workout_context(user_id,workout_id,db_path)
+    with session(db_path) as con:
+        existing=[r["exercise_id"] for r in con.execute("SELECT exercise_id FROM workout_exercises WHERE workout_id=? ORDER BY exercise_order",(workout_id,)).fetchall()]
+        if sorted(map(int,exercise_ids))!=sorted(map(int,existing)): raise ValueError("Reorder list must contain every workout exercise")
+        for i,eid in enumerate(exercise_ids): con.execute("UPDATE workout_exercises SET exercise_order=? WHERE workout_id=? AND exercise_id=?",(i,workout_id,int(eid)))
+        _sync_workout_plan(con,ctx,workout_id)
+    return {"status":"reordered"}
+
+def copy_previous_nutrition_day(user_id,target_date,db_path=DEFAULT_DB_PATH):
+    from datetime import date,timedelta
+    target=date.fromisoformat(target_date); source=(target-timedelta(days=1)).isoformat()
+    with session(db_path) as con:
+        rows=con.execute("SELECT * FROM nutrition_entries WHERE user_id=? AND entry_date=? ORDER BY id",(user_id,source)).fetchall()
+        for r in rows:
+            con.execute("INSERT INTO nutrition_entries(user_id,entry_date,meal_type,food_name,calories,protein_g,carbs_g,fat_g,source,source_url) VALUES(?,?,?,?,?,?,?,?,?,?)",(user_id,target_date,r["meal_type"],r["food_name"],r["calories"],r["protein_g"],r["carbs_g"],r["fat_g"],r["source"],r["source_url"]))
+    return {"status":"copied","source_date":source,"entry_date":target_date,"entries_copied":len(rows)}

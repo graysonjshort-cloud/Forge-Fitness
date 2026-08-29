@@ -1133,6 +1133,11 @@ def me_nutrition(date: Optional[str]=None, authorization: Optional[str]=Header(N
     try:return database.get_nutrition_day(user["user_id"],entry_date,DB_PATH)
     except ValueError as exc:raise HTTPException(400,str(exc))
 
+@app.post("/me/nutrition/copy-yesterday")
+def me_nutrition_copy_yesterday(request:NutritionCopyRequest, authorization:Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return database.copy_previous_nutrition_day(user["user_id"],request.entry_date,DB_PATH)
+
 @app.put("/me/nutrition/targets")
 def me_nutrition_targets(request: NutritionTargetsRequest,
                          authorization: Optional[str]=Header(None)):
@@ -1450,6 +1455,33 @@ def me_body_metrics_delete(entry_id: int, authorization: Optional[str]=Header(No
     except ValueError as exc:
         raise HTTPException(404,str(exc))
 
+
+@app.get("/me/progress/hub")
+def me_progress_hub(authorization: Optional[str]=Header(None)):
+    """v14.56 unified progress summary across adherence, strength, volume, PRs, recovery and bodyweight."""
+    user=_current_account(authorization); uid=user["user_id"]
+    intel=database.get_progress_intelligence(uid,DB_PATH)
+    history=database.get_workout_history(uid,100,DB_PATH)
+    prs=database.get_personal_records(uid,100,DB_PATH)
+    strength=database.get_strength_trend(uid,None,365,DB_PATH)
+    body=database.get_body_metrics_summary(uid,90,DB_PATH)
+    completed=[x for x in history if x.get("status")=="completed"]
+    volume=sum(float(x.get("total_volume") or 0) for x in completed)
+    sm=strength.get("summary",{}) if isinstance(strength,dict) else {}
+    metrics=intel.get("metrics",{})
+    adherence=metrics.get("adherence_percent")
+    strength_change=sm.get("change_percent")
+    signals=[]
+    signals.append({"label":"Consistency","value":f"{round(float(adherence))}%" if adherence is not None else "Building data","status":"good" if adherence is not None and float(adherence)>=80 else "watch","detail":"Completed versus scheduled training."})
+    signals.append({"label":"Strength trend","value":f"{float(strength_change):+.1f}%" if strength_change is not None else "Building data","status":"good" if strength_change is not None and float(strength_change)>0 else "watch","detail":"Estimated strength change across logged lifts."})
+    signals.append({"label":"Recovery","value":f"Fatigue {float(metrics.get('fatigue_score') or 0):.1f}/10","status":"watch" if float(metrics.get('fatigue_score') or 0)>=6 else "good","detail":"Uses recent effort and training state."})
+    weight_metric=(body.get("metrics",{}) or {}).get("weight_lb",{}) if isinstance(body,dict) else {}
+    if weight_metric.get("current") is not None: signals.append({"label":"Bodyweight","value":f"{float(weight_metric['current']):.1f} lb","status":"neutral","detail":f"{float(weight_metric.get('change') or 0):+.1f} lb over selected range."})
+    score=intel.get("score")
+    next_action=(intel.get("recommendations") or ["Keep executing the plan and log every working set."])[0]
+    return {"score":score,"headline":intel.get("headline") or "Your training picture","kpis":{"adherence_percent":adherence,"strength_change_percent":strength_change,"total_volume":round(volume,1),"pr_count":len(prs),"completed_workouts":len(completed)},"signals":signals,"next_action":next_action}
+
+
 @app.get("/me/progress/intelligence")
 def me_progress_intelligence(authorization: Optional[str]=Header(None)):
     user=_current_account(authorization)
@@ -1708,6 +1740,26 @@ def me_swap_exercise(workout_id: int, request: SwapExerciseRequest,
     return {"status":"swapped","exercise":result}
 
 
+@app.post("/me/workouts/{workout_id}/exercises")
+def me_workout_add_exercise(workout_id:int, request:WorkoutExerciseAddRequest, authorization:Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return database.add_workout_exercise(user["user_id"],workout_id,request.exercise_id,DB_PATH)
+
+@app.put("/me/workouts/{workout_id}/exercises/reorder")
+def me_workout_reorder(workout_id:int, request:WorkoutExerciseReorderRequest, authorization:Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return database.reorder_workout_exercises(user["user_id"],workout_id,request.exercise_ids,DB_PATH)
+
+@app.put("/me/workouts/{workout_id}/exercises/{exercise_id}")
+def me_workout_edit_exercise(workout_id:int, exercise_id:int, request:WorkoutExerciseEditRequest, authorization:Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return database.edit_workout_exercise(user["user_id"],workout_id,exercise_id,request.model_dump(),DB_PATH)
+
+@app.delete("/me/workouts/{workout_id}/exercises/{exercise_id}")
+def me_workout_remove_exercise(workout_id:int, exercise_id:int, authorization:Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return database.remove_workout_exercise(user["user_id"],workout_id,exercise_id,DB_PATH)
+
 @app.put("/me/workouts/{workout_id}/exercise-sets")
 def me_update_exercise_sets(workout_id: int, request: ExerciseSetsRequest, authorization: Optional[str]=Header(None)):
     user=_current_account(authorization)
@@ -1774,6 +1826,71 @@ def me_reconfigure_plan(request: PlanReconfigureRequest, authorization: Optional
 def me_schedule(authorization: Optional[str]=Header(None)):
     user=_current_account(authorization)
     return database.get_workout_schedule(user["user_id"],DB_PATH)
+
+
+
+
+@app.get("/me/system/health")
+def me_system_health(authorization: Optional[str]=Header(None)):
+    """v14.55 authenticated production diagnostics; contains no secrets."""
+    user=_current_account(authorization); uid=user["user_id"]
+    checks={"api":True,"database":False,"plan_read":False,"persistence_configured":bool(database.SUPABASE_DB_URL),"calendar_configured":bool(GOOGLE_CALENDAR_ENABLED),"llm_configured":_llm_available(),"nutrition_lookup":nutrition_lookup.configured()}
+    try:
+        database.get_training_state(uid,DB_PATH); checks["database"]=True
+        database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
+    except Exception: pass
+    critical=checks["api"] and checks["database"] and checks["plan_read"]
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.55.0"}
+
+
+@app.get("/me/coach/briefing")
+def me_coach_briefing(authorization: Optional[str]=Header(None)):
+    """v14.54 Coach 3.0: one deterministic context payload across training systems."""
+    user=_current_account(authorization); uid=user["user_id"]
+    import datetime as dt
+    intel=database.get_progress_intelligence(uid,DB_PATH)
+    state=database.get_training_state(uid,DB_PATH)
+    current=database.get_current_plan(uid,DB_PATH) or {}
+    nutrition=database.get_nutrition_day(uid,dt.date.today().isoformat(),DB_PATH)
+    m=intel.get("metrics",{})
+    fatigue=float(m.get("fatigue_score") or state.get("fatigue_score") or 0)
+    adherence=m.get("adherence_percent")
+    rpe=m.get("recent_average_rpe")
+    recovery_level="deload" if fatigue>=7.5 or (rpe is not None and float(rpe)>=9) else "watch" if fatigue>=5.5 else "ready"
+    workouts=(current.get("workouts") or [])
+    active=[w for w in workouts if not w.get("is_skipped")]
+    tight=sum(1 for a,c in zip(sorted(active,key=lambda x:int(x.get("scheduled_day",0))),sorted(active,key=lambda x:int(x.get("scheduled_day",0)))[1:]) if int(c.get("scheduled_day",0))-int(a.get("scheduled_day",0))<=1)
+    connected=bool(database.get_calendar_connection(uid,DB_PATH))
+    conflicts=0
+    if connected:
+        for w in active:
+            try:
+                av=calendar_integration.availability_for_workout(uid,int(w.get("scheduled_day",0)),int(w.get("estimated_minutes") or 45),DB_PATH,w.get("scheduled_time"))
+                if av.get("available") is False: conflicts+=1
+            except Exception: pass
+    totals=nutrition.get("totals",{}); targets=nutrition.get("targets",{}); remaining=nutrition.get("remaining",{})
+    protein_target=float(targets.get("protein_g") or 0); protein=float(totals.get("protein_g") or 0)
+    nutrition_summary=(f"{round(protein/protein_target*100)}% protein" if protein_target else "targets not set")
+    score=100
+    score-=min(35,round(fatigue*4))
+    if adherence is not None and float(adherence)<80: score-=10
+    if conflicts: score-=min(20,conflicts*10)
+    if tight: score-=min(10,tight*5)
+    score=max(0,min(100,score))
+    actions=[]
+    if recovery_level=="deload": actions.append({"title":"Reduce training stress","reason":"Fatigue and recent effort support a recovery-biased session."})
+    elif recovery_level=="watch": actions.append({"title":"Cap effort today","reason":"Recovery is adequate, but fatigue is elevated."})
+    if conflicts: actions.append({"title":"Resolve calendar conflict","reason":f"{conflicts} scheduled workout conflict(s) with current availability."})
+    if protein_target and protein < protein_target*.65: actions.append({"title":"Prioritize protein","reason":f"About {round(float(remaining.get('protein_g') or 0))} g remains today."})
+    if intel.get("plateau_detected"): actions.append({"title":"Review stalled lifts","reason":"Progress intelligence detected a plateau signal."})
+    headline="Recovery needs attention" if recovery_level=="deload" else "A few constraints need managing" if actions else "Training conditions look supportive"
+    rec=actions[0]["reason"] if actions else "Run the plan as written and keep logging effort, nutrition, and recovery signals."
+    return {"score":score,"headline":headline,"recommendation":rec,
+            "readiness":{"label":"Recover" if fatigue>=7 else "Moderate" if fatigue>=4.5 else "Ready","fatigue_score":fatigue},
+            "recovery":{"level":recovery_level,"average_rpe":rpe},
+            "progress":{"headline":intel.get("headline"),"status":intel.get("status"),"plateau":bool(intel.get("plateau_detected"))},
+            "calendar":{"connected":connected,"conflicts":conflicts,"tight_gaps":tight},
+            "nutrition":{"summary":nutrition_summary,"remaining":remaining},"actions":actions[:4]}
 
 
 @app.get("/me/coach/status")
