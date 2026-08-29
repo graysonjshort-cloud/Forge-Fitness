@@ -1299,6 +1299,34 @@ def me_calendar_availability(day: int=Query(...,ge=0,le=6),
         raise HTTPException(400,str(exc))
 
 
+@app.get("/me/calendar/intelligence")
+def me_calendar_intelligence(authorization: Optional[str]=Header(None)):
+    """v14.50: combine Forge schedule, recovery spacing, and Google Calendar availability."""
+    user=_current_account(authorization); uid=user["user_id"]
+    current=database.get_current_plan(uid,DB_PATH)
+    workouts=(current or {}).get("workouts",[])
+    connected=bool(database.get_calendar_connection(uid,DB_PATH))
+    days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+    items=[]
+    scheduled=sorted([w for w in workouts if not w.get("is_skipped")],key=lambda x:int(x.get("scheduled_day",0)))
+    for i,w in enumerate(scheduled):
+        day=int(w.get("scheduled_day",0)); minutes=int(w.get("estimated_minutes") or 45)
+        prev_day=int(scheduled[i-1].get("scheduled_day",day-2)) if i else None
+        recovery_gap=None if prev_day is None else day-prev_day
+        row={"workout_id":w.get("workout_id"),"name":w.get("name"),"day":day,"day_name":days[day],"minutes":minutes,"recovery_gap_days":recovery_gap,"recovery_spacing":"tight" if recovery_gap is not None and recovery_gap<=1 else "good"}
+        if connected:
+            try:
+                avail=calendar_integration.availability_for_workout(uid,day,minutes,DB_PATH,w.get("scheduled_time"))
+                row.update({"available":avail.get("available"),"alternative_times":avail.get("alternative_times",[])})
+            except Exception as exc:
+                row.update({"available":None,"warning":str(exc)})
+        items.append(row)
+    conflicts=[x for x in items if x.get("available") is False]
+    tight=[x for x in items if x.get("recovery_spacing")=="tight"]
+    recommendation=("Resolve calendar conflicts before the training week starts." if conflicts else "Recovery spacing is tight; avoid adding extra hard sessions between these workouts." if tight else "Your current weekly layout has reasonable recovery spacing.")
+    return {"connected":connected,"workouts":items,"conflicts":len(conflicts),"tight_recovery_gaps":len(tight),"recommendation":recommendation}
+
+
 @app.get("/me/profile")
 def me_profile(authorization: Optional[str]=Header(None)):
     user=_current_account(authorization)

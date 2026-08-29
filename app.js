@@ -6,7 +6,7 @@ let authToken = localStorage.getItem("forge_auth_token") || "";
 let account = null;
 let plan = null, session = null;
 const profile = {goal:"build_muscle",experience:"intermediate",days_per_week:4,minutes_per_workout:45,equipment:["full_gym"],preferred_exercises:[],excluded_exercises:[],priority_muscles:[],recovery_level:"normal",cardio_preference:"moderate",workout_split:"auto",sport:"general",core_workouts_per_week:2,cardio_workouts_per_week:2,seed:42};
-const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,sessionStartedAt:null,completedWorkoutSummary:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0,demoAngle:"primary",readinessCheckin:null,todayAdjustment:null,liveAdjustment:null,readinessReturn:"home",swapReason:"preference",recoveryIntelligence:null};
+const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,sessionStartedAt:null,completedWorkoutSummary:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,calendarIntelligence:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0,demoAngle:"primary",readinessCheckin:null,todayAdjustment:null,liveAdjustment:null,readinessReturn:"home",swapReason:"preference",recoveryIntelligence:null};
 const V=document.querySelector("#view"),toastEl=document.querySelector("#toast"),nav=document.querySelector("#bottomNav"),topbar=document.querySelector("#topbar");
 const toast=t=>{toastEl.textContent=t;toastEl.classList.add("show");setTimeout(()=>toastEl.classList.remove("show"),1800)};
 const esc=ForgeCore.esc;
@@ -129,6 +129,14 @@ async function loadCalendarSettings(){
     S.timeSettings=time.settings;S.calendarStatus=status;
     if(S.route==="calendarsettings")render();
   }catch(e){console.warn("Calendar settings load failed",e)}
+}
+async function loadCalendarIntelligence(){
+  if(!authToken)return;
+  try{S.calendarIntelligence=await api("/me/calendar/intelligence");if(S.route==="calendarsettings")render()}catch(e){console.warn("Calendar intelligence load failed",e)}
+}
+function calendarIntelligenceCard(){
+  const x=S.calendarIntelligence;if(!x)return `<div class="card"><p class=eyebrow>CALENDAR INTELLIGENCE</p><p class=muted>Analyzing schedule and recovery spacing...</p></div>`;
+  return `<div class="card calendar-intelligence-card"><div class=row><div><p class=eyebrow>CALENDAR INTELLIGENCE 2.0</p><h3>${x.conflicts?`${x.conflicts} schedule conflict${x.conflicts===1?"":"s"}`:"Week layout"}</h3></div><b>${x.connected?"LIVE":"PLAN"}</b></div><p class=muted>${esc(x.recommendation)}</p><div class=spacer></div>${(x.workouts||[]).map(w=>`<div class=adaptation-note><span><b>${esc(w.day_name)} • ${esc(w.name)}</b><small>${w.minutes} min • recovery ${esc(w.recovery_spacing)}${w.available===false?" • calendar conflict":w.available===true?" • available":""}</small></span><strong>${w.available===false?"Adjust":w.recovery_spacing==="tight"?"Watch":"Good"}</strong></div>`).join("")}</div>`;
 }
 async function syncCalendar({silent=false}={}){
   if(!authToken)return;
@@ -1618,7 +1626,7 @@ ${c?`<div class=spacer></div><div class=coach-context><div><b>${c.recent_complet
 <div class=coach-action-launcher>
   <button data-coachprompt="Review my readiness and adjust today's workout if needed"><span>⚙</span><b>Adjust Today</b><small>Use recovery + recent training</small></button>
   <button data-coachprompt="Find the best exercise swap for my current workout using only my equipment"><span>⇄</span><b>Smart Swap</b><small>Equipment-aware replacement</small></button>
-  <button data-coachprompt="Check my calendar availability and help me place my workouts this week"><span>▦</span><b>Calendar Fit</b><small>Work around busy time</small></button>
+  <button data-coachprompt="Check my calendar availability, recovery spacing, and propose the best workout placement this week"><span>▦</span><b>Calendar Intelligence</b><small>Conflicts + recovery spacing</small></button>
   <button data-coachprompt="Review my progress and tell me whether next week should progress, maintain, or recover"><span>↗</span><b>Next Week</b><small>Adaptive plan recommendation</small></button>
 </div>
 <div class=spacer></div><div class=coach-prompts>
@@ -1853,6 +1861,7 @@ ${connected
      <p class=calendar-privacy-note>Forge only asks for Calendar access needed to schedule workouts and check availability.</p>`
    :`<div class=calendar-unavailable-note><b>No action needed</b><span>The Forge server owner needs to enable Google Calendar before accounts can connect.</span></div>`}
 </div>
+<div class=big-spacer></div>${calendarIntelligenceCard()}
 <div class=big-spacer></div><button class=btn data-a=calendar-settings-save>Save Calendar & Time Settings</button>`;
 }
 window.ForgeLegacyViews=Object.assign(window.ForgeLegacyViews||{},{nutrition:()=>nutrition(),nutritionadd:()=>nutritionadd()});
@@ -2219,7 +2228,7 @@ async function act(a){
     if(a==="close-more"){S.moreOpen=false;render();}
     if(a==="open-training-settings"){S.moreOpen=false;go("trainingsettings");}
     if(a==="open-equipment-log"){S.moreOpen=false;S.equipmentReturn="settings";go("equipmentlog");}
-    if(a==="open-calendar-settings"){S.moreOpen=false;go("calendarsettings");}
+    if(a==="open-calendar-settings"){loadCalendarIntelligence();S.moreOpen=false;go("calendarsettings");}
     if(a==="signout"){
       if(confirm("Sign out of Forge? Your saved data will remain on your account.")){
         try{await api("/auth/logout",{method:"POST"})}catch{}
