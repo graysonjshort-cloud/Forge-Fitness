@@ -222,6 +222,8 @@ def ensure_schema(db_path: str | Path = DEFAULT_DB_PATH) -> None:
             con.execute("ALTER TABLE user_profiles ADD COLUMN cardio_workouts_per_week INTEGER NOT NULL DEFAULT 2")
         if "exercises_per_day" not in cols:
             con.execute("ALTER TABLE user_profiles ADD COLUMN exercises_per_day INTEGER NOT NULL DEFAULT 6")
+        if "exercises_per_workout_json" not in cols:
+            con.execute("ALTER TABLE user_profiles ADD COLUMN exercises_per_workout_json TEXT NOT NULL DEFAULT '[]'")
         ws_cols={r["name"] for r in con.execute("PRAGMA table_info(workout_schedule)").fetchall()}
         if ws_cols and "scheduled_time" not in ws_cols:
             con.execute("ALTER TABLE workout_schedule ADD COLUMN scheduled_time TEXT NOT NULL DEFAULT '17:00'")
@@ -232,6 +234,8 @@ def ensure_schema(db_path: str | Path = DEFAULT_DB_PATH) -> None:
             con.execute("ALTER TABLE nutrition_entries ADD COLUMN source_url TEXT")
     ensure_expanded_exercise_directory(db_path)
     ensure_exercise_muscle_taxonomy(db_path)
+    ensure_exercise_intelligence_v4(db_path)
+    ensure_plan_exercise_locks(db_path)
     ensure_exercise_form_demo_metadata(db_path)
     ensure_bundled_exercise_demo_assets(db_path)
 
@@ -260,6 +264,68 @@ def ensure_exercise_muscle_taxonomy(db_path=DEFAULT_DB_PATH) -> None:
                 con.execute("INSERT OR IGNORE INTO exercise_muscles(exercise_id,muscle_group,sub_muscle,role) VALUES (?,?,?,?)",
                             (d["id"],link["muscle_group"],link["sub_muscle"],link["role"]))
 
+
+
+def ensure_plan_exercise_locks(db_path=DEFAULT_DB_PATH) -> None:
+    with session(db_path) as con:
+        con.execute("""CREATE TABLE IF NOT EXISTS plan_exercise_locks (
+            user_id INTEGER NOT NULL, workout_index INTEGER NOT NULL, exercise_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY(user_id,workout_index,exercise_id))""")
+
+def get_plan_exercise_locks(user_id:int, db_path=DEFAULT_DB_PATH) -> dict[int,list[int]]:
+    with session(db_path) as con:
+        rows=con.execute("SELECT workout_index,exercise_id FROM plan_exercise_locks WHERE user_id=? ORDER BY workout_index,created_at",(user_id,)).fetchall()
+    out={}
+    for r in rows: out.setdefault(int(r["workout_index"]),[]).append(int(r["exercise_id"]))
+    return out
+
+def set_plan_exercise_lock(user_id:int, workout_index:int, exercise_id:int, locked:bool, db_path=DEFAULT_DB_PATH) -> dict:
+    with session(db_path) as con:
+        if locked:
+            con.execute("INSERT OR IGNORE INTO plan_exercise_locks(user_id,workout_index,exercise_id) VALUES (?,?,?)",(user_id,workout_index,exercise_id))
+        else:
+            con.execute("DELETE FROM plan_exercise_locks WHERE user_id=? AND workout_index=? AND exercise_id=?",(user_id,workout_index,exercise_id))
+    return {"workout_index":workout_index,"exercise_id":exercise_id,"locked":bool(locked)}
+
+def ensure_exercise_intelligence_v4(db_path=DEFAULT_DB_PATH) -> None:
+    """Exercise Database 4.0: normalized similarity, stress, stability and substitution metadata."""
+    with session(db_path) as con:
+        con.execute("""CREATE TABLE IF NOT EXISTS exercise_intelligence (
+            exercise_id INTEGER PRIMARY KEY, movement_family TEXT NOT NULL, similarity_family TEXT NOT NULL,
+            joint_stress INTEGER NOT NULL DEFAULT 3, stability_demand INTEGER NOT NULL DEFAULT 3,
+            skill_demand INTEGER NOT NULL DEFAULT 3, fatigue_cost INTEGER NOT NULL DEFAULT 3,
+            FOREIGN KEY(exercise_id) REFERENCES exercises(id) ON DELETE CASCADE)""")
+        rows=con.execute("SELECT id,name,movement_pattern,exercise_type,equipment,difficulty FROM exercises").fetchall()
+        for r in rows:
+            d=dict(r); name=str(d['name']).lower(); pattern=str(d.get('movement_pattern') or 'other').lower()
+            family=pattern
+            if 'press' in name or 'bench' in name: family += ':press'
+            elif 'fly' in name: family += ':fly'
+            elif 'row' in name: family += ':row'
+            elif 'pulldown' in name or 'pull-up' in name or 'chin-up' in name: family += ':vertical_pull'
+            elif 'curl' in name: family += ':curl'
+            elif 'extension' in name and 'tricep' in name: family += ':triceps_extension'
+            elif 'squat' in name: family += ':squat'
+            elif 'lunge' in name or 'split squat' in name: family += ':lunge'
+            elif 'deadlift' in name or 'rdl' in name: family += ':hinge'
+            elif 'raise' in name: family += ':raise'
+            equipment=str(d.get('equipment') or '').split(',')[0].strip().lower()
+            similarity=f"{family}:{equipment}"
+            compound=str(d.get('exercise_type'))=='Compound'
+            joint=4 if compound else 2; fatigue=4 if compound else 2
+            stability=4 if any(x in equipment for x in ('barbell','dumbbell','bodyweight')) else 2
+            skill=4 if str(d.get('difficulty'))=='Advanced' else (3 if compound else 2)
+            con.execute("""INSERT INTO exercise_intelligence(exercise_id,movement_family,similarity_family,joint_stress,stability_demand,skill_demand,fatigue_cost)
+                VALUES (?,?,?,?,?,?,?) ON CONFLICT(exercise_id) DO UPDATE SET movement_family=excluded.movement_family,similarity_family=excluded.similarity_family,
+                joint_stress=excluded.joint_stress,stability_demand=excluded.stability_demand,skill_demand=excluded.skill_demand,fatigue_cost=excluded.fatigue_cost""",
+                (d['id'],family,similarity,joint,stability,skill,fatigue))
+
+def get_exercise_intelligence(exercise_id:int, db_path=DEFAULT_DB_PATH) -> dict|None:
+    with session(db_path) as con:
+        r=con.execute("SELECT * FROM exercise_intelligence WHERE exercise_id=?",(exercise_id,)).fetchone()
+    return dict(r) if r else None
+
 def get_muscle_taxonomy(db_path=DEFAULT_DB_PATH) -> dict[str,list[str]]:
     with session(db_path) as con:
         rows=con.execute("SELECT muscle_group,sub_muscle FROM muscle_taxonomy ORDER BY muscle_group,sub_muscle").fetchall()
@@ -279,8 +345,8 @@ def upsert_profile(user_id: int, profile: dict[str, Any], db_path=DEFAULT_DB_PAT
             """INSERT INTO user_profiles
             (user_id, goal, experience, days_per_week, minutes_per_workout,
              equipment_json, preferred_exercises_json, excluded_exercises_json,
-             priority_muscles_json, recovery_level, cardio_preference, workout_split, custom_split_json, sport, core_workouts_per_week, cardio_workouts_per_week, exercises_per_day, seed)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             priority_muscles_json, recovery_level, cardio_preference, workout_split, custom_split_json, sport, core_workouts_per_week, cardio_workouts_per_week, exercises_per_day, exercises_per_workout_json, seed)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id) DO UPDATE SET
               goal=excluded.goal, experience=excluded.experience,
               days_per_week=excluded.days_per_week,
@@ -291,7 +357,7 @@ def upsert_profile(user_id: int, profile: dict[str, Any], db_path=DEFAULT_DB_PAT
               priority_muscles_json=excluded.priority_muscles_json,
               recovery_level=excluded.recovery_level,
               cardio_preference=excluded.cardio_preference,
-              workout_split=excluded.workout_split, custom_split_json=excluded.custom_split_json, sport=excluded.sport, core_workouts_per_week=excluded.core_workouts_per_week, cardio_workouts_per_week=excluded.cardio_workouts_per_week, exercises_per_day=excluded.exercises_per_day, seed=excluded.seed,
+              workout_split=excluded.workout_split, custom_split_json=excluded.custom_split_json, sport=excluded.sport, core_workouts_per_week=excluded.core_workouts_per_week, cardio_workouts_per_week=excluded.cardio_workouts_per_week, exercises_per_day=excluded.exercises_per_day, exercises_per_workout_json=excluded.exercises_per_workout_json, seed=excluded.seed,
               updated_at=CURRENT_TIMESTAMP""",
             (
                 user_id, profile["goal"], profile["experience"], profile["days_per_week"],
@@ -302,6 +368,7 @@ def upsert_profile(user_id: int, profile: dict[str, Any], db_path=DEFAULT_DB_PAT
                 max(0, min(int(profile.get("core_workouts_per_week", 2)), int(profile["days_per_week"]))),
                 max(0, min(int(profile.get("cardio_workouts_per_week", 2)), int(profile["days_per_week"]))),
                 max(3, min(int(profile.get("exercises_per_day", 6)), 10)),
+                _json(profile.get("exercises_per_workout", [])),
                 profile.get("seed"),
             ),
         )
@@ -316,6 +383,7 @@ def get_profile(user_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any] | None:
     for key in ("equipment", "preferred_exercises", "excluded_exercises", "priority_muscles"):
         d[key] = json.loads(d.pop(f"{key}_json"))
     d["custom_split"] = json.loads(d.pop("custom_split_json", "[]") or "[]")
+    d["exercises_per_workout"] = json.loads(d.pop("exercises_per_workout_json", "[]") or "[]")
     return d
 
 

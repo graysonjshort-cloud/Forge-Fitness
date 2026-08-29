@@ -348,6 +348,8 @@ class UserProfile:
     cardio_workouts_per_week: int = 2
     custom_split: tuple[dict[str, Any], ...] = ()
     exercises_per_day: int = 6
+    exercises_per_workout: tuple[int, ...] = ()
+    locked_exercises: dict[int, list[int]] | None = None
 
 @dataclass
 class PlannedExercise:
@@ -396,9 +398,16 @@ class PlanGenerator:
                     links.setdefault(int(r["exercise_id"]),[]).append(dict(r))
             except sqlite3.OperationalError:
                 pass
+            intelligence={}
+            try:
+                for r in con.execute("SELECT * FROM exercise_intelligence"):
+                    intelligence[int(r["exercise_id"])]=dict(r)
+            except sqlite3.OperationalError:
+                pass
             unique=[]; seen=set()
             for e in rows:
                 e["muscle_links"]=links.get(int(e["id"]),[])
+                e["intelligence"]=intelligence.get(int(e["id"]),{})
                 canonical=canonical_exercise_name(e["name"])
                 key=canonical.lower()
                 if key in seen:
@@ -474,6 +483,15 @@ class PlanGenerator:
             score -= 14
         if muscle_marker in used_names:
             score -= 8
+        intel=e.get("intelligence") or {}
+        similarity_marker=f"similarity::{intel.get('similarity_family','')}"
+        family_marker=f"family::{intel.get('movement_family','')}"
+        if intel.get("similarity_family") and similarity_marker in used_names:
+            score -= 70
+        if intel.get("movement_family") and family_marker in used_names:
+            score -= 24
+        # Prefer lower-fatigue choices when two exercises provide comparable stimulus.
+        score -= max(0,int(intel.get("fatigue_cost",3))-3)*3
 
         if profile.experience == "beginner" and e["difficulty"] == "Beginner":
             score += 10
@@ -530,7 +548,10 @@ class PlanGenerator:
         fallback.sort(key=lambda x:x[0],reverse=True)
         return fallback[0][1] if fallback else None
 
-    def _exercise_target_count(self, profile: UserProfile) -> int:
+    def _exercise_target_count(self, profile: UserProfile, workout_index: int | None = None) -> int:
+        per=list(getattr(profile,"exercises_per_workout",()) or ())
+        if workout_index is not None and workout_index < len(per):
+            return max(3,min(int(per[workout_index] or profile.exercises_per_day),10))
         return max(3,min(int(getattr(profile,"exercises_per_day",6) or 6),10))
 
     def _rep_range(self, e, goal):
@@ -771,12 +792,12 @@ class PlanGenerator:
                 )
                 workout.estimated_minutes = self._estimate_minutes(workout.exercises)
 
-    def generate_workout(self, profile: UserProfile, workout_name: str, candidates):
+    def generate_workout(self, profile: UserProfile, workout_name: str, candidates, workout_index: int = 0):
         used = set()
         selected = []
         template = self._template(workout_name)
 
-        target_count=self._exercise_target_count(profile)
+        target_count=self._exercise_target_count(profile, workout_index)
         expanded_template=(template * max(1, math.ceil(target_count/max(1,len(template)))))[:target_count]
         for pattern, kind in expanded_template:
             e = self._pick(candidates, pattern, kind, profile, used)
@@ -785,6 +806,9 @@ class PlanGenerator:
             used.add(e["name"])
             used.add(f"pattern::{e['movement_pattern']}")
             used.add(f"muscle::{e['primary_muscle'].split(',')[0].strip().lower()}")
+            intel=e.get("intelligence") or {}
+            if intel.get("similarity_family"): used.add(f"similarity::{intel['similarity_family']}")
+            if intel.get("movement_family"): used.add(f"family::{intel['movement_family']}")
             low, high = self._rep_range(e, profile.goal)
             sport_bias=SPORT_PROFILES.get(profile.sport,SPORT_PROFILES["general"]).get("rep_bias",0)
             if sport_bias:
@@ -804,7 +828,7 @@ class PlanGenerator:
                 progression_method=self._progression_note(e, profile),
             ))
 
-        max_exercises = self._exercise_target_count(profile)
+        max_exercises = self._exercise_target_count(profile, workout_index)
         sport=SPORT_PROFILES.get(profile.sport,SPORT_PROFILES["general"])
         if len(selected)<max_exercises and sport.get("conditioning"):
             for pattern in sport["conditioning"]:
@@ -1049,12 +1073,12 @@ class PlanGenerator:
         workout.cardio_equipment=chosen["equipment"]
         workout.estimated_minutes+=duration
 
-    def generate_custom_workout(self, profile: UserProfile, day: dict[str, Any], candidates):
+    def generate_custom_workout(self, profile: UserProfile, day: dict[str, Any], candidates, workout_index: int = 0):
         muscles=list(day.get("muscles") or [])
         submap=day.get("submuscles") or {}
         if not muscles:
             raise ValueError("Every custom split day needs at least one muscle group.")
-        target_count=self._exercise_target_count(profile)
+        target_count=self._exercise_target_count(profile, workout_index)
         # Interleave muscle groups so later selections are not starved when the
         # requested exercise count is smaller than the combined templates.
         per_muscle={m:list(CUSTOM_MUSCLE_TEMPLATES.get(m,[])) for m in muscles}
@@ -1127,11 +1151,32 @@ class PlanGenerator:
             if len(custom_days) != profile.days_per_week:
                 raise ValueError(f"Custom split requires exactly {profile.days_per_week} configured training days.")
             split_intelligence=custom_split_intelligence(custom_days, profile.priority_muscles)
-            workouts=[self.generate_custom_workout(profile, day, candidates) for day in custom_days]
+            workouts=[self.generate_custom_workout(profile, day, candidates, i) for i,day in enumerate(custom_days)]
             resolved_split=[w.name for w in workouts]
         else:
             resolved_split=resolve_sport_split(profile.days_per_week, profile.workout_split, profile.sport)
-            workouts = [self.generate_workout(profile, name, candidates) for name in resolved_split]
+            workouts = [self.generate_workout(profile, name, candidates, i) for i,name in enumerate(resolved_split)]
+        # Preserve user-locked exercises across regeneration. Locks are anchored to workout sequence.
+        lock_map=getattr(profile,"locked_exercises",None) or {}
+        by_id={int(e["id"]):e for e in candidates}
+        for wi,locked_ids in lock_map.items():
+            wi=int(wi)
+            if wi<0 or wi>=len(workouts): continue
+            workout=workouts[wi]
+            existing={int(x.exercise_id) for x in workout.exercises}
+            target=self._exercise_target_count(profile,wi)
+            for exid in locked_ids:
+                exid=int(exid)
+                if exid in existing or exid not in by_id: continue
+                e=by_id[exid]; low,high=self._rep_range(e,profile.goal)
+                pe=PlannedExercise(exercise_id=e["id"],name=e["name"],movement_pattern=e["movement_pattern"],primary_muscle=e["primary_muscle"],equipment=e["equipment"],sets=self._intelligent_sets(e,profile),min_reps=low,max_reps=high,rest_seconds=e["default_rest_seconds"],progression_method=self._progression_note(e,profile))
+                if len(workout.exercises)>=target:
+                    workout.exercises[-1]=pe
+                else:
+                    workout.exercises.append(pe)
+                existing.add(exid)
+            workout.estimated_minutes=self._estimate_minutes(workout.exercises)
+
         core_count=max(0,min(int(profile.core_workouts_per_week),len(workouts)))
         cardio_count=max(0,min(int(profile.cardio_workouts_per_week),len(workouts)))
         if profile.cardio_preference=="none":
@@ -1164,8 +1209,27 @@ class PlanGenerator:
                 workout_dicts[idx]["cardio_name"]=None
                 workout_dicts[idx]["cardio_minutes"]=0
 
+        # Plan Generator 4.0 audit: volume, subsection coverage, recovery warnings and redundancy.
+        volume_audit={}
+        redundancy=[]
+        for wi,w in enumerate(workout_dicts):
+            families={}
+            for ex in w.get("exercises",[]):
+                raw=next((x for x in candidates if int(x["id"])==int(ex["exercise_id"])),None)
+                if raw:
+                    for link in raw.get("muscle_links",[]):
+                        weight=1.0 if link.get("role")=="primary" else 0.5
+                        key=f"{link.get('muscle_group')} > {link.get('sub_muscle')}"
+                        volume_audit[key]=round(volume_audit.get(key,0)+float(ex.get("sets",0))*weight,1)
+                    fam=(raw.get("intelligence") or {}).get("movement_family")
+                    if fam:
+                        families.setdefault(fam,[]).append(ex.get("name"))
+            for fam,names in families.items():
+                if len(names)>=3: redundancy.append({"workout_index":wi,"movement_family":fam,"exercises":names,"warning":"High movement redundancy"})
+        plan_audit={"submuscle_set_equivalents":volume_audit,"redundancy_warnings":redundancy,"status":"review" if redundancy else "balanced"}
+
         return {
-            "planner_version": "2.5-progressive-core-circuits",
+            "planner_version": "4.0-plan-intelligence",
             "adaptive_features": [
                 "recent performance adaptation",
                 "recovery-aware set adjustment",
@@ -1185,6 +1249,7 @@ class PlanGenerator:
             "split": resolved_split,
             "custom_split": custom_days if profile.workout_split == "custom" else [],
             "split_intelligence": split_intelligence,
+            "plan_audit": plan_audit,
             "cardio_preference": profile.cardio_preference,
             "workout_split": profile.workout_split,
             "sport": profile.sport,

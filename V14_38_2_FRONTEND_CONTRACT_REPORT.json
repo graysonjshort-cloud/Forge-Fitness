@@ -1,7 +1,7 @@
 {
   "status": "passed",
-  "frontend_api_calls_checked": 119,
-  "backend_routes_found": 114,
+  "frontend_api_calls_checked": 124,
+  "backend_routes_found": 118,
   "missing_contracts": [],
   "raw_fetch_bypasses": []
 }

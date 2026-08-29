@@ -532,6 +532,7 @@ class PlanReconfigureRequest(BaseModel):
     minutes_per_workout: int = Field(ge=15, le=180)
     exercises_per_day: int = Field(6, ge=3, le=10)
     preferred_days: list[int] = []
+    exercises_per_workout: list[int] = []
 
 class ProfileRequest(BaseModel):
     goal: str = "build_muscle"
@@ -550,6 +551,7 @@ class ProfileRequest(BaseModel):
     core_workouts_per_week: int = Field(2, ge=0, le=6)
     cardio_workouts_per_week: int = Field(2, ge=0, le=6)
     exercises_per_day: int = Field(6, ge=3, le=10)
+    exercises_per_workout: list[int] = []
     seed: Optional[int] = 42
 
 
@@ -665,6 +667,7 @@ def _profile_from_db(user_id: int) -> UserProfile:
         training_state=state, priority_muscles=tuple(p["priority_muscles"]),
         recovery_level=p["recovery_level"],
         cardio_preference=p.get("cardio_preference","moderate"), workout_split=p.get("workout_split","auto"), custom_split=tuple(p.get("custom_split",[])), sport=p.get("sport","general"), core_workouts_per_week=p.get("core_workouts_per_week",2), cardio_workouts_per_week=p.get("cardio_workouts_per_week",2), exercises_per_day=p.get("exercises_per_day",6),
+        exercises_per_workout=tuple(p.get("exercises_per_workout",[])), locked_exercises=database.get_plan_exercise_locks(user_id,DB_PATH),
     )
 
 
@@ -1354,7 +1357,7 @@ PLAN_GENERATION_PROFILE_KEYS = {
     "goal","experience","days_per_week","minutes_per_workout","equipment",
     "preferred_exercises","excluded_exercises","priority_muscles","recovery_level",
     "cardio_preference","workout_split","custom_split","sport",
-    "core_workouts_per_week","cardio_workouts_per_week","exercises_per_day","seed",
+    "core_workouts_per_week","cardio_workouts_per_week","exercises_per_day","exercises_per_workout","seed",
 }
 
 def _generation_profile_changed(before: dict, after: dict) -> bool:
@@ -1797,6 +1800,13 @@ def me_swap_cardio(workout_id: int, request: SwapCardioRequest,
         raise HTTPException(400,str(exc))
 
 
+@app.get("/me/exercises/{exercise_id}/intelligence")
+def me_exercise_intelligence(exercise_id:int, authorization: Optional[str]=Header(None)):
+    _current_account(authorization)
+    data=database.get_exercise_intelligence(exercise_id,DB_PATH)
+    if not data: raise HTTPException(404,"Exercise intelligence not found")
+    return data
+
 @app.get("/me/exercises/{exercise_id}/substitutions")
 def me_substitutions(exercise_id: int, authorization: Optional[str]=Header(None)):
     user=_current_account(authorization)
@@ -1842,6 +1852,44 @@ def me_update_exercise_sets(workout_id: int, request: ExerciseSetsRequest, autho
     try: return database.update_workout_exercise_sets(user["user_id"],workout_id,request.exercise_id,request.sets,DB_PATH)
     except ValueError as e: raise HTTPException(400,str(e))
 
+@app.get("/me/plan/locks")
+def me_plan_locks(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return database.get_plan_exercise_locks(user["user_id"],DB_PATH)
+
+@app.post("/me/plan/locks/{workout_index}/{exercise_id}")
+def me_plan_lock(workout_index:int, exercise_id:int, locked:bool=True, authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return database.set_plan_exercise_lock(user["user_id"],workout_index,exercise_id,locked,DB_PATH)
+
+@app.post("/me/plan/preview")
+def me_plan_preview(request: PlanReconfigureRequest, authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); uid=user["user_id"]
+    previous=database.get_profile(uid,DB_PATH)
+    if not previous: raise HTTPException(404,"Profile not found")
+    updated=dict(previous); updated["days_per_week"]=request.days_per_week; updated["minutes_per_workout"]=request.minutes_per_workout
+    updated["exercises_per_day"]=request.exercises_per_day
+    updated["exercises_per_workout"]=[max(3,min(int(x),10)) for x in request.exercises_per_workout[:request.days_per_week]]
+    profile=_profile_from_dict_for_preview(uid,updated)
+    plan=PlanGenerator(DB_PATH).generate_plan(profile)
+    current=database.get_current_plan(uid,DB_PATH) or {}
+    changes=[]
+    for i,neww in enumerate(plan.get("workouts",[])):
+        oldw=(current.get("workouts") or [{}])[i] if i<len(current.get("workouts") or []) else {}
+        old_names=[x.get("name") for x in oldw.get("exercises",[])]
+        new_names=[x.get("name") for x in neww.get("exercises",[])]
+        changes.append({"workout_index":i,"name":neww.get("name"),"kept":[x for x in new_names if x in old_names],"added":[x for x in new_names if x not in old_names],"removed":[x for x in old_names if x not in new_names]})
+    return {"status":"preview","plan":plan,"changes":changes,"locks":database.get_plan_exercise_locks(uid,DB_PATH)}
+
+def _profile_from_dict_for_preview(user_id:int,p:dict):
+    base=_profile_from_db(user_id)
+    base.days_per_week=p.get("days_per_week",base.days_per_week)
+    base.minutes_per_workout=p.get("minutes_per_workout",base.minutes_per_workout)
+    base.exercises_per_day=p.get("exercises_per_day",base.exercises_per_day)
+    base.exercises_per_workout=tuple(p.get("exercises_per_workout",[]))
+    base.locked_exercises=database.get_plan_exercise_locks(user_id,DB_PATH)
+    return base
+
 @app.post("/me/plan/reconfigure")
 def me_reconfigure_plan(request: PlanReconfigureRequest, authorization: Optional[str]=Header(None)):
     user=_current_account(authorization); uid=user["user_id"]
@@ -1865,6 +1913,7 @@ def me_reconfigure_plan(request: PlanReconfigureRequest, authorization: Optional
     updated["days_per_week"]=request.days_per_week
     updated["minutes_per_workout"]=request.minutes_per_workout
     updated["exercises_per_day"]=request.exercises_per_day
+    updated["exercises_per_workout"]=[max(3,min(int(x),10)) for x in request.exercises_per_workout[:request.days_per_week]]
     updated["core_workouts_per_week"]=min(int(updated.get("core_workouts_per_week",2)),request.days_per_week)
     updated["cardio_workouts_per_week"]=min(int(updated.get("cardio_workouts_per_week",2)),request.days_per_week)
 
@@ -1920,7 +1969,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.62.0"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.64.0"}
 
 
 @app.get("/me/coach/briefing")
