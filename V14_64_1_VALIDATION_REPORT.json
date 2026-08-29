@@ -1,0 +1,8 @@
+{
+  "version": "14.64.1",
+  "release": "Custom Split Rebuild Fix",
+  "status": "passed",
+  "root_cause": "Adjust Plan resized custom_split in the frontend but omitted custom_split from preview/reconfigure requests, causing days_per_week/custom-day count mismatches.",
+  "regression": "4-day custom split -> 5-day preview -> 5-day rebuild with exact weekday sequence",
+  "tests": ["static validation", "frontend contract validation", "plan precision validation", "full E2E including rebuild regression"]
+}

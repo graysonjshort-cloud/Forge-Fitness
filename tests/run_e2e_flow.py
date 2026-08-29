@@ -93,6 +93,25 @@ def main():
         assert split_intel.get("frequency",{}).get("Chest")==1
         assert "Chest" in split_intel.get("priority_muscles",[])
         assert any("Chest is high priority" in x for x in split_intel.get("warnings",[]))
+
+        # v14.64.1 rebuild regression: increasing days/week while a Custom Split
+        # is active must send the resized custom split through preview + apply.
+        custom_days_5=custom_days+[
+            {"name":"Chest + Back","muscles":["Chest","Back"],"submuscles":{}}
+        ]
+        adjust_payload={
+            "days_per_week":5,"minutes_per_workout":45,"exercises_per_day":6,
+            "exercises_per_workout":[6,6,6,6,6],
+            "preferred_days":[0,1,2,4,6],"custom_split":custom_days_5,
+        }
+        _,preview=req("POST","/me/plan/preview",adjust_payload,token)
+        assert preview["status"]=="preview"
+        assert len(preview["plan"]["workouts"])==5
+        _,rebuilt=req("POST","/me/plan/reconfigure",adjust_payload,token)
+        assert rebuilt["status"]=="reconfigured"
+        assert len(rebuilt["plan"]["workouts"])==5
+        assert [w["scheduled_day"] for w in rebuilt["plan"]["workouts"]]==[0,1,2,4,6]
+
         restored={**profile,"minutes_per_workout":50,"exercises_per_day":7}
         _,saved=req("POST","/me/profile",restored,token)
         assert saved["plan_regenerated"] is True
