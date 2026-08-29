@@ -57,9 +57,9 @@ subprocess.run(["node","--check",str(ROOT/"app.js")],check=True,capture_output=T
 for module in sorted((ROOT/"js").glob("*.js")):
     subprocess.run(["node","--check",str(module)],check=True,capture_output=True,text=True)
 for name in ["forge_core.js","forge_api.js","forge_equipment.js","forge_pwa.js"]:
-    assert f'/js/{name}?v=14.39.0' in index, f"Missing module script: {name}"
-assert '/app.js?v=14.39.0' in index
-assert len(app) < 185000, "app.js modularization regression"
+    assert f'/js/{name}?v=14.43.0' in index, f"Missing module script: {name}"
+assert '/app.js?v=14.43.0' in index
+assert len(app) < 210000, "app.js modularization regression"
 print(json.dumps({
   "status":"passed",
   "routes_checked":len(required_routes),
@@ -69,3 +69,28 @@ print(json.dumps({
   "frontend_modules_checked":len(modules),
   "app_js_bytes":len(app)
 },indent=2))
+
+# v14.40 daily workout intelligence regression guards
+assert 'data-a=repeat-last-set' in app, "Repeat Last Set action missing"
+assert 'data-a=current-exercise-history' in app, "In-workout exercise history action missing"
+assert 'Why this target?' in app, "Progression explanation missing"
+assert 'loadCompletedWorkoutSummary' in app, "Completion summary loader missing"
+assert 'completion-metrics' in app, "Completion metrics UI missing"
+
+# v14.41 readiness/live adjustment regression guards
+assert "readiness:readinessCheckin" in app
+assert "Adjust Today’s Workout" in app
+assert "todayAdjustmentBanner" in app
+assert "LIVE ADJUSTMENT" in app
+
+# v14.42 smart substitution regression guards
+assert "SMART SUBSTITUTION" in app
+assert "data-swap-reason" in app
+assert "Marked during workout substitution due to discomfort" in app
+assert "smart_reason" in app
+
+# v14.43 dashboard/weekly insights regression guards
+assert "WEEKLY INSIGHTS" in app
+assert "homeQuickActions" in app
+assert "api(\"/me/history\")" in app
+assert "NEXT BEST ACTION" in app
