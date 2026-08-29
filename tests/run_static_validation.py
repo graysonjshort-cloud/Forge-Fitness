@@ -57,9 +57,12 @@ subprocess.run(["node","--check",str(ROOT/"app.js")],check=True,capture_output=T
 for module in sorted((ROOT/"js").glob("*.js")):
     subprocess.run(["node","--check",str(module)],check=True,capture_output=True,text=True)
 for name in ["forge_core.js","forge_api.js","forge_equipment.js","forge_pwa.js"]:
-    assert f'/js/{name}?v=14.64.1' in index, f"Missing module script: {name}"
-assert '/app.js?v=14.64.1' in index
+    assert f'/js/{name}?v=14.64.2' in index, f"Missing module script: {name}"
+assert '/app.js?v=14.64.2' in index
 assert len(app) < 240000, "app.js modularization regression"
+assert 'function normalizedExerciseTargets()' in app, "Sparse exercise target normalization missing"
+assert 'exercises_per_workout:normalizedExerciseTargets()' in app, "Rebuild payload must normalize per-workout targets"
+assert 'Array.isArray(detail)' in modules.get("forge_api.js",""), "Structured API validation errors must be readable"
 print(json.dumps({
   "status":"passed",
   "routes_checked":len(required_routes),

@@ -532,7 +532,7 @@ class PlanReconfigureRequest(BaseModel):
     minutes_per_workout: int = Field(ge=15, le=180)
     exercises_per_day: int = Field(6, ge=3, le=10)
     preferred_days: list[int] = []
-    exercises_per_workout: list[int] = []
+    exercises_per_workout: list[Optional[int]] = []
     # Custom split configuration must travel with an Adjust Plan request.
     # Otherwise changing days/week leaves the backend with the old custom-day
     # count and generation fails before the preview can be shown.
@@ -555,7 +555,7 @@ class ProfileRequest(BaseModel):
     core_workouts_per_week: int = Field(2, ge=0, le=6)
     cardio_workouts_per_week: int = Field(2, ge=0, le=6)
     exercises_per_day: int = Field(6, ge=3, le=10)
-    exercises_per_workout: list[int] = []
+    exercises_per_workout: list[Optional[int]] = []
     seed: Optional[int] = 42
 
 
@@ -1367,6 +1367,18 @@ PLAN_GENERATION_PROFILE_KEYS = {
 def _generation_profile_changed(before: dict, after: dict) -> bool:
     return any(before.get(k) != after.get(k) for k in PLAN_GENERATION_PROFILE_KEYS)
 
+def _normalize_exercise_targets(values, days_per_week: int, global_target: int) -> list[int]:
+    global_target=max(3,min(int(global_target or 6),10))
+    raw=list(values or [])
+    out=[]
+    for i in range(max(0,int(days_per_week))):
+        value=raw[i] if i < len(raw) else None
+        if value is None or value == "": value=global_target
+        try: value=int(value)
+        except (TypeError,ValueError): value=global_target
+        out.append(max(3,min(value,10)))
+    return out
+
 def _restore_schedule_days(user_id: int, preferred_days: list[int]) -> None:
     if not preferred_days:
         return
@@ -1413,7 +1425,9 @@ def me_profile(authorization: Optional[str]=Header(None)):
 def me_save_profile(request: ProfileRequest, authorization: Optional[str]=Header(None)):
     user=_current_account(authorization)
     try:
-        result=_save_profile_with_full_regeneration(user["user_id"],request.model_dump())
+        payload=request.model_dump()
+        payload["exercises_per_workout"]=_normalize_exercise_targets(payload.get("exercises_per_workout"),payload.get("days_per_week",4),payload.get("exercises_per_day",6))
+        result=_save_profile_with_full_regeneration(user["user_id"],payload)
         # Preserve the historical response shape for onboarding; settings clients can
         # use the metadata fields when an active plan was rebuilt.
         return {**result["profile"],"plan_regenerated":result["regenerated"],"regenerated_plan":result["plan"]}
@@ -1873,7 +1887,7 @@ def me_plan_preview(request: PlanReconfigureRequest, authorization: Optional[str
     if not previous: raise HTTPException(404,"Profile not found")
     updated=dict(previous); updated["days_per_week"]=request.days_per_week; updated["minutes_per_workout"]=request.minutes_per_workout
     updated["exercises_per_day"]=request.exercises_per_day
-    updated["exercises_per_workout"]=[max(3,min(int(x),10)) for x in request.exercises_per_workout[:request.days_per_week]]
+    updated["exercises_per_workout"]=_normalize_exercise_targets(request.exercises_per_workout,request.days_per_week,request.exercises_per_day)
     if request.custom_split:
         updated["custom_split"]=request.custom_split[:request.days_per_week]
     profile=_profile_from_dict_for_preview(uid,updated)
@@ -1920,7 +1934,7 @@ def me_reconfigure_plan(request: PlanReconfigureRequest, authorization: Optional
     updated["days_per_week"]=request.days_per_week
     updated["minutes_per_workout"]=request.minutes_per_workout
     updated["exercises_per_day"]=request.exercises_per_day
-    updated["exercises_per_workout"]=[max(3,min(int(x),10)) for x in request.exercises_per_workout[:request.days_per_week]]
+    updated["exercises_per_workout"]=_normalize_exercise_targets(request.exercises_per_workout,request.days_per_week,request.exercises_per_day)
     if request.custom_split:
         updated["custom_split"]=request.custom_split[:request.days_per_week]
     updated["core_workouts_per_week"]=min(int(updated.get("core_workouts_per_week",2)),request.days_per_week)
@@ -1978,7 +1992,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.64.1"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.64.2"}
 
 
 @app.get("/me/coach/briefing")

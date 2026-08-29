@@ -1,0 +1,20 @@
+{
+  "version": "14.64.2",
+  "status": "passed",
+  "release": "Sparse Rebuild Target Fix",
+  "bug": "Sparse JavaScript exercises_per_workout arrays serialized empty override slots as null, causing FastAPI 422 validation errors.",
+  "fixes": [
+    "Frontend normalizes every workout exercise target before preview and apply.",
+    "Backend accepts optional per-workout targets and normalizes null/missing values to exercises_per_day.",
+    "Profile saves normalize sparse targets too.",
+    "Structured FastAPI validation errors are converted to readable messages."
+  ],
+  "validation": {
+    "static": "passed",
+    "frontend_contracts": "passed",
+    "e2e": "passed",
+    "frontend_api_calls": 124,
+    "backend_routes": 118,
+    "missing_contracts": []
+  }
+}

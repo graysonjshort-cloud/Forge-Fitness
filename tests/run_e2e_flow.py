@@ -107,6 +107,14 @@ def main():
         _,preview=req("POST","/me/plan/preview",adjust_payload,token)
         assert preview["status"]=="preview"
         assert len(preview["plan"]["workouts"])==5
+
+        # v14.64.2 regression: browser arrays can contain null holes when only
+        # some per-workout exercise targets override the global target. These
+        # must resolve to the global target instead of causing FastAPI 422.
+        sparse_payload={**adjust_payload,"exercises_per_day":5,"exercises_per_workout":[None,7,6,None,7]}
+        _,sparse_preview=req("POST","/me/plan/preview",sparse_payload,token)
+        assert sparse_preview["status"]=="preview"
+        assert sparse_preview["plan"]["profile"]["exercises_per_workout"]==[5,7,6,5,7]
         _,rebuilt=req("POST","/me/plan/reconfigure",adjust_payload,token)
         assert rebuilt["status"]=="reconfigured"
         assert len(rebuilt["plan"]["workouts"])==5

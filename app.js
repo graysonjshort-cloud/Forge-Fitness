@@ -50,6 +50,15 @@ function equipmentIcon(key,name="",category=""){return ForgeEquipment.icon(key,n
 
 const w=()=>plan?.workouts?.[S.wi]||null;
 async function api(path,opt={}){return ForgeApi.request(API,()=>authToken,S,path,opt)}
+function normalizedExerciseTargets(){
+  const globalTarget=Math.max(3,Math.min(10,Number(profile.exercises_per_day)||6));
+  const per=Array.isArray(profile.exercises_per_workout)?profile.exercises_per_workout:[];
+  return Array.from({length:Number(profile.days_per_week)||0},(_,i)=>{
+    const raw=per[i];
+    const n=(raw===null||raw===undefined||raw==="")?globalTarget:Number(raw);
+    return Number.isFinite(n)?Math.max(3,Math.min(10,Math.round(n))):globalTarget;
+  });
+}
 
 async function loadExisting(){
   if(!authToken)return;
@@ -2283,11 +2292,11 @@ async function act(a){
     }
     if(a==="adjust-plan"){S.preferredDays=[];S.planPreview=null;try{S.planLocks=await api("/me/plan/locks")}catch{}go("adjustplan");return;}
     if(a==="cancel-plan-preview"){S.planPreview=null;toast("Current plan kept");render();return;}
-    if(a==="apply-plan-preview"){const d=await api("/me/plan/reconfigure",{method:"POST",body:JSON.stringify({days_per_week:profile.days_per_week,minutes_per_workout:profile.minutes_per_workout,exercises_per_day:profile.exercises_per_day||6,exercises_per_workout:profile.exercises_per_workout||[],preferred_days:[...S.preferredDays].sort((a,b)=>a-b),custom_split:profile.workout_split==="custom"?(profile.custom_split||[]):[]})});plan=d.plan;Object.assign(profile,d.profile||{});S.planPreview=null;toast("New plan applied");S.planTab="overview";go("plan");return;}
+    if(a==="apply-plan-preview"){const d=await api("/me/plan/reconfigure",{method:"POST",body:JSON.stringify({days_per_week:profile.days_per_week,minutes_per_workout:profile.minutes_per_workout,exercises_per_day:profile.exercises_per_day||6,exercises_per_workout:normalizedExerciseTargets(),preferred_days:[...S.preferredDays].sort((a,b)=>a-b),custom_split:profile.workout_split==="custom"?(profile.custom_split||[]):[]})});plan=d.plan;Object.assign(profile,d.profile||{});S.planPreview=null;toast("New plan applied");S.planTab="overview";go("plan");return;}
     if(a==="save-plan-adjust"){
       if(S.preferredDays.length!==profile.days_per_week)throw Error(`Choose exactly ${profile.days_per_week} training days`);
       S.planAdjusting=true;render();
-      try{S.planPreview=await api("/me/plan/preview",{method:"POST",body:JSON.stringify({days_per_week:profile.days_per_week,minutes_per_workout:profile.minutes_per_workout,exercises_per_day:profile.exercises_per_day||6,exercises_per_workout:profile.exercises_per_workout||[],preferred_days:[...S.preferredDays].sort((a,b)=>a-b),custom_split:profile.workout_split==="custom"?(profile.custom_split||[]):[]})});toast("Preview ready — review changes before applying");render();}finally{S.planAdjusting=false}
+      try{S.planPreview=await api("/me/plan/preview",{method:"POST",body:JSON.stringify({days_per_week:profile.days_per_week,minutes_per_workout:profile.minutes_per_workout,exercises_per_day:profile.exercises_per_day||6,exercises_per_workout:normalizedExerciseTargets(),preferred_days:[...S.preferredDays].sort((a,b)=>a-b),custom_split:profile.workout_split==="custom"?(profile.custom_split||[]):[]})});toast("Preview ready — review changes before applying");render();}finally{S.planAdjusting=false}
       return;
     }
     if(a==="readiness-skip"){S.todayAdjustment=null;await startWorkout();return}
