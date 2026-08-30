@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 import database
 import calendar_integration
 import nutrition_lookup
+import training_intelligence_v14
 from fitness_app_plan_generator_upgraded import PlanGenerator, UserProfile, TrainingState, normalize_custom_split
 from fitness_app_weekly_program_controller import (
     WeeklyProgramController, WeeklyProgramState, WeeklyWorkoutResult,
@@ -77,6 +78,7 @@ def _coach_llm_context(user_id: int, workout_id: Optional[int], db_path=DB_PATH)
             user_id,calendar_integration.current_local_time(user_id,db_path)["date"],db_path
         ),
         "nutrition_goal":(database.get_profile(user_id,db_path) or {}).get("goal","general_fitness"),
+        "coach_v4":training_intelligence_v14.coach_context_v4(user_id,db_path),
     }
 
 
@@ -387,7 +389,7 @@ def _call_openai_coach(user_id: int, user_message: str, workout_id: Optional[int
     recent=database.get_coach_messages(user_id,10,db_path)[-8:]
     conversation=[{"role":"assistant" if m.get("role")=="assistant" else "user",
                    "content":m.get("message","")} for m in recent]
-    instructions="""You are Forge Coach, the coaching assistant inside a general-audience fitness app.
+    instructions="""You are Forge Coach 4.0, the coaching assistant inside a general-audience fitness app. Explain programming decisions using mesocycle phase, readiness, muscle-volume status, exercise progression, schedule, and nutrition context. Prefer the smallest effective change and preserve successful exercises unless a clear reason supports rotation.
 Use only the supplied Forge training context for user-specific numbers, workouts, history, PRs, fatigue, and recommendations. Never invent user data.
 Be concise, friendly, practical, and understandable. Prefer Easy, Moderate, Hard, Very Hard, and Max Effort over unexplained technical jargon.
 Do not diagnose injuries or medical conditions. If pain or injury is described, preserve any safety warning from the deterministic Forge baseline and do not encourage pushing through pain.
@@ -2190,7 +2192,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.69.0"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.74.0"}
 
 
 @app.get("/me/coach/briefing")
@@ -2898,6 +2900,33 @@ def persistence_status():
         "persistent": bool(database.SUPABASE_DB_URL),
         "key": database.PERSISTENCE_KEY,
     }
+
+@app.get("/me/training-dashboard")
+def me_training_dashboard(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.training_dashboard(user["user_id"],DB_PATH)
+
+@app.get("/me/exercises/{exercise_id}/progression-strategy")
+def me_exercise_progression_strategy(exercise_id:int, authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    try:return training_intelligence_v14.progression_strategy(user["user_id"],exercise_id,DB_PATH)
+    except ValueError as e:raise HTTPException(404,str(e))
+
+@app.get("/me/exercises/{exercise_id}/substitution-intelligence")
+def me_substitution_intelligence(exercise_id:int, authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    try:return training_intelligence_v14.substitution_rankings(user["user_id"],exercise_id,DB_PATH)
+    except ValueError as e:raise HTTPException(404,str(e))
+
+@app.get("/me/training-records")
+def me_training_records(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.training_records(user["user_id"],DB_PATH)
+
+@app.get("/me/coach/context-v4")
+def me_coach_context_v4(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.coach_context_v4(user["user_id"],DB_PATH)
 
 # ---------------------------------------------------------
 # Forge PWA frontend

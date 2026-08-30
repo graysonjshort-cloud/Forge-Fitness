@@ -1426,3 +1426,13 @@ button:disabled,.btn:disabled{opacity:.48;cursor:not-allowed;transform:none}
 
 /* v14.56 Progress Hub */
 .progress-hub-card{border:1px solid rgba(255,255,255,.08)}.progress-hub-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.progress-hub-kpis span{padding:12px;background:rgba(255,255,255,.045);border-radius:13px}.progress-hub-kpis small,.progress-hub-kpis b{display:block}.progress-hub-kpis small{font-size:9px;letter-spacing:.07em;opacity:.58}.progress-hub-kpis b{font-size:18px;margin-top:4px}.progress-hub-signals{margin-top:12px;display:grid;gap:7px}.progress-hub-signals>div{display:grid;grid-template-columns:1fr auto;gap:3px 10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.07)}.progress-hub-signals>div small{grid-column:1/-1;opacity:.58}.progress-hub-signals .good b{opacity:1}.progress-hub-signals .watch b{font-weight:800}
+
+.training-command-card .row>b{text-transform:capitalize}.muscle-status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.muscle-status-grid>div{background:#15191e;border:1px solid #292f36;border-radius:12px;padding:10px}.muscle-status-grid span{display:flex;justify-content:space-between;gap:8px;align-items:end}.muscle-status-grid small{color:#9aa3ad}.muscle-status-grid i{display:block;height:5px;background:#292f36;border-radius:5px;margin-top:8px;overflow:hidden}.muscle-status-grid u{display:block;height:100%;background:var(--red);text-decoration:none}
+
+.progression-card .row>b{text-transform:capitalize}.progression-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.progression-metrics span{background:#15191e;padding:9px;border-radius:10px;text-align:center}.progression-metrics small{display:block;color:#9aa3ad;margin-top:3px}
+
+.sub-intel-list{display:grid;gap:9px;margin-top:12px}.sub-intel-list>div{background:#15191e;border-radius:10px;padding:10px}.sub-intel-list span,.sub-intel-list small{display:block;color:#a6afb8;margin-top:4px}
+
+.record-card-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.record-card-grid>div,.block-history span{background:#15191e;border-radius:10px;padding:10px}.record-card-grid span,.record-card-grid small,.block-history small{display:block;color:#9ea7b0;margin-top:3px}.record-card-grid strong{display:block;margin-top:5px}.block-history{display:grid;gap:8px}
+
+.coach4-context>.row>b{text-transform:capitalize}.coach4-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}.coach4-grid span,.coach4-prog{background:#15191e;border-radius:10px;padding:9px}.coach4-grid small,.coach4-prog span{display:block;color:#a1aab3;margin-top:3px}.coach4-prog{margin-top:7px}
