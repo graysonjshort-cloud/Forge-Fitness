@@ -501,7 +501,7 @@ def start_workout(user_id: int, workout_id: int, db_path=DEFAULT_DB_PATH) -> int
             """SELECT w.id, w.status FROM workouts w
                JOIN program_weeks pw ON pw.id=w.program_week_id
                JOIN programs p ON p.id=pw.program_id
-               WHERE w.id=? AND p.user_id=?""", (workout_id, user_id)
+               WHERE w.id=? AND p.user_id=? AND p.status='active'""", (workout_id, user_id)
         ).fetchone()
         if not row:
             raise ValueError("Workout not found for user")
@@ -534,14 +534,20 @@ def start_workout(user_id: int, workout_id: int, db_path=DEFAULT_DB_PATH) -> int
 def record_performance(user_id: int, session_id: int, exercise_id: int, data: dict[str, Any], db_path=DEFAULT_DB_PATH) -> int:
     with session(db_path) as con:
         valid = con.execute(
-            """SELECT ws.id FROM workout_sessions ws
+            """SELECT ws.id,ws.workout_id FROM workout_sessions ws
                JOIN workouts w ON w.id=ws.workout_id
                JOIN program_weeks pw ON pw.id=w.program_week_id
                JOIN programs p ON p.id=pw.program_id
-               WHERE ws.id=? AND p.user_id=?""", (session_id, user_id)
+               WHERE ws.id=? AND p.user_id=? AND p.status='active' AND ws.status='active'""", (session_id, user_id)
         ).fetchone()
         if not valid:
-            raise ValueError("Workout session not found for user")
+            raise ValueError("Active workout session is stale. Resume or start the current workout.")
+        belongs = con.execute(
+            "SELECT 1 FROM workout_exercises WHERE workout_id=? AND exercise_id=? LIMIT 1",
+            (valid["workout_id"], exercise_id),
+        ).fetchone()
+        if not belongs:
+            raise ValueError("This exercise does not match the active workout session. Reopen the workout to resync it.")
         cur = con.execute(
             """INSERT INTO exercise_performance
                (session_id, exercise_id, completed_sets, reps_json, difficulty, skipped,
@@ -607,7 +613,7 @@ def get_active_session(user_id: int, db_path=DEFAULT_DB_PATH):
                JOIN workouts w ON w.id=ws.workout_id
                JOIN program_weeks pw ON pw.id=w.program_week_id
                JOIN programs p ON p.id=pw.program_id
-               WHERE p.user_id=? AND ws.status='active'
+               WHERE p.user_id=? AND p.status='active' AND ws.status='active'
                ORDER BY ws.started_at DESC, ws.id DESC LIMIT 1""",
             (user_id,),
         ).fetchone()

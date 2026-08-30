@@ -13,5 +13,5 @@ for x in checks: assert x in s, f'missing async-stability guard: {x}'
 assert 'if(S.swapOptionsKey===key&&(S.swapOptionsLoaded||S.swapOptionsLoading))return;' in s
 assert 'if(S.substitutionIntelligenceExerciseId===exerciseId&&(S.substitutionIntelligence||S.substitutionIntelligenceLoading))return;' in s
 assert 'if(S.exerciseProgressionLoading)return' not in s, 'new exercise can be blocked by stale progression request'
-assert (ROOT/'VERSION.txt').read_text().strip()=='14.74.2'
-print('v14.74.2 async loader stability regression: passed')
+assert (ROOT/'VERSION.txt').read_text().strip()=='14.74.3'
+print('v14.74.3 async loader stability regression: passed')

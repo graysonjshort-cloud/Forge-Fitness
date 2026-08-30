@@ -89,7 +89,12 @@ async function restoreSession(){
   try{
     const s=await api("/me/session/resume");if(!s)return;
     session={session_id:s.session_id};S.lastSessionId=s.session_id;
-    S.wi=Number(s.workout_index||0);S.ei=Number(s.current_exercise_index||0);S.set=Number(s.current_set_index||0);
+    const resumedWorkoutIndex=(plan?.workouts||[]).findIndex(x=>Number(x.workout_id)===Number(s.workout_id));
+    if(resumedWorkoutIndex<0){
+      console.warn("Active session does not belong to the current plan; ignoring stale session",s.workout_id);
+      session=null;S.lastSessionId=null;return;
+    }
+    S.wi=resumedWorkoutIndex;S.ei=Number(s.current_exercise_index||0);S.set=Number(s.current_set_index||0);
     if(s.rest_started_at&&s.rest_duration_seconds){
       const elapsed=Math.max(0,Math.floor((Date.now()-Date.parse(s.rest_started_at+"Z"))/1000));
       const remain=Math.max(0,Number(s.rest_duration_seconds)-elapsed);

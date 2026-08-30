@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "version": "14.74.2",
+  "version": "14.74.3",
   "release": "Async Loader Stability",
   "root_cause": "Rerender-driven async loaders could refetch or replace settled UI with loading placeholders. Smart Swap had both an unkeyed substitutions loader and an exercise intelligence loader that rendered on completion, causing the two loaders to retrigger each other.",
   "repairs": [
