@@ -81,44 +81,62 @@ def training_dashboard(user_id,db_path):
     return {'version':'3.0','mesocycle':{'block_number':((week-1)//block_len)+1,'week_in_block':win,'block_length':block_len,'phase':phase,'fatigue_score':round(fatigue,1)},'week':{'completed':completed,'planned':planned,'adherence_percent':round(completed/max(planned,1)*100)},'muscles':muscles,'submuscles':subrows[:24],'recent_prs':recent_prs,'progression_mode':'deload' if phase=='deload' else 'progress' if fatigue<6 else 'maintain'}
 
 def progression_strategy(user_id,exercise_id,db_path):
-    hist=database.get_exercise_history(user_id,exercise_id,100,db_path)
+    hist=database.get_exercise_history(user_id,exercise_id,160,db_path)
     with database.session(db_path) as con:
         ex=con.execute('SELECT * FROM exercises WHERE id=?',(exercise_id,)).fetchone()
     if not ex: raise ValueError('Exercise not found')
     ex=dict(ex); sets=hist.get('sets') or []
-    timed=any((s.get('duration_seconds') or 0)>0 for s in sets[-8:]) or str(ex.get('progression_method','')).lower().startswith('time')
-    body=all((s.get('load_mode')=='bodyweight' or not s.get('weight')) for s in sets[-6:]) if sets else ex.get('equipment')=='Bodyweight'
-    method='time progression' if timed else 'bodyweight rep progression' if body else 'double progression'
-    recent=sets[-12:]
-    valid=[s for s in recent if not s.get('duration_seconds') and s.get('reps')]
-    best=max([_e1rm(s.get('weight'),s.get('reps')) for s in valid] or [0])
-    old=[_e1rm(s.get('weight'),s.get('reps')) for s in (sets[-24:-12] if len(sets)>12 else []) if s.get('reps')]
-    baseline=max(old or [0])
-    trend=((best-baseline)/baseline*100) if baseline else None
-    rpes=[float(s['rpe']) for s in recent if s.get('rpe') is not None]
-    avg_rpe=sum(rpes)/len(rpes) if rpes else None
-    sessions=[]
-    for s in recent:
-        key=s.get('recorded_at','')[:10]
-        if key and key not in sessions:sessions.append(key)
-    plateau=len(sessions)>=3 and trend is not None and abs(trend)<1.5
-    poor=avg_rpe is not None and avg_rpe>=9.2
-    if timed:
-        target='Add 5–10 seconds once all working sets are controlled.'
-    elif body:
-        target='Add 1–2 reps per set; add external load only after the rep range is owned.'
-    else:
-        target=f"Reach {ex.get('max_reps',12)} reps across working sets, then add the smallest practical load increase."
-    if poor: status='reduce'; note='Recent effort is very high; hold or reduce load before adding reps.'
-    elif plateau: status='plateau'; note='Performance has been flat across multiple exposures; consider a small rep-range or exercise change.'
-    elif trend is not None and trend>2: status='progressing'; note='Estimated strength is trending upward; keep the current progression method.'
-    else: status='building'; note='Keep accumulating consistent exposures before changing the progression method.'
-    retention_score=max(0,min(100,round(86 + (8 if trend is not None and trend>2 else 0) - (18 if plateau else 0) - (12 if poor else 0))))
-    plateau_evidence=max(0,min(5,len(sessions)-2)) if plateau else 0
+    timed=any((x.get('duration_seconds') or 0)>0 for x in sets[-12:]) or str(ex.get('progression_method','')).lower().startswith('time')
+    body=(all((x.get('load_mode')=='bodyweight' or not x.get('weight')) for x in sets[-8:]) if sets else ex.get('equipment')=='Bodyweight')
+    assisted='assist' in str(ex.get('name','')).lower()
+    method='timed progression' if timed else 'assisted progression' if assisted else 'bodyweight progression' if body else 'double progression'
+    by_session=defaultdict(list)
+    for x in sets:
+        key=(x.get('recorded_at') or '')[:10]
+        if key: by_session[key].append(x)
+    exposures=[]
+    for d,rows in sorted(by_session.items()):
+        if timed:
+            score=max([float(x.get('duration_seconds') or 0) for x in rows] or [0])
+        elif body or assisted:
+            score=max([float(x.get('reps') or 0) for x in rows] or [0])
+        else:
+            score=max([_e1rm(x.get('weight'),x.get('reps')) for x in rows] or [0])
+        rpes=[float(x['rpe']) for x in rows if x.get('rpe') is not None]
+        exposures.append({'date':d,'score':round(score,1),'rpe':round(sum(rpes)/len(rpes),1) if rpes else None})
+    recent=exposures[-6:]
+    arrows=[]
+    for i,x in enumerate(recent[-4:]):
+        if i==0 and len(recent)>4: prev=recent[-5]['score']
+        elif i>0: prev=recent[-4:][i-1]['score']
+        else: prev=x['score']
+        arrows.append('↑' if x['score']>prev*1.01 else '↓' if x['score']<prev*.99 else '→')
+    scores=[x['score'] for x in recent if x['score']>0]
+    trend=((scores[-1]-scores[0])/scores[0]*100) if len(scores)>=2 and scores[0] else None
+    recent_rpes=[x['rpe'] for x in recent if x.get('rpe') is not None]
+    avg_rpe=sum(recent_rpes)/len(recent_rpes) if recent_rpes else None
+    flat=sum(1 for i in range(1,len(scores)) if abs(scores[i]-scores[i-1])/max(scores[i-1],1)<.01)
+    regress=sum(1 for i in range(1,len(scores)) if scores[i] < scores[i-1]*.985)
+    plateau_evidence=max(0,flat-1) if len(scores)>=3 else 0
     state=database.get_training_state(user_id,db_path); week=max(1,int(state.get('week_number',1) or 1)); win=((week-1)%6)+1
-    post_deload=win==1 and week>1
-    resume_cue='Resume near the final pre-deload working load, but keep 2–3 reps in reserve on the first exposure.' if post_deload else None
-    return {'version':'4.0-mesocycle','exercise_id':exercise_id,'name':hist.get('name'),'method':method,'status':status,'target_rule':target,'sessions_analyzed':len(sessions),'avg_rpe':round(avg_rpe,1) if avg_rpe is not None else None,'strength_change_percent':round(trend,1) if trend is not None else None,'plateau':plateau,'plateau_evidence':plateau_evidence,'retention_score':retention_score,'post_deload_resume':post_deload,'resume_cue':resume_cue,'reason':note,'prs':hist.get('prs') or {}}
+    returning=win==1 and week>1
+    if len(exposures)<2: status='new'
+    elif returning: status='returning_after_deload'
+    elif regress>=2: status='regressing'
+    elif plateau_evidence>=2: status='plateauing'
+    elif trend is not None and trend>1.5: status='progressing'
+    else: status='holding'
+    retention_score=max(0,min(100,round(82 + (10 if status=='progressing' else 0) - (15 if status=='plateauing' else 0) - (20 if status=='regressing' else 0) - (8 if avg_rpe and avg_rpe>=9.2 else 0))))
+    hi=int(ex.get('max_reps') or 12); lo=int(ex.get('min_reps') or max(1,hi-4)); default_sets=int(ex.get('default_sets') or 3)
+    if timed: threshold=f'Complete {default_sets} sets at the top of the time range with controlled effort, then add 5–10 seconds.'
+    elif body: threshold=f'Reach {hi} reps across all {default_sets} working sets before adding external load.'
+    elif assisted: threshold=f'Reach {hi} reps across working sets, then reduce assistance by the smallest available step.'
+    else: threshold=f'Reach {hi} reps across all {default_sets} working sets at RPE ≤ 9, then add the smallest practical load increase.'
+    action='reduce' if status=='regressing' and avg_rpe and avg_rpe>=9 else 'rotate_review' if status=='plateauing' else 'progress' if status=='progressing' else 'resume_conservative' if returning else 'hold'
+    reason={'new':'Establish at least two comparable exposures before judging the trend.','returning_after_deload':'Resume conservatively after the deload before rebuilding progression pressure.','regressing':'Multiple recent exposures declined; reduce stress before forcing progression.','plateauing':'Performance has stayed essentially flat across several exposures.','progressing':'Recent exposure quality and performance are trending upward.','holding':'Performance is stable but has not earned a persistent load increase yet.'}[status]
+    result={'version':'4.0','exercise_id':exercise_id,'name':hist.get('name'),'method':method,'status':status,'target_rule':threshold,'next_load_threshold':threshold,'next_action':action,'sessions_analyzed':len(exposures),'avg_rpe':round(avg_rpe,1) if avg_rpe is not None else None,'strength_change_percent':round(trend,1) if trend is not None else None,'plateau':status=='plateauing','plateau_evidence':plateau_evidence,'retention_score':retention_score,'post_deload_resume':returning,'resume_cue':'Use the final pre-deload load with 2–3 reps in reserve on the first return exposure.' if returning else None,'last_exposures':arrows,'exposure_history':recent,'reason':reason,'prs':hist.get('prs') or {}}
+    database.save_exercise_progression_state(user_id,exercise_id,result,db_path)
+    return result
 
 def substitution_rankings(user_id,exercise_id,db_path):
     base=database.get_substitutions_for_user(user_id,exercise_id,db_path)
@@ -171,6 +189,89 @@ def training_records(user_id,db_path):
     for b,v in sorted(grouped.items()): mesocycles.append({'block':b,'workouts':v['workouts'],'sets':v['sets'],'volume':round(v['volume'],1)})
     return {'version':'3.0','exercise_cards':cards[:40],'weekly_history':week_rows[-16:],'mesocycle_history':mesocycles[-8:],'personal_records':database.get_personal_records(user_id,50,db_path)}
 
+
+def muscle_development_intelligence(user_id,db_path):
+    dash=training_dashboard(user_id,db_path)
+    plan, exercises=_current_exercises(user_id,db_path)
+    mmap=_muscle_map(db_path)
+    linked=defaultdict(list)
+    for e in exercises:
+        try: prog=progression_strategy(user_id,e['exercise_id'],db_path)
+        except Exception: continue
+        parents={m.get('parent_muscle') for m in mmap.get(e['exercise_id'],[]) if m.get('parent_muscle')}
+        subs={m.get('submuscle') for m in mmap.get(e['exercise_id'],[]) if m.get('submuscle')}
+        for m in parents|subs: linked[m].append(prog)
+    fatigue=float((dash.get('mesocycle') or {}).get('fatigue_score') or 0)
+    def classify(row):
+        t=float(row.get('target_sets') or 0); a=float(row.get('actual_sets') or 0); ratio=(a/max(t,1)) if t else 0
+        progs=linked.get(row['muscle'],[])
+        statuses=[p.get('status') for p in progs]
+        progressing=sum(1 for x in statuses if x=='progressing')
+        stalled=sum(1 for x in statuses if x in {'plateauing','regressing'})
+        if fatigue>=8 and ratio>=.7:
+            status='recovery_limited'; rec='Keep volume stable or reduce it temporarily; recovery pressure is already high.'
+        elif ratio<.6:
+            status='underexposed'; rec='Complete more of the planned weekly stimulus before adding or rotating exercises.'
+        elif ratio>=.85 and stalled and not progressing:
+            status='stimulus_not_progressing'; rec='Volume is present but performance is not improving. Review exercise selection, rep targets, and recovery before adding more sets.'
+        elif progressing:
+            status='progressing'; rec='Keep the current exercise mix and volume while performance is moving up.'
+        elif ratio>=.85:
+            status='on_track'; rec='Weekly stimulus is on target. Hold steady until progression evidence changes.'
+        else:
+            status='building'; rec='Continue the current week and reassess once more planned volume is completed.'
+        return {**row,'development_status':status,'linked_exercises':len(progs),'progressing_exercises':progressing,'stalled_exercises':stalled,'recommendation':rec}
+    broad=[classify(x) for x in dash.get('muscles',[])]
+    sub=[classify(x) for x in dash.get('submuscles',[])]
+    priority={'recovery_limited':0,'stimulus_not_progressing':1,'underexposed':2,'building':3,'on_track':4,'progressing':5}
+    broad.sort(key=lambda x:(priority.get(x['development_status'],9),-float(x.get('target_sets') or 0)))
+    return {'version':'1.0','fatigue_score':fatigue,'mesocycle':dash.get('mesocycle'),'muscles':broad,'submuscles':sub,'summary':{
+        'progressing':sum(1 for x in broad if x['development_status']=='progressing'),
+        'needs_review':sum(1 for x in broad if x['development_status'] in {'recovery_limited','stimulus_not_progressing','underexposed'}),
+        'on_track':sum(1 for x in broad if x['development_status'] in {'on_track','building'})}}
+
+
+def plan_editor_snapshot(user_id,db_path):
+    plan, exercises=_current_exercises(user_id,db_path); mmap=_muscle_map(db_path); workouts=[]; weekly=defaultdict(float)
+    for wi,w in enumerate(plan.get('workouts') or []):
+        muscles=defaultdict(float)
+        for e in w.get('exercises') or []:
+            sets=float(e.get('sets') or 0)
+            for m in mmap.get(int(e.get('exercise_id') or 0),[]):
+                weight=1.0 if m.get('role')=='primary' else .5
+                muscles[m.get('parent_muscle')]+=sets*weight; weekly[m.get('parent_muscle')]+=sets*weight
+        workouts.append({'workout_id':w.get('workout_id'),'workout_index':wi,'name':w.get('name'),'exercise_count':len(w.get('exercises') or []),'muscle_sets':dict(sorted((k,round(v,1)) for k,v in muscles.items() if k))})
+    warnings=[]
+    for i in range(1,len(workouts)):
+        overlap=set(workouts[i-1]['muscle_sets']) & set(workouts[i]['muscle_sets'])
+        heavy=[m for m in overlap if workouts[i-1]['muscle_sets'][m]>=4 and workouts[i]['muscle_sets'][m]>=4]
+        if heavy:warnings.append(f"{workouts[i-1]['name']} → {workouts[i]['name']} repeats substantial {', '.join(heavy[:3])} work on adjacent training sessions.")
+    return {'version':'2.0','workouts':workouts,'weekly_muscle_sets':{k:round(v,1) for k,v in weekly.items()},'warnings':warnings}
+
+
+def intelligence_core(user_id,db_path):
+    dash=training_dashboard(user_id,db_path)
+    muscle=muscle_development_intelligence(user_id,db_path)
+    plan, exercises=_current_exercises(user_id,db_path)
+    progression=[]
+    for e in exercises[:16]:
+        try: progression.append(progression_strategy(user_id,e['exercise_id'],db_path))
+        except Exception: pass
+    decisions=database.list_programming_decisions(user_id,40,db_path)
+    progress=database.get_progress_intelligence(user_id,db_path)
+    active=database.get_active_session(user_id,db_path)
+    return {'version':'1.0','policy':{
+        'session_changes_do_not_rewrite_mesocycle':True,
+        'persistent_changes_require_repeated_evidence':True,
+        'preserve_successful_exercises':True,
+        'prefer_smallest_effective_change':True},
+        'mesocycle':dash.get('mesocycle'),'readiness':{'fatigue_score':(progress.get('metrics') or {}).get('fatigue_score'),'signals':progress.get('signals') or []},
+        'muscle_development':muscle,'exercise_progression':progression,'active_session_id':active.get('id') if active else None,
+        'decisions':decisions,'decision_counts':{
+            'session':sum(1 for d in decisions if d.get('scope')=='session'),
+            'persistent':sum(1 for d in decisions if d.get('duration')=='persistent'),
+            'applied':sum(1 for d in decisions if d.get('applied'))}}
+
 def coach_context_v4(user_id,db_path):
     dash=training_dashboard(user_id,db_path); records=training_records(user_id,db_path); intel=database.get_progress_intelligence(user_id,db_path)
     plan, exercises=_current_exercises(user_id,db_path)
@@ -180,4 +281,4 @@ def coach_context_v4(user_id,db_path):
         except Exception:pass
     profile=database.get_profile(user_id,db_path) or {}
     readiness={'fatigue_score':(intel.get('metrics') or {}).get('fatigue_score'),'signals':intel.get('signals') or []}
-    return {'version':'4.0','mesocycle':dash['mesocycle'],'readiness':readiness,'muscle_status':dash['muscles'],'exercise_progression':progression,'recent_records':records['exercise_cards'][:8],'schedule':database.get_workout_schedule(user_id,db_path),'nutrition_goal':profile.get('goal'),'coaching_rules':['Explain why a programming decision changed.','Prefer the smallest effective change.','Preserve successful exercises unless plateau, pain/avoidance, equipment, or recovery requires rotation.','Use mesocycle phase and readiness before increasing stress.']}
+    return {'version':'4.1-core','mesocycle':dash['mesocycle'],'readiness':readiness,'muscle_status':dash['muscles'],'exercise_progression':progression,'recent_records':records['exercise_cards'][:8],'recent_decisions':database.list_programming_decisions(user_id,12,db_path),'schedule':database.get_workout_schedule(user_id,db_path),'nutrition_goal':profile.get('goal'),'coaching_rules':['Explain why a programming decision changed.','State whether a change is session-only or persistent.','Prefer the smallest effective change.','Preserve successful exercises unless plateau, pain/avoidance, equipment, or recovery requires rotation.','Use mesocycle phase and readiness before increasing stress.']}

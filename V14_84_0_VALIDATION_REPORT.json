@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "version": "14.84.0",
+  "release": "Forge Intelligence Core",
+  "targeted_validation": "passed",
+  "static_validation": "passed",
+  "cumulative_final_validation": "passed",
+  "frontend_api_calls": 138,
+  "backend_routes": 134,
+  "missing_contracts": 0,
+  "exercise_directory_count": 215,
+  "exercise_muscle_links": 743,
+  "browser_viewport": "390x844",
+  "browser_errors": 0,
+  "full_e2e": "passed"
+}

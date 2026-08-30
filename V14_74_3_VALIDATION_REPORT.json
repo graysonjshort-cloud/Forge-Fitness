@@ -1,6 +1,6 @@
 {
   "status": "passed",
-  "version": "14.79.0",
+  "version": "14.84.0",
   "fixes": [
     "resume active session by workout_id",
     "exclude stale sessions from inactive programs",

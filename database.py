@@ -236,6 +236,8 @@ def ensure_schema(db_path: str | Path = DEFAULT_DB_PATH) -> None:
     ensure_exercise_muscle_taxonomy(db_path)
     ensure_exercise_intelligence_v4(db_path)
     ensure_plan_exercise_locks(db_path)
+    ensure_exercise_progression_state(db_path)
+    ensure_programming_decisions(db_path)
     ensure_exercise_form_demo_metadata(db_path)
     ensure_bundled_exercise_demo_assets(db_path)
 
@@ -287,6 +289,82 @@ def set_plan_exercise_lock(user_id:int, workout_index:int, exercise_id:int, lock
         else:
             con.execute("DELETE FROM plan_exercise_locks WHERE user_id=? AND workout_index=? AND exercise_id=?",(user_id,workout_index,exercise_id))
     return {"workout_index":workout_index,"exercise_id":exercise_id,"locked":bool(locked)}
+
+
+def ensure_exercise_progression_state(db_path=DEFAULT_DB_PATH) -> None:
+    with session(db_path) as con:
+        con.execute("""CREATE TABLE IF NOT EXISTS exercise_progression_state (
+            user_id INTEGER NOT NULL, exercise_id INTEGER NOT NULL, method TEXT NOT NULL,
+            status TEXT NOT NULL, exposure_count INTEGER NOT NULL DEFAULT 0,
+            plateau_evidence INTEGER NOT NULL DEFAULT 0, retention_score INTEGER NOT NULL DEFAULT 50,
+            next_threshold TEXT, last_exposures_json TEXT NOT NULL DEFAULT '[]',
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY(user_id,exercise_id))""")
+
+def save_exercise_progression_state(user_id:int, exercise_id:int, state:dict, db_path=DEFAULT_DB_PATH) -> None:
+    ensure_exercise_progression_state(db_path)
+    with session(db_path) as con:
+        con.execute("""INSERT INTO exercise_progression_state
+            (user_id,exercise_id,method,status,exposure_count,plateau_evidence,retention_score,next_threshold,last_exposures_json,updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+            ON CONFLICT(user_id,exercise_id) DO UPDATE SET method=excluded.method,status=excluded.status,
+            exposure_count=excluded.exposure_count,plateau_evidence=excluded.plateau_evidence,retention_score=excluded.retention_score,
+            next_threshold=excluded.next_threshold,last_exposures_json=excluded.last_exposures_json,updated_at=CURRENT_TIMESTAMP""",
+            (user_id,exercise_id,state.get('method','double progression'),state.get('status','new'),int(state.get('sessions_analyzed',0)),
+             int(state.get('plateau_evidence',0)),int(state.get('retention_score',50)),state.get('next_load_threshold'),
+             _json(state.get('last_exposures') or [])))
+
+def get_exercise_progression_state(user_id:int, exercise_id:int, db_path=DEFAULT_DB_PATH):
+    ensure_exercise_progression_state(db_path)
+    with session(db_path) as con:
+        r=con.execute("SELECT * FROM exercise_progression_state WHERE user_id=? AND exercise_id=?",(user_id,exercise_id)).fetchone()
+    if not r:return None
+    d=dict(r)
+    try:d['last_exposures']=json.loads(d.pop('last_exposures_json') or '[]')
+    except Exception:d['last_exposures']=[]
+    return d
+
+
+def ensure_programming_decisions(db_path=DEFAULT_DB_PATH) -> None:
+    with session(db_path) as con:
+        con.execute("""CREATE TABLE IF NOT EXISTS programming_decisions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL,
+            decision_type TEXT NOT NULL, scope TEXT NOT NULL, duration TEXT NOT NULL,
+            target_type TEXT NOT NULL, target_id TEXT, target_name TEXT,
+            old_value_json TEXT, new_value_json TEXT, evidence TEXT NOT NULL,
+            confidence TEXT NOT NULL DEFAULT 'medium', applied INTEGER NOT NULL DEFAULT 1,
+            source TEXT NOT NULL DEFAULT 'forge_intelligence_core',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)""")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_programming_decisions_user_created ON programming_decisions(user_id,created_at DESC,id DESC)")
+
+def record_programming_decision(user_id:int, *, decision_type:str, scope:str, duration:str, target_type:str,
+                                target_id=None, target_name=None, old_value=None, new_value=None,
+                                evidence:str, confidence:str='medium', applied:bool=True, source:str='forge_intelligence_core',
+                                db_path=DEFAULT_DB_PATH) -> int:
+    ensure_programming_decisions(db_path)
+    confidence=confidence if confidence in {'low','medium','high'} else 'medium'
+    with session(db_path) as con:
+        cur=con.execute("""INSERT INTO programming_decisions
+            (user_id,decision_type,scope,duration,target_type,target_id,target_name,old_value_json,new_value_json,evidence,confidence,applied,source)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (user_id,decision_type,scope,duration,target_type,str(target_id) if target_id is not None else None,target_name,
+             _json(old_value) if old_value is not None else None,_json(new_value) if new_value is not None else None,
+             evidence,confidence,int(bool(applied)),source))
+        return int(cur.lastrowid)
+
+def list_programming_decisions(user_id:int, limit:int=50, db_path=DEFAULT_DB_PATH):
+    ensure_programming_decisions(db_path); limit=max(1,min(200,int(limit)))
+    with session(db_path) as con:
+        rows=con.execute("SELECT * FROM programming_decisions WHERE user_id=? ORDER BY id DESC LIMIT ?",(user_id,limit)).fetchall()
+    out=[]
+    for r in rows:
+        d=dict(r)
+        for src,dst in [('old_value_json','old_value'),('new_value_json','new_value')]:
+            raw=d.pop(src,None)
+            try:d[dst]=json.loads(raw) if raw else None
+            except Exception:d[dst]=raw
+        d['applied']=bool(d['applied']); out.append(d)
+    return out
 
 def ensure_exercise_intelligence_v4(db_path=DEFAULT_DB_PATH) -> None:
     """Exercise Database 4.0: normalized similarity, stress, stability and substitution metadata."""
@@ -1178,7 +1256,43 @@ def get_session_intelligence(user_id: int, session_id: int, exercise_id: int, db
         "Performance is stable with room in reserve, so progression remains available." if recent_rpe<=7 and decay<10 else
         "The session is tracking close to the programmed target."
     )
-    next_set={"load_adjustment_percent":load_adjustment_percent,"effort_cap":effort_cap,"rest_seconds":suggested_rest,"estimated_remaining_minutes":estimated_remaining_minutes}
+    last_weight=float(valid[-1].get("weight") or 0) if valid else 0.0
+    last_reps=int(last or 0) if mode != "timed" else 0
+    planned_min=int(plan["min_reps"] or 1); planned_max=int(plan["max_reps"] or planned_min)
+    target_gap=(last_reps-planned_min) if mode != "timed" else 0
+    if mode == "weight" and last_weight > 0:
+        next_weight=round(max(0.0,last_weight*(1+load_adjustment_percent/100.0))*2)/2
+    else:
+        next_weight=None
+    if mode == "timed":
+        next_reps=None
+    elif recent_rpe>=9.5 or decay>=20:
+        next_reps=max(planned_min,min(planned_max,last_reps))
+    elif recent_rpe<=7 and last_reps>=planned_max:
+        next_reps=planned_min
+    else:
+        next_reps=max(planned_min,min(planned_max,last_reps+1 if last_reps<planned_max else last_reps))
+    auto_scope="session"
+    auto_duration="next_set" if completed < total_sets else "exercise_complete"
+    auto_action=(
+        "reduce_load" if load_adjustment_percent<0 else
+        "increase_load" if load_adjustment_percent>0 else
+        "extend_rest" if suggested_rest>base_rest else
+        "trim_volume" if total_sets<planned else
+        "hold"
+    )
+    autoregulation={
+        "version":"3.0",
+        "scope":auto_scope,
+        "duration":auto_duration,
+        "action":auto_action,
+        "planned":{"sets":planned,"min_reps":planned_min,"max_reps":planned_max,"rest_seconds":base_rest},
+        "actual":{"completed_sets":completed,"last_reps":last_reps if mode!="timed" else None,"last_weight":round(last_weight,2) if last_weight else None,"recent_rpe":round(recent_rpe,1),"performance_drop_percent":performance_drop_percent},
+        "recommended":{"total_sets":total_sets,"weight":next_weight,"reps":next_reps,"rest_seconds":suggested_rest,"effort_cap":effort_cap},
+        "why":why_changed,
+        "persistent_change":False,
+    }
+    next_set={"load_adjustment_percent":load_adjustment_percent,"effort_cap":effort_cap,"rest_seconds":suggested_rest,"estimated_remaining_minutes":estimated_remaining_minutes,"recommended_weight":next_weight,"recommended_reps":next_reps}
 
     return {
         "exercise_id": exercise_id,
@@ -1204,6 +1318,7 @@ def get_session_intelligence(user_id: int, session_id: int, exercise_id: int, db
         "why_changed": why_changed,
         "estimated_remaining_minutes": estimated_remaining_minutes,
         "next_set": next_set,
+        "autoregulation": autoregulation,
     }
 
 
@@ -3910,6 +4025,50 @@ def reorder_workout_exercises(user_id,workout_id,exercise_ids,db_path=DEFAULT_DB
         for i,eid in enumerate(exercise_ids): con.execute("UPDATE workout_exercises SET exercise_order=? WHERE workout_id=? AND exercise_id=?",(i,workout_id,int(eid)))
         _sync_workout_plan(con,ctx,workout_id)
     return {"status":"reordered"}
+
+
+def preview_move_workout_exercise(user_id:int, source_workout_id:int, exercise_id:int, target_workout_id:int, db_path=DEFAULT_DB_PATH):
+    if int(source_workout_id)==int(target_workout_id): raise ValueError('Choose a different workout')
+    with session(db_path) as con:
+        rows=con.execute("""SELECT w.id,w.name,w.workout_index,pw.id AS week_id
+            FROM workouts w JOIN program_weeks pw ON pw.id=w.program_week_id
+            JOIN programs p ON p.id=pw.program_id
+            WHERE p.user_id=? AND p.status='active' AND w.id IN (?,?)""",(user_id,source_workout_id,target_workout_id)).fetchall()
+        by={int(r['id']):dict(r) for r in rows}
+        if source_workout_id not in by or target_workout_id not in by: raise ValueError('Both workouts must belong to the active plan')
+        if by[source_workout_id]['week_id']!=by[target_workout_id]['week_id']: raise ValueError('Exercises can only move inside the current program week')
+        src=con.execute("""SELECT we.*,e.name,e.primary_muscle,e.secondary_muscles FROM workout_exercises we JOIN exercises e ON e.id=we.exercise_id
+            WHERE we.workout_id=? AND we.exercise_id=?""",(source_workout_id,exercise_id)).fetchone()
+        if not src: raise ValueError('Exercise is not part of the source workout')
+        count=int(con.execute('SELECT COUNT(*) n FROM workout_exercises WHERE workout_id=?',(source_workout_id,)).fetchone()['n'])
+        if count<=1: raise ValueError('A workout must keep at least one exercise')
+        if con.execute('SELECT 1 FROM workout_exercises WHERE workout_id=? AND exercise_id=?',(target_workout_id,exercise_id)).fetchone(): raise ValueError('Target workout already contains this exercise')
+        locks=get_plan_exercise_locks(user_id,db_path)
+        if int(exercise_id) in locks.get(int(by[source_workout_id]['workout_index']),[]): raise ValueError('Unlock this exercise before moving it')
+        target_count=int(con.execute('SELECT COUNT(*) n FROM workout_exercises WHERE workout_id=?',(target_workout_id,)).fetchone()['n'])
+        links=con.execute('SELECT muscle_group,sub_muscle,role FROM exercise_muscles WHERE exercise_id=?',(exercise_id,)).fetchall()
+        impact=[{'muscle':r['muscle_group'],'submuscle':r['sub_muscle'],'set_equivalents':round(float(src['sets'])*(1.0 if r['role']=='primary' else .5),1)} for r in links]
+        return {'source':by[source_workout_id],'target':by[target_workout_id],'exercise':dict(src),'weekly_volume_change':0,'target_exercise_count_before':target_count,'target_exercise_count_after':target_count+1,'source_exercise_count_after':count-1,'muscle_impact':impact,'warning':'Weekly set volume is unchanged, but training-day distribution and recovery spacing will change.'}
+
+def move_workout_exercise(user_id:int, source_workout_id:int, exercise_id:int, target_workout_id:int, db_path=DEFAULT_DB_PATH):
+    preview=preview_move_workout_exercise(user_id,source_workout_id,exercise_id,target_workout_id,db_path)
+    with session(db_path) as con:
+        row=con.execute('SELECT * FROM workout_exercises WHERE workout_id=? AND exercise_id=?',(source_workout_id,exercise_id)).fetchone()
+        target_order=int(con.execute('SELECT COALESCE(MAX(exercise_order),-1)+1 n FROM workout_exercises WHERE workout_id=?',(target_workout_id,)).fetchone()['n'])
+        con.execute('UPDATE workout_exercises SET workout_id=?,exercise_order=? WHERE id=?',(target_workout_id,target_order,row['id']))
+        for wid in (source_workout_id,target_workout_id):
+            rows=con.execute('SELECT id FROM workout_exercises WHERE workout_id=? ORDER BY exercise_order,id',(wid,)).fetchall()
+            for i,r in enumerate(rows): con.execute('UPDATE workout_exercises SET exercise_order=? WHERE id=?',(i,r['id']))
+        week_id=preview['source']['week_id']; prow=con.execute('SELECT plan_json FROM program_weeks WHERE id=?',(week_id,)).fetchone(); plan=json.loads(prow['plan_json'])
+        for wid in (source_workout_id,target_workout_id):
+            wr=con.execute('SELECT workout_index FROM workouts WHERE id=?',(wid,)).fetchone(); wi=int(wr['workout_index'])
+            erows=con.execute("""SELECT we.*,e.name,e.primary_muscle,e.secondary_muscles,e.movement_pattern,e.equipment,e.difficulty,e.exercise_type
+                FROM workout_exercises we JOIN exercises e ON e.id=we.exercise_id WHERE we.workout_id=? ORDER BY we.exercise_order""",(wid,)).fetchall()
+            plan['workouts'][wi]['exercises']=[dict(x) for x in erows]
+        con.execute('UPDATE program_weeks SET plan_json=? WHERE id=?',(_json(plan),week_id))
+        con.execute("""INSERT INTO progression_events(user_id,exercise_id,workout_id,event_type,old_value,new_value,reason)
+            VALUES (?,?,?,?,?,?,?)""",(user_id,exercise_id,target_workout_id,'plan_editor_move',str(source_workout_id),str(target_workout_id),'User moved exercise in Plan Editor 2.0'))
+    return {'status':'moved',**preview}
 
 def copy_previous_nutrition_day(user_id,target_date,db_path=DEFAULT_DB_PATH):
     from datetime import date,timedelta

@@ -389,7 +389,7 @@ def _call_openai_coach(user_id: int, user_message: str, workout_id: Optional[int
     recent=database.get_coach_messages(user_id,10,db_path)[-8:]
     conversation=[{"role":"assistant" if m.get("role")=="assistant" else "user",
                    "content":m.get("message","")} for m in recent]
-    instructions="""You are Forge Coach 4.0, the coaching assistant inside a general-audience fitness app. Explain programming decisions using mesocycle phase, readiness, muscle-volume status, exercise progression, schedule, and nutrition context. Prefer the smallest effective change and preserve successful exercises unless a clear reason supports rotation.
+    instructions="""You are Forge Coach 4.0 powered by Forge Intelligence Core, the coaching assistant inside a general-audience fitness app. Explain programming decisions using mesocycle phase, readiness, muscle-volume status, exercise progression, schedule, and nutrition context. Prefer the smallest effective change and preserve successful exercises unless a clear reason supports rotation.
 Use only the supplied Forge training context for user-specific numbers, workouts, history, PRs, fatigue, and recommendations. Never invent user data.
 Be concise, friendly, practical, and understandable. Prefer Easy, Moderate, Hard, Very Hard, and Max Effort over unexplained technical jargon.
 Do not diagnose injuries or medical conditions. If pain or injury is described, preserve any safety warning from the deterministic Forge baseline and do not encourage pushing through pain.
@@ -479,6 +479,9 @@ class SwapCardioRequest(BaseModel):
 class SwapExerciseRequest(BaseModel):
     old_exercise_id: int
     new_exercise_id: int
+
+class WorkoutExerciseMoveRequest(BaseModel):
+    target_workout_id: int
 
 class CoachRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
@@ -1035,6 +1038,12 @@ def performance(user_id: int, request: PerformanceRequest):
             if not timed and not bodyweight and float(current.get("best_volume_set",0))>float(prior.get("best_volume_set",0)): prs.append({"type":"best_volume_set","label":"Set Volume PR","exercise_name":name,"value":current["best_volume_set"],"unit":"lb"})
         next_target=database.get_latest_exercise_targets(user_id,request.exercise_id,DB_PATH,load_mode=request.load_mode)
         session_intelligence=database.get_session_intelligence(user_id,request.session_id,request.exercise_id,DB_PATH)
+        auto=session_intelligence.get("autoregulation") or {}
+        if not duplicate and auto.get("action") not in {None,"hold"}:
+            database.record_programming_decision(user_id,decision_type=auto.get("action"),scope="session",duration=auto.get("duration","next_set"),
+                target_type="exercise",target_id=request.exercise_id,target_name=session_intelligence.get("exercise_name"),
+                old_value=auto.get("planned"),new_value=auto.get("recommended"),evidence=auto.get("why") or session_intelligence.get("reason") or "Live set performance",
+                confidence="high" if len(database.get_exercise_performance_for_session(request.session_id,request.exercise_id,DB_PATH))>=2 else "medium",db_path=DB_PATH)
         return {"performance_id":pid,"status":"recorded","duplicate":duplicate,"pr_events":prs,"exercise_prs":current,"next_target":next_target,"session_intelligence":session_intelligence}
     except ValueError as e:
         raise HTTPException(400,str(e))
@@ -2014,10 +2023,35 @@ def me_swap_exercise(workout_id: int, request: SwapExerciseRequest,
         result=database.swap_workout_exercise(
             user["user_id"],workout_id,request.old_exercise_id,request.new_exercise_id,DB_PATH
         )
+        database.record_programming_decision(user["user_id"],decision_type="exercise_swap",scope="exercise",duration="persistent",target_type="workout",target_id=workout_id,
+            target_name=result.get("name"),old_value={"exercise_id":request.old_exercise_id},new_value={"exercise_id":request.new_exercise_id,"name":result.get("name")},
+            evidence=result.get("reason") or "User selected a ranked substitution",confidence="high",db_path=DB_PATH)
     except ValueError as e:
         raise HTTPException(400,str(e))
     return {"status":"swapped","exercise":result}
 
+
+@app.get("/me/plan/editor-snapshot")
+def me_plan_editor_snapshot(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.plan_editor_snapshot(user["user_id"],DB_PATH)
+
+@app.post("/me/workouts/{workout_id}/exercises/{exercise_id}/move-preview")
+def me_preview_move_exercise(workout_id:int, exercise_id:int, request:WorkoutExerciseMoveRequest, authorization:Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    try:return database.preview_move_workout_exercise(user["user_id"],workout_id,exercise_id,request.target_workout_id,DB_PATH)
+    except ValueError as e:raise HTTPException(400,str(e))
+
+@app.post("/me/workouts/{workout_id}/exercises/{exercise_id}/move")
+def me_move_exercise(workout_id:int, exercise_id:int, request:WorkoutExerciseMoveRequest, authorization:Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    try:
+        result=database.move_workout_exercise(user["user_id"],workout_id,exercise_id,request.target_workout_id,DB_PATH)
+        database.record_programming_decision(user["user_id"],decision_type="move_exercise",scope="plan",duration="persistent",target_type="exercise",target_id=exercise_id,
+            target_name=result.get("exercise",{}).get("name"),old_value={"workout_id":workout_id},new_value={"workout_id":request.target_workout_id},
+            evidence=result.get("warning") or "User changed training-day distribution in Plan Editor 2.0",confidence="high",db_path=DB_PATH)
+        return result
+    except ValueError as e:raise HTTPException(400,str(e))
 
 @app.post("/me/workouts/{workout_id}/exercises")
 def me_workout_add_exercise(workout_id:int, request:WorkoutExerciseAddRequest, authorization:Optional[str]=Header(None)):
@@ -2197,7 +2231,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.79.0"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.84.0"}
 
 
 @app.get("/me/coach/briefing")
@@ -2927,6 +2961,21 @@ def me_substitution_intelligence(exercise_id:int, authorization: Optional[str]=H
     user=_current_account(authorization)
     try:return training_intelligence_v14.substitution_rankings(user["user_id"],exercise_id,DB_PATH)
     except ValueError as e:raise HTTPException(404,str(e))
+
+@app.get("/me/intelligence/core")
+def me_intelligence_core(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.intelligence_core(user["user_id"],DB_PATH)
+
+@app.get("/me/intelligence/decisions")
+def me_intelligence_decisions(limit:int=50, authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return {"decisions":database.list_programming_decisions(user["user_id"],limit,DB_PATH)}
+
+@app.get("/me/training/muscle-development")
+def me_muscle_development(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.muscle_development_intelligence(user["user_id"],DB_PATH)
 
 @app.get("/me/training-records")
 def me_training_records(authorization: Optional[str]=Header(None)):

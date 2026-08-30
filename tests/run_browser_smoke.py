@@ -75,7 +75,7 @@ def main():
                 page.add_script_tag(content=(runtime/'app'/'js'/module).read_text(encoding='utf-8'))
             assert page.evaluate("typeof ForgeCore==='object' && typeof ForgeApi.request==='function' && typeof ForgeEquipment.icon==='function' && typeof ForgePWA.create==='function'")
             js=(runtime/'app'/'app.js').read_text(encoding='utf-8')
-            js=js.replace('const API = localStorage.getItem("forge_api_url") || (\n  location.protocol==="https:" ? location.origin : `http://${location.hostname}:8000`\n);', 'const API = "http://forge.test";')
+            js=re.sub(r'const API = localStorage\.getItem\("forge_api_url"\) \|\| \(\s*location\.protocol==="https:" \? location\.origin : `http://\$\{location\.hostname\}:8000`\s*\);', 'const API = "http://forge.test";', js)
             js=js.replace('let authToken = localStorage.getItem("forge_auth_token") || "";', 'let authToken = '+json.dumps(token)+';')
             page.add_script_tag(content=js)
             page.wait_for_selector('#bottomNav:not(.hidden)',timeout=15000)
@@ -106,7 +106,7 @@ def main():
                 assert 'Loading your last performance' not in page.locator('#recallCard').inner_text(), 'Previous Performance returned to loading state'
 
 
-                # v14.79.0: smart swap loaders must settle once and survive rerenders.
+                # v14.84.0: smart swap loaders must settle once and survive rerenders.
                 page.locator('[data-a="swap-exercise"]').click();page.wait_for_timeout(1200)
                 substitutions_path=f'/me/exercises/{exercise_id}/substitutions'
                 intelligence_path=f'/me/exercises/{exercise_id}/substitution-intelligence'
@@ -127,7 +127,7 @@ def main():
                     assert request_counts.get(intelligence_path,0)==intel_before, 'Swap reason change incorrectly refetched substitution intelligence'
                 page.evaluate("go('exercise')");page.wait_for_timeout(250)
 
-            # v14.79.0 loader audit: sibling loader completions and forced renders must not amplify requests.
+            # v14.84.0 loader audit: sibling loader completions and forced renders must not amplify requests.
             def assert_stable(route, paths, settle=1200):
                 page.evaluate(f"go('{route}')")
                 page.wait_for_timeout(settle)

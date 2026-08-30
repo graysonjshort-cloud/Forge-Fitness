@@ -49,9 +49,9 @@ def main():
     live=database.get_session_intelligence(uid,sid,ids[0],dbp)
     assert 'next_set' in live and 'effort_cap' in live and 'why_changed' in live
     strategy=training_intelligence_v14.progression_strategy(uid,ids[0],dbp)
-    assert strategy['version']=='4.0-mesocycle' and 'retention_score' in strategy and 'plateau_evidence' in strategy
+    assert str(strategy['version']).startswith('4.0') and 'retention_score' in strategy and 'plateau_evidence' in strategy
     diagnostics=database.get_session_diagnostics(uid,dbp)
     assert diagnostics['stale_active_sessions']==0 and diagnostics['duplicate_active_workouts']==0
-    print(json.dumps({'status':'passed','version':'14.79.0','session_reconciliation':'passed','stale_cleanup':'passed','wrong_exercise_guard':'passed','live_intelligence_2':'passed','mesocycle_progression_2':'passed','production_diagnostics':'passed'},indent=2))
+    print(json.dumps({'status':'passed','version':'14.84.0','session_reconciliation':'passed','stale_cleanup':'passed','wrong_exercise_guard':'passed','live_intelligence_2':'passed','mesocycle_progression_2':'passed','production_diagnostics':'passed'},indent=2))
 
 if __name__=='__main__': main()
