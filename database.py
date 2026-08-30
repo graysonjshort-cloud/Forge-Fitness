@@ -1167,6 +1167,19 @@ def get_session_intelligence(user_id: int, session_id: int, exercise_id: int, db
         title = "Performance is holding well"
         reason = "Effort is controlled and output is stable, so continue the planned volume."
 
+    performance_drop_percent=round(max(0.0, decay),1)
+    load_adjustment_percent=-5 if recent_rpe>=9.5 or decay>=25 else 2.5 if recent_rpe<=6.5 and decay<8 and completed<planned else 0
+    effort_cap=8 if fatigue>=7 else 9 if fatigue>=4.5 else 10
+    remaining_sets=max(0,total_sets-completed)
+    estimated_remaining_minutes=max(1,round((remaining_sets*(suggested_rest+45))/60))
+    why_changed=(
+        "Performance dropped across working sets, so Forge is protecting quality." if decay>=15 else
+        "Effort is running high, so the next set should be more conservative." if recent_rpe>=9 else
+        "Performance is stable with room in reserve, so progression remains available." if recent_rpe<=7 and decay<10 else
+        "The session is tracking close to the programmed target."
+    )
+    next_set={"load_adjustment_percent":load_adjustment_percent,"effort_cap":effort_cap,"rest_seconds":suggested_rest,"estimated_remaining_minutes":estimated_remaining_minutes}
+
     return {
         "exercise_id": exercise_id,
         "exercise_name": plan["name"],
@@ -1186,6 +1199,11 @@ def get_session_intelligence(user_id: int, session_id: int, exercise_id: int, db
         "stop_exercise": stop,
         "optional_extra_set": optional,
         "load_mode": mode,
+        "load_adjustment_percent": load_adjustment_percent,
+        "effort_cap": effort_cap,
+        "why_changed": why_changed,
+        "estimated_remaining_minutes": estimated_remaining_minutes,
+        "next_set": next_set,
     }
 
 
@@ -1596,6 +1614,65 @@ def get_session_resume_state(user_id: int, session_id: int, db_path=DEFAULT_DB_P
         logged=con.execute("SELECT exercise_id,COUNT(*) AS logged_sets FROM exercise_performance WHERE session_id=? GROUP BY exercise_id",(session_id,)).fetchall()
         d["logged_sets_by_exercise"]={str(r["exercise_id"]):int(r["logged_sets"]) for r in logged}
         return d
+
+
+def reconcile_active_session(user_id: int, session_id: int | None = None, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    """Reconcile persisted session state with the current active program."""
+    with session(db_path) as con:
+        stale=con.execute("""SELECT ws.id FROM workout_sessions ws
+            JOIN workouts w ON w.id=ws.workout_id
+            JOIN program_weeks pw ON pw.id=w.program_week_id
+            JOIN programs p ON p.id=pw.program_id
+            WHERE p.user_id=? AND ws.status='active' AND p.status!='active'""",(user_id,)).fetchall()
+        for r in stale:
+            con.execute("UPDATE workout_sessions SET status='abandoned',completed_at=CURRENT_TIMESTAMP WHERE id=?",(r["id"],))
+            con.execute("UPDATE session_state SET abandoned_at=COALESCE(abandoned_at,CURRENT_TIMESTAMP),updated_at=CURRENT_TIMESTAMP WHERE session_id=?",(r["id"],))
+        params=[user_id]
+        where="p.user_id=? AND p.status='active' AND ws.status='active'"
+        if session_id is not None:
+            where+=" AND ws.id=?"
+            params.append(int(session_id))
+        row=con.execute(f"""SELECT ws.id AS session_id,ws.workout_id,w.workout_index,w.name AS workout_name,
+                    COALESCE(ss.current_exercise_index,0) AS current_exercise_index,
+                    COALESCE(ss.current_set_index,0) AS current_set_index
+               FROM workout_sessions ws JOIN workouts w ON w.id=ws.workout_id
+               JOIN program_weeks pw ON pw.id=w.program_week_id JOIN programs p ON p.id=pw.program_id
+               LEFT JOIN session_state ss ON ss.session_id=ws.id
+               WHERE {where} ORDER BY ws.started_at DESC,ws.id DESC LIMIT 1""",tuple(params)).fetchone()
+        if not row:
+            return {"status":"none","stale_sessions_closed":len(stale)}
+        d=dict(row)
+        exercises=con.execute("""SELECT we.exercise_order,we.exercise_id,we.sets,e.name
+            FROM workout_exercises we JOIN exercises e ON e.id=we.exercise_id
+            WHERE we.workout_id=? ORDER BY we.exercise_order""",(d["workout_id"],)).fetchall()
+        if not exercises:
+            con.execute("UPDATE workout_sessions SET status='abandoned',completed_at=CURRENT_TIMESTAMP WHERE id=?",(d["session_id"],))
+            return {"status":"recovered","action":"session_closed","reason":"Workout has no current exercises","stale_sessions_closed":len(stale)}
+        ei=max(0,min(int(d["current_exercise_index"] or 0),len(exercises)-1))
+        ex=exercises[ei]
+        si=max(0,min(int(d["current_set_index"] or 0),max(0,int(ex["sets"] or 1)-1)))
+        if ei!=int(d["current_exercise_index"] or 0) or si!=int(d["current_set_index"] or 0):
+            con.execute("""INSERT INTO session_state(session_id,current_exercise_index,current_set_index,updated_at)
+                VALUES (?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(session_id) DO UPDATE SET
+                current_exercise_index=excluded.current_exercise_index,current_set_index=excluded.current_set_index,
+                updated_at=CURRENT_TIMESTAMP""",(d["session_id"],ei,si))
+        d.update({"status":"ok","current_exercise_index":ei,"current_set_index":si,
+                  "current_exercise_id":int(ex["exercise_id"]),"current_exercise_name":ex["name"],
+                  "exercise_count":len(exercises),"stale_sessions_closed":len(stale)})
+        return d
+
+def get_session_diagnostics(user_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    sync=reconcile_active_session(user_id,None,db_path)
+    with session(db_path) as con:
+        stale=int(con.execute("""SELECT COUNT(*) FROM workout_sessions ws JOIN workouts w ON w.id=ws.workout_id
+            JOIN program_weeks pw ON pw.id=w.program_week_id JOIN programs p ON p.id=pw.program_id
+            WHERE p.user_id=? AND ws.status='active' AND p.status!='active'""",(user_id,)).fetchone()[0])
+        duplicates=int(con.execute("""SELECT COUNT(*) FROM (SELECT ws.workout_id,COUNT(*) c FROM workout_sessions ws
+            JOIN workouts w ON w.id=ws.workout_id JOIN program_weeks pw ON pw.id=w.program_week_id
+            JOIN programs p ON p.id=pw.program_id WHERE p.user_id=? AND p.status='active' AND ws.status='active'
+            GROUP BY ws.workout_id HAVING c>1)""",(user_id,)).fetchone()[0])
+    return {"status":"ok" if stale==0 and duplicates==0 else "review","active_session":sync,
+            "stale_active_sessions":stale,"duplicate_active_workouts":duplicates}
 
 def update_session_position(user_id: int, session_id: int, exercise_index: int, set_index: int, db_path=DEFAULT_DB_PATH) -> None:
     with session(db_path) as con:

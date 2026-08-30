@@ -1,4 +1,4 @@
-# Forge Fitness v14.74.3 — Active Workout / Swap Session Fix
+# Forge Fitness v14.79.0 — Active Workout / Swap Session Fix
 
 This patch fixes the active-workout mismatch visible after exercise swaps or after resuming a persisted workout.
 

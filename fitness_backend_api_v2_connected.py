@@ -2182,6 +2182,11 @@ def me_schedule(authorization: Optional[str]=Header(None)):
 
 
 
+@app.get("/me/system/session-diagnostics")
+def me_session_diagnostics(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return database.get_session_diagnostics(user["user_id"],DB_PATH)
+
 @app.get("/me/system/health")
 def me_system_health(authorization: Optional[str]=Header(None)):
     """v14.55 authenticated production diagnostics; contains no secrets."""
@@ -2192,7 +2197,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.74.3"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.79.0"}
 
 
 @app.get("/me/coach/briefing")
@@ -2837,6 +2842,11 @@ def me_session_resume(authorization: Optional[str]=Header(None)):
     if not active: return None
     database.ensure_session_state(active["id"],DB_PATH)
     return database.get_session_resume_state(user["user_id"],active["id"],DB_PATH)
+
+@app.get("/me/session/reconcile")
+def me_session_reconcile(session_id: Optional[int]=None, authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return database.reconcile_active_session(user["user_id"],session_id,DB_PATH)
 
 @app.post("/me/session/position")
 def me_session_position(request: SessionPositionRequest, authorization: Optional[str]=Header(None)):

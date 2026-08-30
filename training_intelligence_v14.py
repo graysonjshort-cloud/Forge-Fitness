@@ -113,7 +113,12 @@ def progression_strategy(user_id,exercise_id,db_path):
     elif plateau: status='plateau'; note='Performance has been flat across multiple exposures; consider a small rep-range or exercise change.'
     elif trend is not None and trend>2: status='progressing'; note='Estimated strength is trending upward; keep the current progression method.'
     else: status='building'; note='Keep accumulating consistent exposures before changing the progression method.'
-    return {'version':'3.0','exercise_id':exercise_id,'name':hist.get('name'),'method':method,'status':status,'target_rule':target,'sessions_analyzed':len(sessions),'avg_rpe':round(avg_rpe,1) if avg_rpe is not None else None,'strength_change_percent':round(trend,1) if trend is not None else None,'plateau':plateau,'reason':note,'prs':hist.get('prs') or {}}
+    retention_score=max(0,min(100,round(86 + (8 if trend is not None and trend>2 else 0) - (18 if plateau else 0) - (12 if poor else 0))))
+    plateau_evidence=max(0,min(5,len(sessions)-2)) if plateau else 0
+    state=database.get_training_state(user_id,db_path); week=max(1,int(state.get('week_number',1) or 1)); win=((week-1)%6)+1
+    post_deload=win==1 and week>1
+    resume_cue='Resume near the final pre-deload working load, but keep 2–3 reps in reserve on the first exposure.' if post_deload else None
+    return {'version':'4.0-mesocycle','exercise_id':exercise_id,'name':hist.get('name'),'method':method,'status':status,'target_rule':target,'sessions_analyzed':len(sessions),'avg_rpe':round(avg_rpe,1) if avg_rpe is not None else None,'strength_change_percent':round(trend,1) if trend is not None else None,'plateau':plateau,'plateau_evidence':plateau_evidence,'retention_score':retention_score,'post_deload_resume':post_deload,'resume_cue':resume_cue,'reason':note,'prs':hist.get('prs') or {}}
 
 def substitution_rankings(user_id,exercise_id,db_path):
     base=database.get_substitutions_for_user(user_id,exercise_id,db_path)

@@ -1,4 +1,4 @@
-# Forge Fitness v14.74.3 — Async Loader Stability
+# Forge Fitness v14.79.0 — Async Loader Stability
 
 Fixes rerender-driven request loops and loading-state flicker across workout substitution and other async screens.
 

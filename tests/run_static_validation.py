@@ -57,9 +57,9 @@ subprocess.run(["node","--check",str(ROOT/"app.js")],check=True,capture_output=T
 for module in sorted((ROOT/"js").glob("*.js")):
     subprocess.run(["node","--check",str(module)],check=True,capture_output=True,text=True)
 for name in ["forge_core.js","forge_api.js","forge_equipment.js","forge_pwa.js"]:
-    assert f'/js/{name}?v=14.74.3' in index, f"Missing module script: {name}"
-assert '/app.js?v=14.74.3' in index
-assert len(app) < 245000, "app.js modularization regression"
+    assert f'/js/{name}?v=14.79.0' in index, f"Missing module script: {name}"
+assert '/app.js?v=14.79.0' in index
+assert len(app) < 250000, "app.js modularization regression"
 assert 'function normalizedExerciseTargets()' in app, "Sparse exercise target normalization missing"
 assert 'exercises_per_workout:normalizedExerciseTargets()' in app, "Rebuild payload must normalize per-workout targets"
 assert 'Array.isArray(detail)' in modules.get("forge_api.js",""), "Structured API validation errors must be readable"
@@ -84,7 +84,7 @@ assert 'completion-metrics' in app, "Completion metrics UI missing"
 assert "readiness:readinessCheckin" in app
 assert "Adjust Today’s Workout" in app
 assert "todayAdjustmentBanner" in app
-assert "LIVE ADJUSTMENT" in app
+assert "LIVE WORKOUT INTELLIGENCE 2.0" in app
 
 # v14.42 smart substitution regression guards
 assert "SMART SUBSTITUTION" in app

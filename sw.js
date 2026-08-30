@@ -1,6 +1,6 @@
-const CACHE="forge-v14-74-3-async-loader-stability-v1";
+const CACHE="forge-v14-79-production-v1";
 const APP_SHELL=[
-  "/","/index.html","/styles.css?v=14.74.3","/js/forge_core.js?v=14.74.3","/js/forge_api.js?v=14.74.3","/js/forge_equipment.js?v=14.74.3","/js/forge_pwa.js?v=14.74.3","/js/forge_coach.js?v=14.74.3","/app.js?v=14.74.3","/manifest.webmanifest?v=14.74.3",
+  "/","/index.html","/styles.css?v=14.79.0","/js/forge_core.js?v=14.79.0","/js/forge_api.js?v=14.79.0","/js/forge_equipment.js?v=14.79.0","/js/forge_pwa.js?v=14.79.0","/js/forge_coach.js?v=14.79.0","/app.js?v=14.79.0","/manifest.webmanifest?v=14.79.0",
   "/assets/pwa/forge-icon-192-v14343.png","/assets/pwa/forge-icon-512-v14343.png",
   "/assets/pwa/forge-icon-maskable-192-v14343.png","/assets/pwa/forge-icon-maskable-512-v14343.png",
   "/assets/pwa/apple-touch-icon.png"
