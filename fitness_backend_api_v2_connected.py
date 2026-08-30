@@ -18,6 +18,7 @@ import database
 import calendar_integration
 import nutrition_lookup
 import training_intelligence_v14
+import strategy_intelligence_v14
 from fitness_app_plan_generator_upgraded import PlanGenerator, UserProfile, TrainingState, normalize_custom_split
 from fitness_app_weekly_program_controller import (
     WeeklyProgramController, WeeklyProgramState, WeeklyWorkoutResult,
@@ -637,6 +638,12 @@ class PerformanceRequest(BaseModel):
     load_mode: str = "weight"
     skipped: bool = False
 
+
+class SpecializationRequest(BaseModel):
+    muscles: list[str] = []
+
+class ProgrammingAuthorityRequest(BaseModel):
+    controls: dict[str,str] = {}
 
 class ReadinessEvaluationRequest(BaseModel):
     energy: float = Field(3, ge=1, le=5)
@@ -2231,7 +2238,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.84.0"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.94.0"}
 
 
 @app.get("/me/coach/briefing")
@@ -2986,6 +2993,59 @@ def me_training_records(authorization: Optional[str]=Header(None)):
 def me_coach_context_v4(authorization: Optional[str]=Header(None)):
     user=_current_account(authorization)
     return training_intelligence_v14.coach_context_v4(user["user_id"],DB_PATH)
+
+@app.get("/me/intelligence/governance")
+def me_intelligence_governance(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.decision_governance(user["user_id"],DB_PATH)
+
+@app.get("/me/training/adaptive-week")
+def me_adaptive_week(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.adaptive_week_plan(user["user_id"],DB_PATH)
+
+@app.get("/me/training/rotation")
+def me_rotation_engine(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.rotation_plateau_engine(user["user_id"],DB_PATH)
+
+@app.get("/me/training/recovery-forecast")
+def me_recovery_forecast(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.recovery_forecast(user["user_id"],DB_PATH)
+
+@app.get("/me/intelligence/explain")
+def me_intelligence_explain(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.explainable_programming(user["user_id"],DB_PATH)
+
+@app.get("/me/training/strategy")
+def me_training_strategy(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); return strategy_intelligence_v14.training_strategy(user["user_id"],DB_PATH)
+
+@app.get("/me/training/specialization")
+def me_training_specialization(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); return strategy_intelligence_v14.specialization_block(user["user_id"],DB_PATH)
+
+@app.post("/me/training/specialization")
+def set_training_specialization(req: SpecializationRequest, authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); picks=list(dict.fromkeys(req.muscles))[:2]; state=database.get_training_strategy_state(user["user_id"],DB_PATH); database.save_training_strategy_state(user["user_id"],"specialization" if picks else "hypertrophy_accumulation","User-selected specialization block",picks,DB_PATH); return strategy_intelligence_v14.specialization_block(user["user_id"],DB_PATH)
+
+@app.get("/me/training/stability-technique")
+def me_stability_technique(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); return strategy_intelligence_v14.stability_technique_intelligence(user["user_id"],DB_PATH)
+
+@app.get("/me/programming/authority")
+def me_programming_authority(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); return strategy_intelligence_v14.programming_controls(user["user_id"],DB_PATH)
+
+@app.put("/me/programming/authority")
+def set_programming_authority(req: ProgrammingAuthorityRequest, authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); database.save_programming_authority(user["user_id"],req.controls,DB_PATH); return strategy_intelligence_v14.programming_controls(user["user_id"],DB_PATH)
+
+@app.get("/me/training/strategy-dashboard")
+def me_strategy_dashboard(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); return strategy_intelligence_v14.strategy_dashboard(user["user_id"],DB_PATH)
 
 # ---------------------------------------------------------
 # Forge PWA frontend

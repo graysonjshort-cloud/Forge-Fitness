@@ -238,6 +238,7 @@ def ensure_schema(db_path: str | Path = DEFAULT_DB_PATH) -> None:
     ensure_plan_exercise_locks(db_path)
     ensure_exercise_progression_state(db_path)
     ensure_programming_decisions(db_path)
+    ensure_training_strategy_state(db_path)
     ensure_exercise_form_demo_metadata(db_path)
     ensure_bundled_exercise_demo_assets(db_path)
 
@@ -4078,3 +4079,44 @@ def copy_previous_nutrition_day(user_id,target_date,db_path=DEFAULT_DB_PATH):
         for r in rows:
             con.execute("INSERT INTO nutrition_entries(user_id,entry_date,meal_type,food_name,calories,protein_g,carbs_g,fat_g,source,source_url) VALUES(?,?,?,?,?,?,?,?,?,?)",(user_id,target_date,r["meal_type"],r["food_name"],r["calories"],r["protein_g"],r["carbs_g"],r["fat_g"],r["source"],r["source_url"]))
     return {"status":"copied","source_date":source,"entry_date":target_date,"entries_copied":len(rows)}
+
+def ensure_training_strategy_state(db_path=DEFAULT_DB_PATH):
+    with session(db_path) as con:
+        con.execute("""CREATE TABLE IF NOT EXISTS training_strategy_state (
+          user_id INTEGER PRIMARY KEY, strategy TEXT NOT NULL DEFAULT 'hypertrophy_accumulation',
+          rationale TEXT NOT NULL DEFAULT '', specialization_json TEXT NOT NULL DEFAULT '[]',
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)""")
+        con.execute("""CREATE TABLE IF NOT EXISTS programming_authority (
+          user_id INTEGER NOT NULL, domain TEXT NOT NULL, mode TEXT NOT NULL DEFAULT 'recommend_only',
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(user_id,domain))""")
+
+def get_training_strategy_state(user_id,db_path=DEFAULT_DB_PATH):
+    ensure_training_strategy_state(db_path)
+    with session(db_path) as con:r=con.execute('SELECT * FROM training_strategy_state WHERE user_id=?',(user_id,)).fetchone()
+    if not r:return {'strategy':'hypertrophy_accumulation','rationale':'','specialization':[]}
+    d=dict(r)
+    try:d['specialization']=json.loads(d.pop('specialization_json') or '[]')
+    except Exception:d['specialization']=[]
+    return d
+
+def save_training_strategy_state(user_id,strategy,rationale='',specialization=None,db_path=DEFAULT_DB_PATH):
+    ensure_training_strategy_state(db_path); specialization=list(specialization or [])[:2]
+    with session(db_path) as con:
+        con.execute("""INSERT INTO training_strategy_state(user_id,strategy,rationale,specialization_json,updated_at)
+        VALUES(?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id) DO UPDATE SET strategy=excluded.strategy,rationale=excluded.rationale,
+        specialization_json=excluded.specialization_json,updated_at=CURRENT_TIMESTAMP""",(user_id,strategy,rationale,_json(specialization)))
+    return get_training_strategy_state(user_id,db_path)
+
+def get_programming_authority(user_id,db_path=DEFAULT_DB_PATH):
+    ensure_training_strategy_state(db_path)
+    domains=['session_load','rest_times','set_count','exercise_substitutions','weekly_volume','workout_scheduling','deload_timing']
+    with session(db_path) as con:rows=con.execute('SELECT domain,mode FROM programming_authority WHERE user_id=?',(user_id,)).fetchall()
+    found={r['domain']:r['mode'] for r in rows}; return {d:found.get(d,'recommend_only') for d in domains}
+
+def save_programming_authority(user_id,values,db_path=DEFAULT_DB_PATH):
+    ensure_training_strategy_state(db_path); valid={'recommend_only','ask_first','auto_apply'}
+    current=get_programming_authority(user_id,db_path)
+    with session(db_path) as con:
+        for d,v in dict(values or {}).items():
+            if d in current and v in valid:con.execute("INSERT INTO programming_authority(user_id,domain,mode,updated_at) VALUES(?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id,domain) DO UPDATE SET mode=excluded.mode,updated_at=CURRENT_TIMESTAMP",(user_id,d,v))
+    return get_programming_authority(user_id,db_path)

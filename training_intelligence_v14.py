@@ -282,3 +282,85 @@ def coach_context_v4(user_id,db_path):
     profile=database.get_profile(user_id,db_path) or {}
     readiness={'fatigue_score':(intel.get('metrics') or {}).get('fatigue_score'),'signals':intel.get('signals') or []}
     return {'version':'4.1-core','mesocycle':dash['mesocycle'],'readiness':readiness,'muscle_status':dash['muscles'],'exercise_progression':progression,'recent_records':records['exercise_cards'][:8],'recent_decisions':database.list_programming_decisions(user_id,12,db_path),'schedule':database.get_workout_schedule(user_id,db_path),'nutrition_goal':profile.get('goal'),'coaching_rules':['Explain why a programming decision changed.','State whether a change is session-only or persistent.','Prefer the smallest effective change.','Preserve successful exercises unless plateau, pain/avoidance, equipment, or recovery requires rotation.','Use mesocycle phase and readiness before increasing stress.']}
+
+def decision_governance(user_id,db_path):
+    """Resolve competing programming signals with deterministic safety-first precedence."""
+    dash=training_dashboard(user_id,db_path)
+    progress=database.get_progress_intelligence(user_id,db_path)
+    meso=dash.get("mesocycle") or {}
+    fatigue=float(meso.get("fatigue_score") or 0)
+    phase=meso.get("phase") or "accumulation"
+    decisions=database.list_programming_decisions(user_id,80,db_path)
+    precedence=["safety","recovery","deload","session_autoregulation","progression","volume","preference"]
+    signals=[]
+    if fatigue>=8: signals.append({"source":"recovery","action":"reduce","strength":3,"reason":f"Fatigue score {fatigue:.1f}"})
+    if phase=="deload": signals.append({"source":"deload","action":"reduce","strength":4,"reason":"Mesocycle is in deload"})
+    recent=[d for d in decisions[:20] if d.get("applied")]
+    if any(d.get("scope")=="session" and d.get("decision_type")=="autoregulation" for d in recent):
+        signals.append({"source":"session_autoregulation","action":"hold","strength":2,"reason":"Recent session autoregulation is active"})
+    if fatigue<6 and phase!="deload": signals.append({"source":"progression","action":"progress","strength":1,"reason":"Recovery permits progression"})
+    rank={name:i for i,name in enumerate(precedence)}
+    winner=min(signals,key=lambda x:(rank.get(x["source"],99),-x["strength"])) if signals else {"source":"progression","action":"hold","strength":0,"reason":"No strong conflicting signal"}
+    suppressed=[x for x in signals if x is not winner and x["action"]!=winner["action"]]
+    return {"version":"2.0","precedence":precedence,"winner":winner,"signals":signals,"suppressed":suppressed,
+            "rule":"Higher-priority recovery/deload signals can block progression; session changes never rewrite the mesocycle."}
+
+def adaptive_week_plan(user_id,db_path):
+    plan,_=_current_exercises(user_id,db_path)
+    dash=training_dashboard(user_id,db_path); gov=decision_governance(user_id,db_path)
+    muscle=muscle_development_intelligence(user_id,db_path)
+    phase=(dash.get("mesocycle") or {}).get("phase","accumulation")
+    winner=(gov.get("winner") or {}).get("action","hold")
+    factor=.72 if phase=="deload" else .9 if winner=="reduce" else 1.04 if winner=="progress" else 1.0
+    workouts=[]
+    for w in plan.get("workouts") or []:
+        exs=[]
+        for e in w.get("exercises") or []:
+            sets=max(1,int(round(int(e.get("sets") or 1)*factor)))
+            exs.append({"exercise_id":e.get("exercise_id"),"name":e.get("name"),"current_sets":e.get("sets"),"recommended_sets":sets,
+                        "rep_range":e.get("rep_range") or [e.get("min_reps"),e.get("max_reps")]})
+        workouts.append({"workout_id":w.get("workout_id"),"name":w.get("name"),"exercises":exs})
+    return {"version":"3.0","phase":phase,"governance":gov,"volume_factor":factor,"workouts":workouts,
+            "muscle_status":muscle.get("muscles",[]),"apply_scope":"next_week",
+            "summary":f"Next week is coordinated at {round(factor*100)}% of current planned set volume before exercise-specific progression."}
+
+def rotation_plateau_engine(user_id,db_path):
+    _,exercises=_current_exercises(user_id,db_path); rows=[]
+    for e in exercises:
+        try: st=progression_strategy(user_id,e["exercise_id"],db_path)
+        except Exception: continue
+        status=st.get("status","holding"); retention=float(st.get("retention_score") or 0)
+        rotate=status in {"plateauing","regressing"} and retention<70
+        rows.append({"exercise_id":e["exercise_id"],"name":e.get("name"),"status":status,"retention_score":retention,
+                     "recommendation":"rotate" if rotate else "retain",
+                     "confidence":"high" if rotate and retention<50 else "medium" if rotate else "high",
+                     "reason":"Repeated stagnation plus low retention value." if rotate else "Preserve the movement while it is productive or evidence is insufficient."})
+    return {"version":"3.0","policy":"Rotation requires repeated evidence; successful exercises are preserved.","exercises":rows}
+
+def recovery_forecast(user_id,db_path):
+    dash=training_dashboard(user_id,db_path); prog=database.get_progress_intelligence(user_id,db_path)
+    fatigue=float((dash.get("mesocycle") or {}).get("fatigue_score") or 0)
+    schedule=database.get_workout_schedule(user_id,db_path) or []
+    density=min(3,max(0,len(schedule)-3))*.35
+    base=fatigue+density
+    mode="recovery" if base>=8 else "controlled" if base>=6 else "normal"
+    days=[]
+    for i in range(1,4):
+        projected=max(0,base-(i-1)*.7)
+        days.append({"day_offset":i,"projected_fatigue":round(projected,1),
+                     "mode":"recovery" if projected>=8 else "controlled" if projected>=6 else "normal",
+                     "confidence":"medium" if i>1 else "high"})
+    return {"version":"1.0","current_fatigue":round(fatigue,1),"training_density_adjustment":round(density,1),
+            "next_session_mode":mode,"days":days,"signals":prog.get("signals") or [],
+            "note":"Forecast is advisory and is recalculated from actual readiness before the workout."}
+
+def explainable_programming(user_id,db_path):
+    gov=decision_governance(user_id,db_path); decisions=database.list_programming_decisions(user_id,30,db_path)
+    cards=[]
+    for d in decisions:
+        cards.append({"id":d.get("id"),"title":str(d.get("decision_type","programming change")).replace("_"," ").title(),
+                      "target":d.get("target_name") or d.get("target_type"),"what_changed":{"from":d.get("old_value"),"to":d.get("new_value")},
+                      "why":d.get("evidence"),"confidence":d.get("confidence"),"scope":d.get("scope"),"duration":d.get("duration"),
+                      "applied":d.get("applied")})
+    return {"version":"1.0","governance":gov,"cards":cards,
+            "legend":{"session":"Today only","week":"Current/next training week","program":"Persistent programming change"}}
