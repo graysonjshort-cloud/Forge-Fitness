@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "version": "14.74.1",
+  "fix": "Exercise Previous Performance / progression reload loop",
+  "root_cause": "Exercise progression completion triggered a full rerender; Previous Performance had no per-exercise cache/in-flight guard, so each rerender reset the card to Loading and fetched history again.",
+  "changes": [
+    "Cache Previous Performance by exercise_id",
+    "Block duplicate in-flight history requests",
+    "Cache progression strategy by exercise_id",
+    "Reuse loaded Previous Performance markup across harmless rerenders",
+    "Invalidate both caches once after a newly logged set",
+    "Add browser request-count regression for exercise rerenders"
+  ],
+  "static_validation": "passed",
+  "frontend_api_calls_checked": 131,
+  "backend_routes_found": 126,
+  "missing_contracts": 0,
+  "exercise_directory_count": 215,
+  "exercise_muscle_links": 743,
+  "e2e": "passed",
+  "browser_smoke": {
+    "status": "passed",
+    "viewport": "390x844",
+    "exercise_history_dedupe_regression": "passed",
+    "page_errors": 0,
+    "console_errors": 0,
+    "failed_requests": 0
+  }
+}

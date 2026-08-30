@@ -39,7 +39,7 @@ def main():
     shutil.copytree(SOURCE,runtime/'app',ignore=shutil.ignore_patterns('__pycache__','*.zip','tests'),dirs_exist_ok=True)
     env=os.environ.copy();env.update({'FORGE_LLM_ENABLED':'0','NUTRITION_LOOKUP_ENABLED':'0','PYTHONPATH':str(runtime/'app')})
     p=subprocess.Popen([sys.executable,'-m','uvicorn','fitness_backend_api_v2_connected:app','--host','127.0.0.1','--port',str(PORT)],cwd=runtime/'app',env=env,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,text=True)
-    errors=[];console_errors=[];failed_requests=[];screens=[]
+    errors=[];console_errors=[];failed_requests=[];screens=[];request_counts={}
     try:
         wait_server();token=seed_user()
         with sync_playwright() as pw:
@@ -51,6 +51,7 @@ def main():
             from urllib.parse import urlparse
             def api_bridge(route):
                 r=route.request; u=urlparse(r.url)
+                request_counts[u.path]=request_counts.get(u.path,0)+1
                 body=r.post_data_buffer
                 headers={k:v for k,v in r.headers.items() if k.lower() not in {'host','content-length','origin','referer'}}
                 target=BASE+u.path+('?' + u.query if u.query else '')
@@ -88,6 +89,22 @@ def main():
                 assert page.locator('#view').inner_text().strip(), f'{route} rendered empty'
                 screens.append(route)
 
+            # v14.74.1 regression: exercise history/progression must not refetch on harmless rerenders.
+            page.locator('#bottomNav [data-nav="workout"]').click();page.wait_for_timeout(300)
+            exbtn=page.locator('[data-ex]').first
+            if exbtn.count():
+                exbtn.click();page.wait_for_timeout(1000)
+                exercise_id=page.evaluate("w().exercises[S.ei].exercise_id")
+                history_path=f'/me/exercises/{exercise_id}/history'
+                progression_path=f'/me/exercises/{exercise_id}/progression-strategy'
+                history_before=request_counts.get(history_path,0)
+                progression_before=request_counts.get(progression_path,0)
+                page.evaluate("render()")
+                page.wait_for_timeout(500)
+                assert request_counts.get(history_path,0)==history_before, 'Previous Performance refetched after harmless rerender'
+                assert request_counts.get(progression_path,0)==progression_before, 'Progression strategy refetched after harmless rerender'
+                assert 'Loading your last performance' not in page.locator('#recallCard').inner_text(), 'Previous Performance returned to loading state'
+
             # Regression: provider diagnostics must use the shared API helper and not throw API_BASE ReferenceError.
             page.locator('#bottomNav [data-nav="nutrition"]').click();page.wait_for_timeout(400)
             btn=page.locator('#nutritionProviderStatusBtn')
@@ -109,7 +126,7 @@ def main():
         bad_requests=[x for x in failed_requests if not any(ok in x for ok in ['favicon.ico'])]
         if fatal or bad_console or bad_requests:
             raise AssertionError(json.dumps({'page_errors':fatal,'console_errors':bad_console,'failed_requests':bad_requests},indent=2))
-        report={'status':'passed','viewport':'390x844','routes':screens,'checks':['authenticated startup','primary nav rendering','no page errors','no console errors','no failed requests','nutrition provider status regression','online-event regression','More sheet','frontend module namespaces']}
+        report={'status':'passed','viewport':'390x844','routes':screens,'checks':['authenticated startup','primary nav rendering','no page errors','no console errors','no failed requests','nutrition provider status regression','online-event regression','More sheet','frontend module namespaces','exercise history dedupe regression']}
         print(json.dumps(report,indent=2))
         (SOURCE/'V14_38_2_BROWSER_SMOKE_REPORT.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     finally:

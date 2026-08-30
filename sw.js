@@ -1,6 +1,6 @@
-const CACHE="forge-v14-74-0-release-v1";
+const CACHE="forge-v14-74-1-exercise-history-fix-v1";
 const APP_SHELL=[
-  "/","/index.html","/styles.css?v=14.74.0","/js/forge_core.js?v=14.74.0","/js/forge_api.js?v=14.74.0","/js/forge_equipment.js?v=14.74.0","/js/forge_pwa.js?v=14.74.0","/js/forge_coach.js?v=14.74.0","/app.js?v=14.74.0","/manifest.webmanifest?v=14.74.0",
+  "/","/index.html","/styles.css?v=14.74.1","/js/forge_core.js?v=14.74.1","/js/forge_api.js?v=14.74.1","/js/forge_equipment.js?v=14.74.1","/js/forge_pwa.js?v=14.74.1","/js/forge_coach.js?v=14.74.1","/app.js?v=14.74.1","/manifest.webmanifest?v=14.74.1",
   "/assets/pwa/forge-icon-192-v14343.png","/assets/pwa/forge-icon-512-v14343.png",
   "/assets/pwa/forge-icon-maskable-192-v14343.png","/assets/pwa/forge-icon-maskable-512-v14343.png",
   "/assets/pwa/apple-touch-icon.png"

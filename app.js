@@ -6,7 +6,7 @@ let authToken = localStorage.getItem("forge_auth_token") || "";
 let account = null;
 let plan = null, session = null;
 const profile = {goal:"build_muscle",experience:"intermediate",days_per_week:4,minutes_per_workout:45,equipment:["full_gym"],preferred_exercises:[],excluded_exercises:[],priority_muscles:[],recovery_level:"normal",cardio_preference:"moderate",workout_split:"auto",sport:"general",core_workouts_per_week:2,cardio_workouts_per_week:2,custom_split:[],exercises_per_day:6,exercises_per_workout:[],seed:42};
-const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,coachBriefing:null,coachStack:null,systemHealth:null,progressHub:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,sessionStartedAt:null,completedWorkoutSummary:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,calendarIntelligence:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,mesocycle:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0,demoAngle:"primary",readinessCheckin:null,todayAdjustment:null,liveAdjustment:null,sessionIntelligence:null,planPreview:null,planDiagnostics:null,planLocks:{},readinessReturn:"home",swapReason:"preference",recoveryIntelligence:null,trainingDashboard:null,exerciseProgression:null,substitutionIntelligence:null,trainingRecords:null,coach4:null,exerciseDirectoryEquipment:"All",exerciseDirectoryMovement:"All",exerciseDirectoryFavorites:false,workoutBuilderExercise:null};
+const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,exerciseRecallExerciseId:null,exerciseRecallLoading:false,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,coachBriefing:null,coachStack:null,systemHealth:null,progressHub:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,sessionStartedAt:null,completedWorkoutSummary:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,calendarIntelligence:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,mesocycle:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0,demoAngle:"primary",readinessCheckin:null,todayAdjustment:null,liveAdjustment:null,sessionIntelligence:null,planPreview:null,planDiagnostics:null,planLocks:{},readinessReturn:"home",swapReason:"preference",recoveryIntelligence:null,trainingDashboard:null,exerciseProgression:null,exerciseProgressionExerciseId:null,exerciseProgressionLoading:false,substitutionIntelligence:null,trainingRecords:null,coach4:null,exerciseDirectoryEquipment:"All",exerciseDirectoryMovement:"All",exerciseDirectoryFavorites:false,workoutBuilderExercise:null};
 const V=document.querySelector("#view"),toastEl=document.querySelector("#toast"),nav=document.querySelector("#bottomNav"),topbar=document.querySelector("#topbar");
 const toast=t=>{toastEl.textContent=t;toastEl.classList.add("show");setTimeout(()=>toastEl.classList.remove("show"),1800)};
 const esc=ForgeCore.esc;
@@ -1044,7 +1044,7 @@ function toggleExerciseTimer(){
   render();
 }
 
-async function loadExerciseProgression(){const ex=w()?.exercises?.[S.ei];if(!ex||S.exerciseProgression?.loading)return;S.exerciseProgression={loading:true};try{S.exerciseProgression=await api(`/me/exercises/${ex.exercise_id}/progression-strategy`);if(S.route==="exercise")render()}catch(e){S.exerciseProgression=null}}
+async function loadExerciseProgression(){const ex=w()?.exercises?.[S.ei];if(!ex)return;const exerciseId=Number(ex.exercise_id);if(S.exerciseProgressionExerciseId===exerciseId&&(S.exerciseProgression||S.exerciseProgressionLoading))return;if(S.exerciseProgressionLoading)return;S.exerciseProgressionLoading=true;S.exerciseProgressionExerciseId=exerciseId;S.exerciseProgression=null;try{const data=await api(`/me/exercises/${exerciseId}/progression-strategy`);if(S.exerciseProgressionExerciseId!==exerciseId)return;S.exerciseProgression=data;if(S.route==="exercise"&&Number(w()?.exercises?.[S.ei]?.exercise_id)===exerciseId)render()}catch(e){if(S.exerciseProgressionExerciseId===exerciseId)S.exerciseProgression=null}finally{if(S.exerciseProgressionExerciseId===exerciseId)S.exerciseProgressionLoading=false}}
 function exerciseProgressionCard(){const p=S.exerciseProgression;if(!p||p.loading)return "";return `<div class="card progression-card"><div class=row><div><p class=eyebrow>PROGRESSION ENGINE 3.0</p><h3>${esc(p.method)}</h3></div><b>${esc(p.status)}</b></div><p>${esc(p.target_rule)}</p><small>${esc(p.reason)}</small><div class=progression-metrics><span><b>${p.sessions_analyzed}</b><small>sessions</small></span><span><b>${p.avg_rpe??"—"}</b><small>avg RPE</small></span><span><b>${p.strength_change_percent==null?"—":`${p.strength_change_percent>0?"+":""}${p.strength_change_percent}%`}</b><small>strength</small></span></div></div>`}
 
 function exercise(){
@@ -1054,7 +1054,7 @@ const target=timed?`${S.exerciseTimerTarget} sec`:`${e.min_reps}-${e.max_reps} r
 const clock=`${String(Math.floor(S.exerciseElapsed/60)).padStart(2,"0")}:${String(S.exerciseElapsed%60).padStart(2,"0")}`;
 return `${exerciseProgressionCard()}<div class=spacer></div><div class=exercise-session-top><div><p class=eyebrow>${esc(w().name)}</p><h2>${esc(e.name)}</h2><p class=muted>Set ${S.set+1} of ${e.sets} • Target ${target}</p><div class=set-adjuster><button type=button data-setchange=-1 aria-label="Remove a set">−</button><span><b>${e.sets}</b><small>planned sets</small></span><button type=button data-setchange=1 aria-label="Add a set">+</button></div></div><span class=set-progress-pill>${setPct}%</span></div>
 <div class=workout-progress-track><i style="width:${setPct}%"></i></div>
-${e.warmup_sets?.length?`<div class="card warmup-card"><p class=eyebrow>WARM-UP SETS</p><h3>${e.warmup_sets.length} ramp-up sets before working weight</h3><p class=muted>${e.warmup_sets.map(x=>`${x.percent}% × ${x.reps}`).join(" • ")} • Warm-ups are not counted as working sets.</p></div><div class=spacer></div>`:""}<div class=spacer></div><button class=form-demo-workout-button data-form-demo="${e.exercise_id}" data-form-return=exercise><span class=form-demo-play>▶</span><span><b>Form Demo</b><small>Technique • setup • common mistakes</small></span><i>›</i></button><div class=spacer></div><div id=recallCard class="card previous-performance-card"><p class=eyebrow>PREVIOUS PERFORMANCE</p><p class=muted>Loading your last performance and next target...</p></div>
+${e.warmup_sets?.length?`<div class="card warmup-card"><p class=eyebrow>WARM-UP SETS</p><h3>${e.warmup_sets.length} ramp-up sets before working weight</h3><p class=muted>${e.warmup_sets.map(x=>`${x.percent}% × ${x.reps}`).join(" • ")} • Warm-ups are not counted as working sets.</p></div><div class=spacer></div>`:""}<div class=spacer></div><button class=form-demo-workout-button data-form-demo="${e.exercise_id}" data-form-return=exercise><span class=form-demo-play>▶</span><span><b>Form Demo</b><small>Technique • setup • common mistakes</small></span><i>›</i></button><div class=spacer></div><div id=recallCard class="card previous-performance-card">${exerciseRecallMarkup(e)}</div>
 <div class=big-spacer></div>${S.liveAdjustment?`<div class="card live-adjustment"><p class=eyebrow>LIVE ADJUSTMENT</p><h3>${esc(S.liveAdjustment.title)}</h3><p class=muted>${esc(S.liveAdjustment.detail)}</p></div><div class=spacer></div>`:""}
 <div class=log-panel><div class=log-panel-head><h3>Log Set ${S.set+1}</h3><span>${e.rest_seconds||60}s rest after</span></div>
 ${timed?`
@@ -1398,41 +1398,71 @@ return `<p class=eyebrow>EXERCISE HISTORY</p><h2 id=ehTitle>Exercise</h2><div cl
 }
 
 
+function exerciseRecallMarkup(e){
+  if(S.exerciseRecallExerciseId!==e.exercise_id){
+    return `<p class=eyebrow>PREVIOUS PERFORMANCE</p><p class=muted>Loading your last performance and next target...</p>`;
+  }
+  const data=S.exerciseRecall;
+  if(!data){
+    return S.exerciseRecallLoading
+      ? `<p class=eyebrow>PREVIOUS PERFORMANCE</p><p class=muted>Loading your last performance and next target...</p>`
+      : `<p class=eyebrow>TRAINING HISTORY</p><p class=muted>No previous data available yet.</p>`;
+  }
+  const sets=data.sets||[];
+  const last=sets.length?sets[sets.length-1]:null;
+  const suggestion=data.progression_suggestion;
+  if(!last)return `<p class=eyebrow>FIRST SESSION</p><h3>No previous sets yet</h3><p class=muted>Log this exercise and Forge will remember it next time.</p>`;
+  const action=suggestion?suggestion.action.replaceAll("_"," "):"repeat";
+  const targetLabel=suggestion?.load_mode==="timed"?`${suggestion.suggested_duration_seconds} sec`:suggestion?.load_mode==="bodyweight"?`${suggestion.suggested_reps} reps`:suggestion?`${Number(suggestion.suggested_weight||0).toFixed(1).replace(/\.0$/,'')} lb × ${suggestion.suggested_reps||e.min_reps}`:`${last.weight??0} lb`;
+  const recent=sets.slice(-4).reverse();
+  return `<div class=row><div><p class=eyebrow>LAST TIME</p><h3>${last.weight} lb × ${last.reps}</h3><p class=muted>RPE ${last.rpe??"—"}</p></div>
+    <div style="text-align:right"><p class=eyebrow>ADAPTIVE TARGET</p><h3>${targetLabel}</h3><p class=muted>${action}${suggestion?.confidence?` • ${suggestion.confidence} confidence`:""}</p></div></div>
+    <div class=previous-set-strip>${recent.map((x,i)=>`<span class="${i===0?"latest":""}"><b>${Number(x.weight||0).toFixed(1).replace(/\.0$/,'')} lb × ${x.reps}</b><small>RPE ${x.rpe??"—"}</small></span>`).join("")}</div><div class=recall-actions><button class="btn dark compact" data-a=repeat-last-set>Repeat Last Set</button><button class="btn dark compact" data-a=current-exercise-history>Full History</button></div>${suggestion?`<div class=progression-why><b>Why this target?</b><span>${esc(suggestion.reason||`Recent effort averaged RPE ${suggestion.recent_average_rpe}.`)}</span><small class=muted>Based on ${suggestion.sample_count||1} recent logged set${Number(suggestion.sample_count||1)===1?"":"s"}.</small></div>`:""}</div>`;
+}
+
+function hydrateExerciseRecallInputs(e){
+  if(S.exerciseRecallExerciseId!==e.exercise_id||!S.exerciseRecall)return;
+  const sets=S.exerciseRecall.sets||[];
+  const last=sets.length?sets[sets.length-1]:null;
+  const suggestion=S.exerciseRecall.progression_suggestion;
+  if(!last)return;
+  const weight=document.querySelector("#weight");
+  const reps=document.querySelector("#reps");
+  const rpe=document.querySelector("#rpe");
+  if(weight)weight.value=(suggestion?.suggested_weight??last.weight??"");
+  if(reps)reps.value=(suggestion?.suggested_reps??last.reps??e.min_reps??"");
+  if(suggestion?.suggested_duration_seconds)S.exerciseTimerTarget=suggestion.suggested_duration_seconds;
+  if(rpe&&last.rpe!=null)rpe.value=last.rpe;
+}
+
 async function loadExerciseRecall(){
+  const e=w()?.exercises?.[S.ei];
+  if(!e)return;
+  const exerciseId=Number(e.exercise_id);
+  if(S.exerciseRecallExerciseId===exerciseId){
+    hydrateExerciseRecallInputs(e);
+    return;
+  }
+  if(S.exerciseRecallLoading)return;
+  S.exerciseRecallLoading=true;
+  S.exerciseRecallExerciseId=exerciseId;
+  S.exerciseRecall=null;
   try{
-    const e=w()?.exercises?.[S.ei];
-    if(!e)return;
     const recallMode=isTimedExercise(e)?"timed":(isBodyweightExercise(e)?"bodyweight":"weight");
-    const data=await api(`/me/exercises/${e.exercise_id}/history?min_reps=${encodeURIComponent(e.min_reps||6)}&max_reps=${encodeURIComponent(e.max_reps||12)}&load_mode=${recallMode}`);
+    const data=await api(`/me/exercises/${exerciseId}/history?min_reps=${encodeURIComponent(e.min_reps||6)}&max_reps=${encodeURIComponent(e.max_reps||12)}&load_mode=${recallMode}`);
+    if(S.exerciseRecallExerciseId!==exerciseId)return;
     S.exerciseRecall=data;
-    const sets=data.sets||[];
-    const last=sets.length?sets[sets.length-1]:null;
-    const suggestion=data.progression_suggestion;
-    const weight=document.querySelector("#weight");
-    const reps=document.querySelector("#reps");
-    const rpe=document.querySelector("#rpe");
-    if(last){
-      if(weight)weight.value=(suggestion?.suggested_weight??last.weight??"");
-      if(reps)reps.value=(suggestion?.suggested_reps??last.reps??e.min_reps??"");
-      if(suggestion?.suggested_duration_seconds)S.exerciseTimerTarget=suggestion.suggested_duration_seconds;
-      if(rpe&&last.rpe!=null)rpe.value=last.rpe;
-    }
+    hydrateExerciseRecallInputs(e);
     const card=document.querySelector("#recallCard");
-    if(card){
-      if(!last){
-        card.innerHTML=`<p class=eyebrow>FIRST SESSION</p><h3>No previous sets yet</h3><p class=muted>Log this exercise and Forge will remember it next time.</p>`;
-      }else{
-        const action=suggestion?suggestion.action.replaceAll("_"," "):"repeat";
-        const targetLabel=suggestion?.load_mode==="timed"?`${suggestion.suggested_duration_seconds} sec`:suggestion?.load_mode==="bodyweight"?`${suggestion.suggested_reps} reps`:suggestion?`${Number(suggestion.suggested_weight||0).toFixed(1).replace(/\.0$/,'')} lb × ${suggestion.suggested_reps||e.min_reps}`:`${last.weight??0} lb`;
-        const recent=sets.slice(-4).reverse();
-        card.innerHTML=`<div class=row><div><p class=eyebrow>LAST TIME</p><h3>${last.weight} lb × ${last.reps}</h3><p class=muted>RPE ${last.rpe??"—"}</p></div>
-          <div style="text-align:right"><p class=eyebrow>ADAPTIVE TARGET</p><h3>${targetLabel}</h3><p class=muted>${action}${suggestion?.confidence?` • ${suggestion.confidence} confidence`:""}</p></div></div>
-          <div class=previous-set-strip>${recent.map((s,i)=>`<span class="${i===0?"latest":""}"><b>${Number(s.weight||0).toFixed(1).replace(/\.0$/,"")} lb × ${s.reps}</b><small>RPE ${s.rpe??"—"}</small></span>`).join("")}</div><div class=recall-actions><button class="btn dark compact" data-a=repeat-last-set>Repeat Last Set</button><button class="btn dark compact" data-a=current-exercise-history>Full History</button></div>${suggestion?`<div class=progression-why><b>Why this target?</b><span>${esc(suggestion.reason||`Recent effort averaged RPE ${suggestion.recent_average_rpe}.`)}</span><small class=muted>Based on ${suggestion.sample_count||1} recent logged set${Number(suggestion.sample_count||1)===1?"":"s"}.</small></div>`:""}</div>`;
-      }
+    if(card&&S.route==="exercise"&&Number(w()?.exercises?.[S.ei]?.exercise_id)===exerciseId)card.innerHTML=exerciseRecallMarkup(e);
+  }catch(err){
+    if(S.exerciseRecallExerciseId===exerciseId){
+      S.exerciseRecall=null;
+      const card=document.querySelector("#recallCard");
+      if(card)card.innerHTML=`<p class=eyebrow>TRAINING HISTORY</p><p class=muted>No previous data available yet.</p>`;
     }
-  }catch(e){
-    const card=document.querySelector("#recallCard");
-    if(card)card.innerHTML=`<p class=eyebrow>TRAINING HISTORY</p><p class=muted>No previous data available yet.</p>`;
+  }finally{
+    if(S.exerciseRecallExerciseId===exerciseId)S.exerciseRecallLoading=false;
   }
 }
 
@@ -2169,6 +2199,7 @@ async function saveSet(){
     payload.load_mode=mode;
   }
   const result=await api("/me/performance",{method:"POST",body:JSON.stringify(payload)});
+  S.exerciseRecall=null;S.exerciseRecallExerciseId=null;S.exerciseRecallLoading=false;S.exerciseProgression=null;S.exerciseProgressionExerciseId=null;S.exerciseProgressionLoading=false;
   S.sessionIntelligence=result.session_intelligence||null;
   if(S.sessionIntelligence){
     const si=S.sessionIntelligence;

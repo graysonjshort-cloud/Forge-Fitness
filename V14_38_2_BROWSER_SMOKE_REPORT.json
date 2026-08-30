@@ -18,6 +18,7 @@
     "nutrition provider status regression",
     "online-event regression",
     "More sheet",
-    "frontend module namespaces"
+    "frontend module namespaces",
+    "exercise history dedupe regression"
   ]
 }
