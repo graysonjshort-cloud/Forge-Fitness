@@ -105,6 +105,65 @@ def main():
                 assert request_counts.get(progression_path,0)==progression_before, 'Progression strategy refetched after harmless rerender'
                 assert 'Loading your last performance' not in page.locator('#recallCard').inner_text(), 'Previous Performance returned to loading state'
 
+
+                # v14.74.2: smart swap loaders must settle once and survive rerenders.
+                page.locator('[data-a="swap-exercise"]').click();page.wait_for_timeout(1200)
+                substitutions_path=f'/me/exercises/{exercise_id}/substitutions'
+                intelligence_path=f'/me/exercises/{exercise_id}/substitution-intelligence'
+                assert 'Loading substitutions' not in page.locator('#swapList').inner_text(), 'Smart Swap remained in loading state'
+                sub_before=request_counts.get(substitutions_path,0)
+                intel_before=request_counts.get(intelligence_path,0)
+                page.evaluate('render();render();render()');page.wait_for_timeout(500)
+                assert request_counts.get(substitutions_path,0)==sub_before, 'Smart Swap substitutions refetched after harmless rerender'
+                assert request_counts.get(intelligence_path,0)==intel_before, 'Substitution Intelligence refetched after harmless rerender'
+                assert 'Loading substitutions' not in page.locator('#swapList').inner_text(), 'Smart Swap returned to loading after rerender'
+                variety=page.locator('[data-swap-reason="variety"]')
+                if variety.count():
+                    variety.click();page.wait_for_timeout(800)
+                    variety_count=request_counts.get(substitutions_path,0)
+                    assert variety_count==sub_before+1, 'Changing swap reason should fetch substitutions exactly once'
+                    page.evaluate('render();render()');page.wait_for_timeout(350)
+                    assert request_counts.get(substitutions_path,0)==variety_count, 'Swap reason result refetched after rerender'
+                    assert request_counts.get(intelligence_path,0)==intel_before, 'Swap reason change incorrectly refetched substitution intelligence'
+                page.evaluate("go('exercise')");page.wait_for_timeout(250)
+
+            # v14.74.2 loader audit: sibling loader completions and forced renders must not amplify requests.
+            def assert_stable(route, paths, settle=1200):
+                page.evaluate(f"go('{route}')")
+                page.wait_for_timeout(settle)
+                before={path:request_counts.get(path,0) for path in paths}
+                page.evaluate('render();render();render()')
+                page.wait_for_timeout(500)
+                after={path:request_counts.get(path,0) for path in paths}
+                assert after==before, f'{route} loader refetch after harmless rerender: before={before}, after={after}'
+
+            assert_stable('plan',['/me/program/adaptation-preview','/me/recovery-intelligence'])
+            assert_stable('progress',['/me/progress/hub','/me/training-records','/me/training-dashboard'])
+            assert_stable('coach',['/me/coach/history','/me/coach/context','/me/coach/status','/me/coach/briefing','/me/coach/context-v4'])
+            assert_stable('history',['/me/history'],800)
+            assert_stable('prs',['/me/prs'],800)
+
+            # Exercise-history screen must keep loaded content without re-requesting.
+            page.evaluate("S.historyExercise=plan.workouts[0].exercises[0].exercise_id;go('exercisehistory')")
+            page.wait_for_timeout(900)
+            eh_id=page.evaluate('S.historyExercise')
+            eh_path=f'/me/exercises/{eh_id}/history'
+            eh_before=request_counts.get(eh_path,0)
+            page.evaluate('render();render()');page.wait_for_timeout(400)
+            assert request_counts.get(eh_path,0)==eh_before, 'Exercise History refetched after harmless rerender'
+            assert 'Loading' not in page.locator('#ehBody').inner_text(), 'Exercise History returned to loading state'
+
+            # Cardio swap must also remain stable when a workout has a cardio module.
+            cardio_index=page.evaluate("plan.workouts.findIndex(x=>x.cardio_module)")
+            if cardio_index>=0:
+                page.evaluate(f"S.wi={cardio_index};go('cardioswap')")
+                page.wait_for_timeout(800)
+                cardio_before=request_counts.get('/me/cardio/options',0)
+                assert 'Loading cardio options' not in page.locator('#cardioSwapList').inner_text(), 'Cardio swap remained loading'
+                page.evaluate('render();render()');page.wait_for_timeout(350)
+                assert request_counts.get('/me/cardio/options',0)==cardio_before, 'Cardio swap refetched after harmless rerender'
+                assert 'Loading cardio options' not in page.locator('#cardioSwapList').inner_text(), 'Cardio swap returned to loading state'
+
             # Regression: provider diagnostics must use the shared API helper and not throw API_BASE ReferenceError.
             page.locator('#bottomNav [data-nav="nutrition"]').click();page.wait_for_timeout(400)
             btn=page.locator('#nutritionProviderStatusBtn')
@@ -126,7 +185,7 @@ def main():
         bad_requests=[x for x in failed_requests if not any(ok in x for ok in ['favicon.ico'])]
         if fatal or bad_console or bad_requests:
             raise AssertionError(json.dumps({'page_errors':fatal,'console_errors':bad_console,'failed_requests':bad_requests},indent=2))
-        report={'status':'passed','viewport':'390x844','routes':screens,'checks':['authenticated startup','primary nav rendering','no page errors','no console errors','no failed requests','nutrition provider status regression','online-event regression','More sheet','frontend module namespaces','exercise history dedupe regression']}
+        report={'status':'passed','viewport':'390x844','routes':screens,'checks':['authenticated startup','primary nav rendering','no page errors','no console errors','no failed requests','nutrition provider status regression','online-event regression','More sheet','frontend module namespaces','exercise history dedupe regression','async loader stability audit','smart swap dedupe','cardio swap dedupe']}
         print(json.dumps(report,indent=2))
         (SOURCE/'V14_38_2_BROWSER_SMOKE_REPORT.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
     finally:

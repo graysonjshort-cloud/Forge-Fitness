@@ -1,0 +1,42 @@
+{
+  "status": "passed",
+  "version": "14.74.2",
+  "release": "Async Loader Stability",
+  "root_cause": "Rerender-driven async loaders could refetch or replace settled UI with loading placeholders. Smart Swap had both an unkeyed substitutions loader and an exercise intelligence loader that rendered on completion, causing the two loaders to retrigger each other.",
+  "repairs": [
+    "Smart Swap substitutions cached by exercise and swap reason",
+    "Substitution Intelligence cached by exercise",
+    "Cardio swap cached by workout",
+    "Previous Performance and progression requests can safely supersede stale in-flight exercise requests",
+    "Plan adaptation and recovery loaders use in-flight guards",
+    "Progress and Coach sibling loaders use in-flight guards",
+    "Workout History, PRs, and Exercise History render from settled cache state",
+    "Nutrition, Equipment, Exercise Directory, Body Metrics, Progress Intelligence, and System Health protected from duplicate in-flight loads"
+  ],
+  "static_validation": "passed",
+  "frontend_contract": {"frontend_api_calls": 131, "backend_routes": 126, "missing_contracts": 0},
+  "exercise_precision": {"canonical_exercises": 215, "exercise_muscle_links": 743, "taxonomy_subsections": 33},
+  "e2e": "passed",
+  "browser": {
+    "status": "passed",
+    "viewport": "390x844",
+    "page_errors": 0,
+    "console_errors": 0,
+    "failed_requests": 0,
+    "rerender_checks": [
+      "previous performance",
+      "exercise progression",
+      "smart swap substitutions",
+      "substitution intelligence",
+      "cardio swap",
+      "plan adaptation preview",
+      "recovery intelligence",
+      "progress hub",
+      "training records/dashboard",
+      "coach history/context/status/briefing/v4 context",
+      "workout history",
+      "personal records",
+      "exercise history"
+    ]
+  }
+}

@@ -19,6 +19,9 @@
     "online-event regression",
     "More sheet",
     "frontend module namespaces",
-    "exercise history dedupe regression"
+    "exercise history dedupe regression",
+    "async loader stability audit",
+    "smart swap dedupe",
+    "cardio swap dedupe"
   ]
 }

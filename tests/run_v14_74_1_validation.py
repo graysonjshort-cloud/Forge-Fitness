@@ -8,5 +8,5 @@ assert 'exerciseProgressionExerciseId' in s
 assert 'if(S.exerciseRecallExerciseId===exerciseId)' in s
 assert 'exerciseRecallMarkup(e)' in s
 assert 'S.exerciseRecall=null;S.exerciseRecallExerciseId=null' in s
-assert (ROOT/'VERSION.txt').read_text().strip()=='14.74.1'
+assert (ROOT/'VERSION.txt').read_text().strip() in {'14.74.1','14.74.2'}
 print('v14.74.1 exercise history reload regression: passed')

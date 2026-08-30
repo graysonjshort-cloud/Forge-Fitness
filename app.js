@@ -6,7 +6,7 @@ let authToken = localStorage.getItem("forge_auth_token") || "";
 let account = null;
 let plan = null, session = null;
 const profile = {goal:"build_muscle",experience:"intermediate",days_per_week:4,minutes_per_workout:45,equipment:["full_gym"],preferred_exercises:[],excluded_exercises:[],priority_muscles:[],recovery_level:"normal",cardio_preference:"moderate",workout_split:"auto",sport:"general",core_workouts_per_week:2,cardio_workouts_per_week:2,custom_split:[],exercises_per_day:6,exercises_per_workout:[],seed:42};
-const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,exerciseRecallExerciseId:null,exerciseRecallLoading:false,swapOptions:[],coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,coachBriefing:null,coachStack:null,systemHealth:null,progressHub:null,strengthTrend:null,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,sessionStartedAt:null,completedWorkoutSummary:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,calendarIntelligence:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,bodyMetrics:null,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,mesocycle:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0,demoAngle:"primary",readinessCheckin:null,todayAdjustment:null,liveAdjustment:null,sessionIntelligence:null,planPreview:null,planDiagnostics:null,planLocks:{},readinessReturn:"home",swapReason:"preference",recoveryIntelligence:null,trainingDashboard:null,exerciseProgression:null,exerciseProgressionExerciseId:null,exerciseProgressionLoading:false,substitutionIntelligence:null,trainingRecords:null,coach4:null,exerciseDirectoryEquipment:"All",exerciseDirectoryMovement:"All",exerciseDirectoryFavorites:false,workoutBuilderExercise:null};
+const S={route:"welcome",onboardStep:0,wi:0,ei:0,set:0,restRemaining:0,restTotal:0,timer:null,feel:"Just Right",name:"Athlete",coachDraft:"",startupError:null,historyExercise:null,workoutPRs:[],exerciseRecall:null,exerciseRecallExerciseId:null,exerciseRecallLoading:false,swapOptions:[],swapOptionsKey:null,swapOptionsLoading:false,swapOptionsLoaded:false,substitutionIntelligenceExerciseId:null,substitutionIntelligenceLoading:false,cardioSwapKey:null,cardioSwapLoading:false,cardioSwapLoaded:false,coachMessages:[],coachAction:null,coachContext:null,coachLoaded:false,coachStatus:null,coachBriefing:null,coachStack:null,systemHealth:null,systemHealthLoading:false,progressHub:null,progressHubLoading:false,strengthTrend:null,strengthTrendLoading:false,strengthExercise:"overall",strengthRange:"90",strengthPoint:null,planTab:"overview",equipmentCatalog:[],equipmentPresets:{},equipmentLog:[],equipmentLoaded:false,equipmentLoading:false,equipmentReturn:"onboarding",equipmentSearch:"",equipmentCategory:"All",equipmentSelectedOnly:false,equipmentEditKey:null,exerciseDirectory:null,exerciseDirectoryLoading:false,exerciseDirectorySearch:"",exerciseDirectoryMuscle:"All",exerciseDirectoryDifficulty:"All",exerciseDirectoryCompatible:true,exerciseDirectorySelected:null,lastSessionId:null,sessionStartedAt:null,completedWorkoutSummary:null,preferenceReturn:"preferences",timeSettings:null,calendarStatus:null,calendarIntelligence:null,clockTimer:null,calendarPollTimer:null,cardioSwapOptions:[],selectedCardioSwap:null,nutrition:null,nutritionLoading:false,nutritionDate:null,nutritionEditingTargets:false,nutritionSavedFoods:[],nutritionEditEntry:null,nutritionCoachSummary:null,notifications:null,notificationSettings:null,progressIntelligence:null,progressIntelligenceLoading:false,bodyMetrics:null,bodyMetricsLoading:false,bodyMetricRange:"90",bodyMetricModal:false,prRecords:[],prLoading:false,prLoaded:false,historyRows:null,historyLoading:false,historyLoaded:false,exerciseHistoryData:null,exerciseHistoryExerciseId:null,exerciseHistoryLoading:false,prView:"exercise",prLiftFilter:"all",prCollapsedGroups:{},homeDashboard:null,adaptationPreview:null,mesocycle:null,adaptationBusy:false,planAdjusting:false,preferredDays:[],pwaInstallPrompt:null,pwaInstalled:false,pwaDismissed:false,moreOpen:false,online:navigator.onLine,updateReady:false,exerciseElapsed:0,exerciseTimer:null,exerciseTimerRunning:false,exerciseTimerTarget:0,moduleSession:null,moduleWorkoutIndex:null,moduleSummary:null,coreTimerElapsed:{},coreTimerRunning:null,coreTimerInterval:null,coreEffort:{},cardioEffort:7,coreCompleted:{},coreRestRemaining:0,coreRestTimer:null,moduleMoveType:null,moduleMoveSourceIndex:null,moduleMoveTarget:null,coreSequenceIndex:0,formDemo:null,formDemoExercise:null,formDemoReturn:"exercise",formDemoTab:"demo",demoOfflineStatus:null,demoAudit:null,demoReview:null,demoReviewExercise:null,demoReviewQueue:[],demoReviewQueueIndex:0,demoAngle:"primary",readinessCheckin:null,todayAdjustment:null,liveAdjustment:null,sessionIntelligence:null,planPreview:null,planDiagnostics:null,planLocks:{},readinessReturn:"home",swapReason:"preference",recoveryIntelligence:null,recoveryIntelligenceLoading:false,adaptationPreviewLoading:false,trainingDashboard:null,exerciseProgression:null,exerciseProgressionExerciseId:null,exerciseProgressionLoading:false,substitutionIntelligence:null,trainingRecords:null,coach4:null,coachLoading:false,coachBriefingLoading:false,exerciseDirectoryEquipment:"All",exerciseDirectoryMovement:"All",exerciseDirectoryFavorites:false,workoutBuilderExercise:null};
 const V=document.querySelector("#view"),toastEl=document.querySelector("#toast"),nav=document.querySelector("#bottomNav"),topbar=document.querySelector("#topbar");
 const toast=t=>{toastEl.textContent=t;toastEl.classList.add("show");setTimeout(()=>toastEl.classList.remove("show"),1800)};
 const esc=ForgeCore.esc;
@@ -176,7 +176,8 @@ function startLiveClock(){
 function stopLiveClock(){if(S.clockTimer){clearInterval(S.clockTimer);S.clockTimer=null}}
 
 async function loadEquipmentLog(){
-  if(!authToken)return;
+  if(!authToken||S.equipmentLoading||S.equipmentLoaded)return;
+  S.equipmentLoading=true;
   try{
     const [meta,log]=await Promise.all([api("/me/equipment/catalog"),api("/me/equipment")]);
     S.equipmentCatalog=meta.catalog||[];
@@ -185,7 +186,7 @@ async function loadEquipmentLog(){
     profile.equipment=log.legacy_equipment||[];
     S.equipmentLoaded=true;
     if(["equipment","equipmentlog"].includes(S.route))render();
-  }catch(e){console.warn("Equipment log load failed",e)}
+  }catch(e){console.warn("Equipment log load failed",e)}finally{S.equipmentLoading=false}
 }
 function equipmentSelected(key){return S.equipmentLog.some(x=>x.key===key)}
 function equipmentItemFromCatalog(key){
@@ -482,7 +483,8 @@ ${fields.length?fields.map(([key,type])=>{
 }
 
 async function loadExerciseDirectory(){
-  if(!authToken)return;
+  if(!authToken||S.exerciseDirectoryLoading)return;
+  S.exerciseDirectoryLoading=true;
   const params=new URLSearchParams();
   if(S.exerciseDirectorySearch)params.set("search",S.exerciseDirectorySearch);
   if(S.exerciseDirectoryMuscle!=="All")params.set("muscle",S.exerciseDirectoryMuscle);
@@ -494,7 +496,7 @@ async function loadExerciseDirectory(){
   try{
     S.exerciseDirectory=await api(`/me/exercises?${params.toString()}`);
     if(S.route==="exercisedirectory")render();
-  }catch(e){toast(e.message)}
+  }catch(e){toast(e.message)}finally{S.exerciseDirectoryLoading=false}
 }
 
 function exercisedirectory(){
@@ -623,7 +625,19 @@ function formdemo(){
  return `<p class=eyebrow>EXERCISE FORM</p><h2>${esc(d.name)}</h2><p class=muted>${esc(d.primary_muscle)} • ${esc(d.equipment)}</p><button class="form-demo-offline-btn" data-a=cache-plan-demos>↓ Make This Week's Demos Available Offline</button><button class="form-demo-audit-btn" data-a=open-demo-audit>View Demo Library Coverage</button><div class=form-demo-tabs>${[["demo","Demo"],["setup","Setup"],["mistakes","Mistakes"]].map(([v,n])=>`<button class="${S.formDemoTab===v?"active":""}" data-form-demo-tab="${v}">${n}</button>`).join("")}</div>${body}<div class=spacer></div><div class=card><p class=eyebrow>BREATHING</p><p>${esc(d.breathing_cue)}</p></div><div class=spacer></div><div class="card form-safety"><p class=eyebrow>CONTROL</p><p>${esc(d.safety_note)}</p></div>`;
 }
 
-async function loadSubstitutionIntelligence(){const ex=w()?.exercises?.[S.ei];if(!ex||S.substitutionIntelligence?.loading)return;S.substitutionIntelligence={loading:true};try{S.substitutionIntelligence=await api(`/me/exercises/${ex.exercise_id}/substitution-intelligence`);if(S.route==="swapexercise")render()}catch(e){S.substitutionIntelligence=null}}
+async function loadSubstitutionIntelligence(){
+  const ex=w()?.exercises?.[S.ei];if(!ex)return;
+  const exerciseId=Number(ex.exercise_id);
+  if(S.substitutionIntelligenceExerciseId===exerciseId&&(S.substitutionIntelligence||S.substitutionIntelligenceLoading))return;
+  S.substitutionIntelligenceExerciseId=exerciseId;S.substitutionIntelligenceLoading=true;S.substitutionIntelligence=null;
+  try{
+    const data=await api(`/me/exercises/${exerciseId}/substitution-intelligence`);
+    if(S.substitutionIntelligenceExerciseId!==exerciseId)return;
+    S.substitutionIntelligence=data;
+    if(S.route==="swapexercise"&&Number(w()?.exercises?.[S.ei]?.exercise_id)===exerciseId)render();
+  }catch(e){if(S.substitutionIntelligenceExerciseId===exerciseId)S.substitutionIntelligence={options:[],error:true}}
+  finally{if(S.substitutionIntelligenceExerciseId===exerciseId)S.substitutionIntelligenceLoading=false}
+}
 function substitutionIntelligenceCard(){const d=S.substitutionIntelligence;if(!d?.options?.length)return "";return `<div class=card><p class=eyebrow>SUBSTITUTION INTELLIGENCE 2.0</p><h3>Best-fit replacements</h3><div class=sub-intel-list>${d.options.slice(0,5).map((x,i)=>`<div><b>${i+1}. ${esc(x.name)}</b><span>${x.submuscle_overlap_percent}% target overlap • ${x.progression_compatible?"similar":"different"} progression</span><small>${esc(x.explanation)}</small></div>`).join("")}</div></div>`}
 
 function exercisedetail(){
@@ -1044,7 +1058,7 @@ function toggleExerciseTimer(){
   render();
 }
 
-async function loadExerciseProgression(){const ex=w()?.exercises?.[S.ei];if(!ex)return;const exerciseId=Number(ex.exercise_id);if(S.exerciseProgressionExerciseId===exerciseId&&(S.exerciseProgression||S.exerciseProgressionLoading))return;if(S.exerciseProgressionLoading)return;S.exerciseProgressionLoading=true;S.exerciseProgressionExerciseId=exerciseId;S.exerciseProgression=null;try{const data=await api(`/me/exercises/${exerciseId}/progression-strategy`);if(S.exerciseProgressionExerciseId!==exerciseId)return;S.exerciseProgression=data;if(S.route==="exercise"&&Number(w()?.exercises?.[S.ei]?.exercise_id)===exerciseId)render()}catch(e){if(S.exerciseProgressionExerciseId===exerciseId)S.exerciseProgression=null}finally{if(S.exerciseProgressionExerciseId===exerciseId)S.exerciseProgressionLoading=false}}
+async function loadExerciseProgression(){const ex=w()?.exercises?.[S.ei];if(!ex)return;const exerciseId=Number(ex.exercise_id);if(S.exerciseProgressionExerciseId===exerciseId&&(S.exerciseProgression||S.exerciseProgressionLoading))return;S.exerciseProgressionLoading=true;S.exerciseProgressionExerciseId=exerciseId;S.exerciseProgression=null;try{const data=await api(`/me/exercises/${exerciseId}/progression-strategy`);if(S.exerciseProgressionExerciseId!==exerciseId)return;S.exerciseProgression=data;if(S.route==="exercise"&&Number(w()?.exercises?.[S.ei]?.exercise_id)===exerciseId)render()}catch(e){if(S.exerciseProgressionExerciseId===exerciseId)S.exerciseProgression=null}finally{if(S.exerciseProgressionExerciseId===exerciseId)S.exerciseProgressionLoading=false}}
 function exerciseProgressionCard(){const p=S.exerciseProgression;if(!p||p.loading)return "";return `<div class="card progression-card"><div class=row><div><p class=eyebrow>PROGRESSION ENGINE 3.0</p><h3>${esc(p.method)}</h3></div><b>${esc(p.status)}</b></div><p>${esc(p.target_rule)}</p><small>${esc(p.reason)}</small><div class=progression-metrics><span><b>${p.sessions_analyzed}</b><small>sessions</small></span><span><b>${p.avg_rpe??"—"}</b><small>avg RPE</small></span><span><b>${p.strength_change_percent==null?"—":`${p.strength_change_percent>0?"+":""}${p.strength_change_percent}%`}</b><small>strength</small></span></div></div>`}
 
 function exercise(){
@@ -1237,25 +1251,31 @@ function modulemove(){
   </button>`).join(""):`<div class=card><p class=muted>Every other workout day already has a ${type} module.</p></div>`}</div>
   <div class=big-spacer></div><div class=row><button class="btn dark" style="width:48%" data-a=cancel-module-move>Cancel</button><button class=btn style="width:48%" data-a=apply-module-move ${S.moduleMoveTarget?"":"disabled"}>Move ${label}</button></div>`;
 }
+function cardioSwapMarkup(){
+  const key=String(w()?.workout_id||"");
+  if(S.cardioSwapKey!==key||S.cardioSwapLoading)return `<div class=card><p class=muted>Loading cardio options…</p></div>`;
+  if(!S.cardioSwapOptions.length)return `<div class=card><p class=muted>No compatible cardio options found for your equipment.</p></div>`;
+  return S.cardioSwapOptions.map(x=>`<button class="card swap-option ${Number(S.selectedCardioSwap)===Number(x.id)||(!S.selectedCardioSwap&&x.name===w()?.cardio_module?.name)?"selected":""}" data-cardio-swap=${x.id}>
+    <div class=row><div><p class=eyebrow>${esc(x.movement_pattern)}</p><h3>${esc(x.name)}</h3><p class=muted>${esc(x.equipment)}</p></div><span>${x.name===w()?.cardio_module?.name?"Current":"›"}</span></div>
+  </button>`).join("");
+}
 function cardioswap(){
-const ww=w();
 return `<p class=eyebrow>SWAP CARDIO</p><h2>Choose Cardio Exercise</h2>
 <p class=muted>Only cardio options that work with your Equipment Log are shown.</p>
-<div class=spacer></div><div id=cardioSwapList class=stack><div class=card><p class=muted>Loading cardio options…</p></div></div>
+<div class=spacer></div><div id=cardioSwapList class=stack>${cardioSwapMarkup()}</div>
 <div class=big-spacer></div><div class=row><button class="btn dark" style="width:48%" data-a=cancel-cardio-swap>Cancel</button><button class=btn style="width:48%" data-a=apply-cardio-swap>Swap</button></div>`;
 }
 async function loadCardioSwapOptions(){
+  const key=String(w()?.workout_id||"");if(!key)return;
+  if(S.cardioSwapKey===key&&(S.cardioSwapLoaded||S.cardioSwapLoading))return;
+  S.cardioSwapKey=key;S.cardioSwapLoading=true;S.cardioSwapLoaded=false;
   try{
     const rows=await api("/me/cardio/options");
+    if(S.cardioSwapKey!==key)return;
     S.cardioSwapOptions=rows.filter(x=>x.equipment_compatible);
-    S.selectedCardioSwap=null;
-    const el=document.querySelector("#cardioSwapList");if(!el)return;
-    if(!S.cardioSwapOptions.length){el.innerHTML=`<div class=card><p class=muted>No compatible cardio options found for your equipment.</p></div>`;return}
-    el.innerHTML=S.cardioSwapOptions.map(x=>`<button class="card swap-option ${x.name===w()?.cardio_module?.name?"selected":""}" data-cardio-swap=${x.id}>
-      <div class=row><div><p class=eyebrow>${esc(x.movement_pattern)}</p><h3>${esc(x.name)}</h3><p class=muted>${esc(x.equipment)}</p></div><span>${x.name===w()?.cardio_module?.name?"Current":"›"}</span></div>
-    </button>`).join("");
-    document.querySelectorAll("[data-cardio-swap]").forEach(b=>b.onclick=()=>{S.selectedCardioSwap=Number(b.dataset.cardioSwap);document.querySelectorAll("[data-cardio-swap]").forEach(x=>x.classList.toggle("selected",x===b))});
-  }catch(e){toast(e.message)}
+    S.selectedCardioSwap=null;S.cardioSwapLoading=false;S.cardioSwapLoaded=true;
+    if(S.route==="cardioswap"&&String(w()?.workout_id||"")===key)render();
+  }catch(e){if(S.cardioSwapKey===key)S.cardioSwapLoaded=true;toast(e.message)}finally{if(S.cardioSwapKey===key)S.cardioSwapLoading=false}
 }
 async function applyCardioSwap(){
   if(!S.selectedCardioSwap){toast("Choose a cardio exercise");return}
@@ -1265,6 +1285,23 @@ async function applyCardioSwap(){
   go("workout");
 }
 
+function swapBonus(x,e){
+  const fatigue=Number(x.fatigue_cost||3),skill=Number(x.skill_demand||3);
+  if(S.swapReason==="discomfort")return (6-fatigue)*8+(6-skill)*3+(/machine|cable/i.test(x.equipment||"")?10:0);
+  if(S.swapReason==="too_hard")return (6-fatigue)*7+(6-skill)*5;
+  if(S.swapReason==="equipment")return x.equipment_compatible?40:-200;
+  if(S.swapReason==="variety")return x.movement_pattern===e?.movement_pattern?5:12;
+  return 0;
+}
+function swapOptionsMarkup(e){
+  const key=`${Number(e?.exercise_id||0)}:${S.swapReason}`;
+  if(S.swapOptionsKey!==key||S.swapOptionsLoading)return `<div class=card><p class=muted>Loading substitutions…</p></div>`;
+  const compatible=(S.swapOptions||[]).filter(x=>x.equipment_compatible&&x.user_preference!=="painful");
+  if(!compatible.length)return `<div class=card><p class=muted>No compatible substitutions found for your equipment and preferences.</p></div>`;
+  return compatible.map((x,i)=>`<button class="card swap-option smart-swap-option ${Number(S.selectedSwap)===Number(x.id)?"selected":""}" data-swap=${x.id}>
+    <div class=row><div><p class=eyebrow>${i===0?"BEST MATCH":esc(x.primary_muscle)}</p><h3>${esc(x.name)}</h3>
+    <p class=muted>${esc(x.equipment)} • ${x.min_reps}-${x.max_reps} reps</p><div class=swap-match-tags><span>${esc(x.smart_reason||"similar movement")}</span>${x.user_preference==="favorite"?"<span>★ Favorite</span>":""}</div></div><div class=swap-score><b>${Math.max(0,Math.round(Number(x.substitution_score||0)+swapBonus(x,e)))}</b><small>match</small></div></div></button>`).join("");
+}
 function swapexercise(){
 const e=w()?.exercises?.[S.ei];
 const reasons=[
@@ -1274,32 +1311,21 @@ const reasons=[
   ["equipment","Equipment unavailable"],
   ["variety","Want variety"]
 ];
-return `${substitutionIntelligenceCard()}<div class=spacer></div><p class=eyebrow>SMART SUBSTITUTION</p><h2>Swap ${esc(e?.name||"Exercise")}</h2><p class=muted>Tell Forge why you’re swapping so the best matches rise to the top.</p><div class=swap-reason-grid>${reasons.map(([k,l])=>`<button class="${S.swapReason===k?"selected":""}" data-swap-reason="${k}">${l}</button>`).join("")}</div><div class=spacer></div><input class=swap-search placeholder="Search alternatives"><div class=row><p class=eyebrow>BEST MATCHES</p><small class=muted>ranked for this reason</small></div><div class=spacer></div><div id=swapList class=stack><div class=card><p class=muted>Loading substitutions…</p></div></div><div class=big-spacer></div>${S.swapReason==="discomfort"?`<div class="card pain-swap-note"><b>Discomfort swap</b><span>Forge will mark the current exercise as painful so it is strongly deprioritized in future substitutions. This is not a diagnosis; stop the movement if it causes pain.</span></div><div class=spacer></div>`:""}<div class=row><button class="btn dark" style="width:48%" data-a=back-exercise>Cancel</button><button class=btn style="width:48%" data-a=swap-selected>Swap</button></div>`;
+return `${substitutionIntelligenceCard()}<div class=spacer></div><p class=eyebrow>SMART SUBSTITUTION</p><h2>Swap ${esc(e?.name||"Exercise")}</h2><p class=muted>Tell Forge why you’re swapping so the best matches rise to the top.</p><div class=swap-reason-grid>${reasons.map(([k,l])=>`<button class="${S.swapReason===k?"selected":""}" data-swap-reason="${k}">${l}</button>`).join("")}</div><div class=spacer></div><input class=swap-search placeholder="Search alternatives"><div class=row><p class=eyebrow>BEST MATCHES</p><small class=muted>ranked for this reason</small></div><div class=spacer></div><div id=swapList class=stack>${swapOptionsMarkup(e)}</div><div class=big-spacer></div>${S.swapReason==="discomfort"?`<div class="card pain-swap-note"><b>Discomfort swap</b><span>Forge will mark the current exercise as painful so it is strongly deprioritized in future substitutions. This is not a diagnosis; stop the movement if it causes pain.</span></div><div class=spacer></div>`:""}<div class=row><button class="btn dark" style="width:48%" data-a=back-exercise>Cancel</button><button class=btn style="width:48%" data-a=swap-selected>Swap</button></div>`;
 }
-
 async function loadSwapOptions(){
+  const e=w()?.exercises?.[S.ei];if(!e)return;
+  const exerciseId=Number(e.exercise_id),reason=S.swapReason,key=`${exerciseId}:${reason}`;
+  if(S.swapOptionsKey===key&&(S.swapOptionsLoaded||S.swapOptionsLoading))return;
+  S.swapOptionsKey=key;S.swapOptionsLoading=true;S.swapOptionsLoaded=false;S.swapOptions=[];S.selectedSwap=null;
   try{
-    const e=w()?.exercises?.[S.ei];if(!e)return;
-    const rows=await api(`/me/exercises/${e.exercise_id}/substitutions`);
-    const bonus=x=>{
-      const fatigue=Number(x.fatigue_cost||3),skill=Number(x.skill_demand||3);
-      if(S.swapReason==="discomfort")return (6-fatigue)*8+(6-skill)*3+(/machine|cable/i.test(x.equipment||"")?10:0);
-      if(S.swapReason==="too_hard")return (6-fatigue)*7+(6-skill)*5;
-      if(S.swapReason==="equipment")return x.equipment_compatible?40:-200;
-      if(S.swapReason==="variety")return x.movement_pattern===e.movement_pattern?5:12;
-      return 0;
-    };
-    S.swapOptions=[...rows].sort((a,b)=>(Number(b.substitution_score||0)+bonus(b))-(Number(a.substitution_score||0)+bonus(a)));S.selectedSwap=null;
-    const el=document.querySelector("#swapList");if(!el)return;
-    const compatible=S.swapOptions.filter(x=>x.equipment_compatible&&x.user_preference!=="painful");
-    if(!compatible.length){el.innerHTML=`<div class=card><p class=muted>No compatible substitutions found for your equipment and preferences.</p></div>`;return}
-    el.innerHTML=compatible.map((x,i)=>`<button class="card swap-option smart-swap-option" data-swap=${x.id}>
-      <div class=row><div><p class=eyebrow>${i===0?"BEST MATCH":esc(x.primary_muscle)}</p><h3>${esc(x.name)}</h3>
-      <p class=muted>${esc(x.equipment)} • ${x.min_reps}-${x.max_reps} reps</p><div class=swap-match-tags><span>${esc(x.smart_reason||"similar movement")}</span>${x.user_preference==="favorite"?"<span>★ Favorite</span>":""}</div></div><div class=swap-score><b>${Math.max(0,Math.round(Number(x.substitution_score||0)+bonus(x)))}</b><small>match</small></div></div></button>`).join("");
-    document.querySelectorAll("[data-swap]").forEach(b=>b.onclick=()=>{S.selectedSwap=Number(b.dataset.swap);document.querySelectorAll("[data-swap]").forEach(x=>x.classList.toggle("selected",x===b))});
-  }catch(e){toast(e.message)}
+    const rows=await api(`/me/exercises/${exerciseId}/substitutions`);
+    if(S.swapOptionsKey!==key)return;
+    S.swapOptions=[...rows].sort((a,b)=>(Number(b.substitution_score||0)+swapBonus(b,e))-(Number(a.substitution_score||0)+swapBonus(a,e)));S.swapOptionsLoading=false;S.swapOptionsLoaded=true;
+    if(S.route==="swapexercise"&&Number(w()?.exercises?.[S.ei]?.exercise_id)===exerciseId&&S.swapReason===reason)render();
+  }catch(err){if(S.swapOptionsKey===key){S.swapOptions=[];S.swapOptionsLoaded=true}toast(err.message)}
+  finally{if(S.swapOptionsKey===key)S.swapOptionsLoading=false}
 }
-
 async function applySwap(newId){
   const old=w().exercises[S.ei];
   await api(`/me/workouts/${w().workout_id}/swap`,{method:"POST",body:JSON.stringify({
@@ -1335,12 +1361,13 @@ function nutritionDateValue(){
   return S.nutritionDate;
 }
 async function loadNutrition(){
-  if(!authToken)return;
+  if(!authToken||S.nutritionLoading)return;
+  S.nutritionLoading=true;
   try{
     const [day,saved]=await Promise.all([api(`/me/nutrition?date=${encodeURIComponent(nutritionDateValue())}`),api("/me/nutrition/saved-foods?limit=10")]);
     S.nutrition=day;S.nutritionSavedFoods=saved;
     if(S.route==="nutrition")render();
-  }catch(e){toast(e.message)}
+  }catch(e){toast(e.message)}finally{S.nutritionLoading=false}
 }
 function nutritionProgress(value,target){
   if(!target)return 0;
@@ -1379,8 +1406,14 @@ function workoutbuilder(){
  <div class=stack>${ww.exercises.map((e,i)=>`<div class="card builder-row"><div class=row><div><small>${i+1}</small><h3>${esc(e.name)}</h3></div><div><button data-builder-move="${i}:-1">↑</button><button data-builder-move="${i}:1">↓</button></div></div><div class=builder-fields><label>Sets<input data-builder-sets=${e.exercise_id} type=number min=1 max=12 value=${e.sets}></label><label>Min reps<input data-builder-min=${e.exercise_id} type=number min=1 value=${e.min_reps}></label><label>Max reps<input data-builder-max=${e.exercise_id} type=number min=1 value=${e.max_reps}></label><label>Rest<input data-builder-rest=${e.exercise_id} type=number min=15 step=15 value=${e.rest_seconds||60}></label></div><div class=row><button class="text-action" data-builder-lock="${S.wi}:${e.exercise_id}">${(S.planLocks?.[S.wi]||[]).includes(Number(e.exercise_id))?"🔒 Locked":"Lock exercise"}</button><button class="text-action" data-builder-exclude="${e.exercise_id}:${encodeURIComponent(e.name)}">Never include</button><button class="text-action" data-builder-remove=${e.exercise_id}>Remove</button></div></div>`).join("")}</div>
  <div class=big-spacer></div><button class=btn data-a=builder-add>Add Exercise</button>`;
 }
+function historyRowsMarkup(){
+  if(S.historyLoading&&!S.historyLoaded)return `<div class=card><p class=muted>Loading history…</p></div>`;
+  const rows=S.historyRows||[];
+  if(!rows.length)return `<div class=card><p class=muted>No completed workout history yet.</p></div>`;
+  return rows.map(r=>`<button class=card data-session=${r.session_id} style="width:100%;color:white;text-align:left"><div class=row><div><p class=eyebrow>WEEK ${r.week_number}</p><h3>${esc(r.workout_name)}</h3><p class=muted>${r.total_sets} sets • ${Math.round(r.total_volume)} lb volume</p></div><span>${r.status==="completed"?"✓":"○"}</span></div></button>`).join("");
+}
 function history(){
-return `<div class=row><div><p class=eyebrow>HISTORY</p><h2>Workout History</h2></div><select class=history-filter><option>All</option></select></div><div class=spacer></div><div id=historyList class=stack><div class=card><p class=muted>Loading history…</p></div></div>`;
+return `<div class=row><div><p class=eyebrow>HISTORY</p><h2>Workout History</h2></div><select class=history-filter><option>All</option></select></div><div class=spacer></div><div id=historyList class=stack>${historyRowsMarkup()}</div>`;
 }
 
 function prs(){
@@ -1390,11 +1423,17 @@ return `<p class=eyebrow>PERSONAL RECORDS</p><h2>Personal Records</h2>
 <button class="${S.prView==="lift"?"active":""}" data-pr-view=lift>By Lift Type</button></div>
 ${S.prView==="lift"?`<div class=spacer></div><p class=muted>View your records grouped by movement type.</p>
 <div class=pr-lift-filters>${[["all","All"],["lower","Lower Body"],["upper","Upper Body"],["core","Core"],["conditioning","Conditioning"]].map(([v,l])=>`<button class="${S.prLiftFilter===v?"active":""}" data-pr-lift-filter="${v}">${l}</button>`).join("")}</div>`:""}
-<div class=spacer></div><div id=prList class=stack><div class=card><p class=muted>Loading PRs…</p></div></div>`;
+<div class=spacer></div><div id=prList class=stack>${S.prLoaded?(S.prView==="lift"?renderPRLiftGroups(S.prRecords||[]):renderPRExerciseList(S.prRecords||[])):`<div class=card><p class=muted>Loading PRs…</p></div>`}</div>`;
 }
 
+function exerciseHistoryMarkup(){
+  const data=S.exerciseHistoryData;
+  if(!data||Number(S.exerciseHistoryExerciseId)!==Number(S.historyExercise))return {title:"Exercise",body:`<div class=card><p class=muted>Loading…</p></div>`};
+  const prs=data.prs||{},suggestion=data.progression_suggestion,all=data.sets||[],recent=all.slice(-12),max=Math.max(1,...recent.map(x=>Number(x.e1rm||0)));
+  return {title:data.name,body:`<div class=metrics><div class=metric><strong>${prs.max_weight||0}</strong><span>MAX LB</span></div><div class=metric><strong>${prs.best_e1rm||0}</strong><span>EST. 1RM</span></div><div class=metric><strong>${prs.best_reps||0}</strong><span>BEST REPS</span></div></div><div class=spacer></div>${recent.length?`<div class=card><p class=eyebrow>ESTIMATED 1RM TREND</p><div class=trend-chart>${recent.map((x,i)=>`<div class=trend-col title="${x.weight} lb × ${x.reps}"><i style="height:${Math.max(8,(Number(x.e1rm||0)/max)*100)}%"></i><small>${i+1}</small></div>`).join("")}</div></div>`:""}<div class=spacer></div>${suggestion?`<div class=card><p class=eyebrow>NEXT TARGET</p><h3>${suggestion.action.replaceAll("_"," ")}</h3><p class=muted>Suggested weight: ${suggestion.suggested_weight} lb • Recent avg RPE ${suggestion.recent_average_rpe}</p></div>`:""}<div class=spacer></div><div class=stack>${recent.slice().reverse().map(x=>`<div class=card><div class=row><div><strong>${x.weight} lb × ${x.reps}</strong><p class=muted>${x.workout_name} • RPE ${x.rpe??"—"}</p></div><span>${x.e1rm} e1RM</span></div></div>`).join("")}</div>`};
+}
 function exercisehistory(){
-return `<p class=eyebrow>EXERCISE HISTORY</p><h2 id=ehTitle>Exercise</h2><div class=spacer></div><div class=tabs><button class="tab active">History</button><button class=tab>About</button></div><div id=ehBody class=stack><div class=card><p class=muted>Loading…</p></div></div>`;
+const v=exerciseHistoryMarkup();return `<p class=eyebrow>EXERCISE HISTORY</p><h2 id=ehTitle>${esc(v.title)}</h2><div class=spacer></div><div class=tabs><button class="tab active">History</button><button class=tab>About</button></div><div id=ehBody class=stack>${v.body}</div>`;
 }
 
 
@@ -1443,7 +1482,6 @@ async function loadExerciseRecall(){
     hydrateExerciseRecallInputs(e);
     return;
   }
-  if(S.exerciseRecallLoading)return;
   S.exerciseRecallLoading=true;
   S.exerciseRecallExerciseId=exerciseId;
   S.exerciseRecall=null;
@@ -1467,15 +1505,8 @@ async function loadExerciseRecall(){
 }
 
 async function loadHistory(){
-  try{
-    const rows=await api("/me/history");
-    const el=document.querySelector("#historyList");if(!el)return;
-    if(!rows.length){el.innerHTML=`<div class=card><p class=muted>No completed workout history yet.</p></div>`;return}
-    el.innerHTML=rows.map(r=>`<button class=card data-session=${r.session_id} style="width:100%;color:white;text-align:left">
-      <div class=row><div><p class=eyebrow>WEEK ${r.week_number}</p><h3>${esc(r.workout_name)}</h3>
-      <p class=muted>${r.total_sets} sets • ${Math.round(r.total_volume)} lb volume</p></div>
-      <span>${r.status==="completed"?"✓":"○"}</span></div></button>`).join("");
-  }catch(e){toast(e.message)}
+  if(S.historyLoading||S.historyLoaded)return;S.historyLoading=true;
+  try{S.historyRows=await api("/me/history");S.historyLoaded=true;if(S.route==="history")render()}catch(e){S.historyLoaded=true;toast(e.message)}finally{S.historyLoading=false}
 }
 
 const PR_LIFT_GROUPS=[
@@ -1526,33 +1557,27 @@ document.querySelectorAll("[data-exhist]").forEach(b=>b.onclick=()=>{S.historyEx
 document.querySelectorAll("[data-pr-group]").forEach(b=>b.onclick=()=>{const k=b.dataset.prGroup;S.prCollapsedGroups[k]=!S.prCollapsedGroups[k];renderPRList()});
 }
 async function loadPRs(){
-try{S.prRecords=await api("/me/prs");renderPRList()}catch(e){toast(e.message)}
+  if(S.prLoading||S.prLoaded)return;S.prLoading=true;
+  try{S.prRecords=await api("/me/prs");S.prLoaded=true;if(S.route==="prs")render()}catch(e){S.prLoaded=true;toast(e.message)}finally{S.prLoading=false}
 }
 
 async function loadExerciseHistory(){
+  const exerciseId=Number(S.historyExercise||0);if(!exerciseId)return;
+  if(Number(S.exerciseHistoryExerciseId)===exerciseId&&(S.exerciseHistoryData||S.exerciseHistoryLoading))return;
+  S.exerciseHistoryExerciseId=exerciseId;S.exerciseHistoryLoading=true;S.exerciseHistoryData=null;
   try{
-    const data=await api(`/me/exercises/${S.historyExercise}/history`);
-    const t=document.querySelector("#ehTitle"),b=document.querySelector("#ehBody");if(!t||!b)return;
-    t.textContent=data.name;
-    const prs=data.prs||{},suggestion=data.progression_suggestion;
-    const all=data.sets||[],recent=all.slice(-12);
-    const max=Math.max(1,...recent.map(x=>Number(x.e1rm||0)));
-    b.innerHTML=`<div class=metrics>
-      <div class=metric><strong>${prs.max_weight||0}</strong><span>MAX LB</span></div>
-      <div class=metric><strong>${prs.best_e1rm||0}</strong><span>EST. 1RM</span></div>
-      <div class=metric><strong>${prs.best_reps||0}</strong><span>BEST REPS</span></div></div>
-      <div class=spacer></div>
-      ${recent.length?`<div class=card><p class=eyebrow>ESTIMATED 1RM TREND</p><div class=trend-chart>${recent.map((x,i)=>`<div class=trend-col title="${x.weight} lb × ${x.reps}"><i style="height:${Math.max(8,(Number(x.e1rm||0)/max)*100)}%"></i><small>${i+1}</small></div>`).join("")}</div></div>`:""}
-      <div class=spacer></div>
-      ${suggestion?`<div class=card><p class=eyebrow>NEXT TARGET</p><h3>${suggestion.action.replaceAll("_"," ")}</h3><p class=muted>Suggested weight: ${suggestion.suggested_weight} lb • Recent avg RPE ${suggestion.recent_average_rpe}</p></div>`:""}
-      <div class=spacer></div><div class=stack>${recent.slice().reverse().map(x=>`<div class=card><div class=row><div><strong>${x.weight} lb × ${x.reps}</strong><p class=muted>${x.workout_name} • RPE ${x.rpe??"—"}</p></div><span>${x.e1rm} e1RM</span></div></div>`).join("")}</div>`;
-  }catch(e){toast(e.message)}
+    const data=await api(`/me/exercises/${exerciseId}/history`);
+    if(Number(S.exerciseHistoryExerciseId)!==exerciseId)return;
+    S.exerciseHistoryData=data;S.exerciseHistoryLoading=false;
+    if(S.route==="exercisehistory"&&Number(S.historyExercise)===exerciseId)render();
+  }catch(e){if(Number(S.exerciseHistoryExerciseId)===exerciseId)S.exerciseHistoryData={name:"Exercise",prs:{},sets:[],progression_suggestion:null};toast(e.message)}
+  finally{if(Number(S.exerciseHistoryExerciseId)===exerciseId)S.exerciseHistoryLoading=false}
 }
 
-
 async function loadProgressHub(){
-  if(!authToken)return;
-  try{S.progressHub=await api("/me/progress/hub");if(S.route==="progress")render()}catch(e){console.warn("Progress hub load failed",e)}
+  if(!authToken||S.progressHubLoading||S.progressHub)return;
+  S.progressHubLoading=true;
+  try{S.progressHub=await api("/me/progress/hub");if(S.route==="progress")render()}catch(e){console.warn("Progress hub load failed",e)}finally{S.progressHubLoading=false}
 }
 function progressHubOverview(){
   const h=S.progressHub;if(!h)return `<div class="card progress-hub-card"><p class=eyebrow>PROGRESS HUB</p><h3>Connecting your training data…</h3></div>`;
@@ -1569,10 +1594,12 @@ function progressHubOverview(){
 }
 
 async function loadProgressIntelligence(){
+  if(S.progressIntelligenceLoading)return;
+  S.progressIntelligenceLoading=true;
   try{
     S.progressIntelligence=await api("/me/progress/intelligence");
     if(S.route==="progress")render();
-  }catch(e){console.warn("Progress intelligence failed",e)}
+  }catch(e){console.warn("Progress intelligence failed",e)}finally{S.progressIntelligenceLoading=false}
 }
 function progressIntelligenceCard(){
   const x=S.progressIntelligence;
@@ -1587,10 +1614,12 @@ function progressIntelligenceCard(){
 }
 
 async function loadBodyMetrics(){
+  if(S.bodyMetricsLoading)return;
+  S.bodyMetricsLoading=true;
   try{
     S.bodyMetrics=await api(`/me/body-metrics?range_days=${encodeURIComponent(S.bodyMetricRange)}`);
     if(S.route==="progress")render();
-  }catch(e){console.warn("Body metrics load failed",e)}
+  }catch(e){console.warn("Body metrics load failed",e)}finally{S.bodyMetricsLoading=false}
 }
 function bodyMetricChart(metric,label,unit){
   const pts=S.bodyMetrics?.metrics?.[metric]?.points||[];
@@ -1730,7 +1759,8 @@ function renderStrengthPointDetail(data,index){
 }
 
 async function loadStrengthTrend(){
-  if(!authToken)return;
+  if(!authToken||S.strengthTrendLoading)return;
+  S.strengthTrendLoading=true;
   const exercise=S.strengthExercise==="overall"?"":`&exercise_id=${encodeURIComponent(S.strengthExercise)}`;
   try{
     const data=await api(`/me/strength-trend?range_days=${encodeURIComponent(S.strengthRange)}${exercise}`);
@@ -1742,13 +1772,14 @@ async function loadStrengthTrend(){
     console.warn("Strength trend load failed",e);
     S.strengthTrend={points:[],exercises:[],summary:{data_points:0,change_percent:0,current:0,best:0},title:"Strength Progress",unit:"percent",mode:"overall"};
     if(S.route==="progress")render();
-  }
+  }finally{S.strengthTrendLoading=false}
 }
 
 
 async function loadCoachBriefing(){
-  if(!authToken)return;
-  try{S.coachBriefing=await api("/me/coach/briefing");if(S.route==="coach")render()}catch(e){console.warn("Coach briefing failed",e)}
+  if(!authToken||S.coachBriefingLoading||S.coachBriefing)return;
+  S.coachBriefingLoading=true;
+  try{S.coachBriefing=await api("/me/coach/briefing");if(S.route==="coach")render()}catch(e){console.warn("Coach briefing failed",e)}finally{S.coachBriefingLoading=false}
 }
 function coachBriefingCard(){
   const b=S.coachBriefing;if(!b)return `<div class="card coach-briefing"><p class=eyebrow>WHOLE-DAY CONTEXT</p><h3>Building your training picture…</h3></div>`;
@@ -1820,13 +1851,14 @@ ${(S.coachAction.preview?.warnings||[]).map(x=>`<p class=coach-warning>⚠ ${esc
 }
 
 async function loadCoach(){
-  if(!authToken)return;
+  if(!authToken||S.coachLoading||S.coachLoaded)return;
+  S.coachLoading=true;
   try{
     const [messages,context,status]=await Promise.all([api("/me/coach/history"),api("/me/coach/context"),api("/me/coach/status")]);
     S.coachMessages=(messages||[]).map(x=>({role:x.role==="assistant"?"ai":"user",text:x.message}));
     S.coachContext=context;S.coachStatus=status;S.coachLoaded=true;
     if(S.route==="coach")render();
-  }catch(e){console.warn("Coach load failed",e)}
+  }catch(e){console.warn("Coach load failed",e)}finally{S.coachLoading=false}
 }
 async function sendCoach(textOverride=null){
   const input=document.querySelector("#coachInput");
@@ -1860,13 +1892,14 @@ async function applyCoachAction(){
 }
 
 
-async function loadRecoveryIntelligence(){try{S.recoveryIntelligence=await api("/me/recovery-intelligence");if(S.route==="plan")render()}catch(e){console.warn("Recovery intelligence failed",e)}}
+async function loadRecoveryIntelligence(){if(S.recoveryIntelligenceLoading||S.recoveryIntelligence)return;S.recoveryIntelligenceLoading=true;try{S.recoveryIntelligence=await api("/me/recovery-intelligence");if(S.route==="plan")render()}catch(e){console.warn("Recovery intelligence failed",e)}finally{S.recoveryIntelligenceLoading=false}}
 async function loadAdaptationPreview(){
-  if(!authToken||!plan)return;
+  if(!authToken||!plan||S.adaptationPreviewLoading||S.adaptationPreview)return;
+  S.adaptationPreviewLoading=true;
   try{
     S.adaptationPreview=await api("/me/program/adaptation-preview");
     if(S.route==="plan")render();
-  }catch(e){console.warn("Adaptation preview failed",e)}
+  }catch(e){console.warn("Adaptation preview failed",e)}finally{S.adaptationPreviewLoading=false}
 }
 async function applyAdaptiveWeek(){
   if(S.adaptationBusy)return;
@@ -1993,8 +2026,9 @@ function adjustplan(){
 
 
 async function loadSystemHealth(){
-  if(!authToken)return;
-  try{S.systemHealth=await api("/me/system/health");if(S.route==="trainingsettings")render()}catch(e){S.systemHealth={status:"degraded",checks:{api:false},message:e.message};if(S.route==="trainingsettings")render()}
+  if(!authToken||S.systemHealthLoading||S.systemHealth)return;
+  S.systemHealthLoading=true;
+  try{S.systemHealth=await api("/me/system/health");if(S.route==="trainingsettings")render()}catch(e){S.systemHealth={status:"degraded",checks:{api:false},message:e.message};if(S.route==="trainingsettings")render()}finally{S.systemHealthLoading=false}
 }
 function systemHealthCard(){
   const h=S.systemHealth;if(!h)return `<div class=card><p class=eyebrow>SYSTEM HEALTH</p><h3>Checking Forge…</h3></div>`;
@@ -2052,7 +2086,7 @@ window.ForgeLegacyViews=Object.assign(window.ForgeLegacyViews||{},{coach:()=>coa
 function render(){const map={welcome,register,login,goal,experience,schedule,equipment,preferences,preferencepicker,cardiopicker,cardiofrequencypicker,splitpicker,customsplit,sportpicker,corepicker,trainingsettings,adjustplan,calendarsettings,generating,yourplan,home,readiness:readinessCheckin,workout,exercise,timer,complete,progress,nutrition,nutritionadd,workoutbuilder,history,prs,exercisehistory,swapexercise,cardioswap,modulemove,coretracker,cardiotracker,coach,notifications:notificationCenter,equipmentlog,equipmentdetails,exercisedirectory,exercisedetail,formdemo,demoaudit,demoreview,plan:planScreen};V.innerHTML=networkBanner()+updateBanner()+(ForgeFeatures.has(S.route)?ForgeFeatures.view(S.route):map[S.route]())+floatingRestTimer()+moreSheet();const onboarding=["welcome","register","login","goal","experience","schedule","equipment","equipmentdetails","preferences","preferencepicker","cardiopicker","cardiofrequencypicker","splitpicker","sportpicker","corepicker","customsplit","generating","yourplan"].includes(S.route)&&!plan;nav.classList.toggle("hidden",onboarding);document.querySelector("#backBtn").style.visibility=["welcome","home","progress","nutrition","coach"].includes(S.route)?"hidden":"visible";document.querySelectorAll("[data-plan-tab]").forEach(b=>b.onclick=()=>{S.planTab=b.dataset.planTab;render()});document.querySelectorAll("[data-coach-route]").forEach(b=>b.onclick=()=>go(b.dataset.coachRoute));
 document.querySelectorAll("[data-readiness-key]").forEach(b=>b.onclick=()=>{S.readinessCheckin=S.readinessCheckin||{};S.readinessCheckin[b.dataset.readinessKey]=Number(b.dataset.readinessValue);render()});
 document.querySelectorAll("[data-readiness-minutes]").forEach(b=>b.onclick=()=>{S.readinessCheckin=S.readinessCheckin||{};S.readinessCheckin.minutes=Number(b.dataset.readinessMinutes);render()});
-document.querySelectorAll("[data-swap-reason]").forEach(b=>b.onclick=()=>{S.swapReason=b.dataset.swapReason;render();loadSwapOptions()});
+document.querySelectorAll("[data-swap-reason]").forEach(b=>b.onclick=()=>{if(S.swapReason===b.dataset.swapReason)return;S.swapReason=b.dataset.swapReason;S.swapOptionsKey=null;S.swapOptionsLoaded=false;S.swapOptions=[];S.selectedSwap=null;render();loadSwapOptions()});document.querySelectorAll("[data-swap]").forEach(b=>b.onclick=()=>{S.selectedSwap=Number(b.dataset.swap);document.querySelectorAll("[data-swap]").forEach(x=>x.classList.toggle("selected",x===b))});document.querySelectorAll("[data-cardio-swap]").forEach(b=>b.onclick=()=>{S.selectedCardioSwap=Number(b.dataset.cardioSwap);document.querySelectorAll("[data-cardio-swap]").forEach(x=>x.classList.toggle("selected",x===b))});
 document.body.dataset.route=S.route;document.querySelectorAll("[data-nav]").forEach(b=>{const active=b.dataset.nav===S.route;b.classList.toggle("active",active);if(active)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");b.onclick=()=>go(b.dataset.nav)});document.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>act(b.dataset.a));document.querySelectorAll("[data-goal]").forEach(b=>b.onclick=()=>{profile.goal=b.dataset.goal;render()});document.querySelectorAll("[data-exp]").forEach(b=>b.onclick=()=>{profile.experience=b.dataset.exp;render()});document.querySelectorAll("[data-days]").forEach(b=>b.onclick=()=>{profile.days_per_week=+b.dataset.days;profile.core_workouts_per_week=Math.min(profile.core_workouts_per_week,profile.days_per_week);profile.cardio_workouts_per_week=Math.min(profile.cardio_workouts_per_week,profile.days_per_week);if(profile.workout_split==="custom")ensureCustomSplit();render()});document.querySelectorAll("[data-mins]").forEach(b=>b.onclick=()=>{profile.minutes_per_workout=+b.dataset.mins;render()});document.querySelectorAll("[data-exercise-count]").forEach(b=>b.onclick=()=>{profile.exercises_per_day=+b.dataset.exerciseCount;render()});document.querySelectorAll("[data-setchange]").forEach(b=>b.onclick=async()=>{const ex=w()?.exercises?.[S.ei];if(!ex)return;const next=Math.max(S.set+1,Math.min(12,Number(ex.sets)+Number(b.dataset.setchange)));if(next===ex.sets)return;try{await api(`/me/workouts/${w().workout_id}/exercise-sets`,{method:"PUT",body:JSON.stringify({exercise_id:ex.exercise_id,sets:next})});ex.sets=next;toast(`${next} sets planned`);render()}catch(e){toast(e.message)}});document.querySelectorAll("[data-adjust-days]").forEach(b=>b.onclick=()=>{profile.days_per_week=+b.dataset.adjustDays;profile.core_workouts_per_week=Math.min(profile.core_workouts_per_week,profile.days_per_week);profile.cardio_workouts_per_week=Math.min(profile.cardio_workouts_per_week,profile.days_per_week);if(profile.workout_split==="custom")ensureCustomSplit();S.preferredDays=S.preferredDays.slice(0,profile.days_per_week);render()});document.querySelectorAll("[data-adjust-mins]").forEach(b=>b.onclick=()=>{profile.minutes_per_workout=+b.dataset.adjustMins;render()});document.querySelectorAll("[data-adjust-exercises]").forEach(b=>b.onclick=()=>{profile.exercises_per_day=+b.dataset.adjustExercises;render()});document.querySelectorAll("[data-day-exercises]").forEach(el=>el.onchange=()=>{profile.exercises_per_workout=profile.exercises_per_workout||[];profile.exercises_per_workout[+el.dataset.dayExercises]=+el.value;S.planPreview=null;render()});document.querySelectorAll("[data-preferred-day]").forEach(b=>b.onclick=()=>{const d=+b.dataset.preferredDay,i=S.preferredDays.indexOf(d);if(i>=0)S.preferredDays.splice(i,1);else if(S.preferredDays.length<profile.days_per_week)S.preferredDays.push(d);else{toast(`Choose ${profile.days_per_week} days`);return}render()});document.querySelectorAll("[data-cardio]").forEach(b=>b.onclick=()=>{profile.cardio_preference=b.dataset.cardio;render()});document.querySelectorAll("[data-split]").forEach(b=>b.onclick=()=>{profile.workout_split=b.dataset.split;if(profile.workout_split==="custom"){ensureCustomSplit();go("customsplit")}else render()});document.querySelectorAll("[data-custom-muscle]").forEach(b=>b.onclick=()=>{const [raw,m]=b.dataset.customMuscle.split(":");const i=Number(raw);ensureCustomSplit();const day=profile.custom_split[i],arr=day.muscles,at=arr.indexOf(m);if(at>=0){if(arr.length===1){toast("Each custom day needs at least one muscle group");return}arr.splice(at,1);if(day.submuscles)delete day.submuscles[m]}else arr.push(m);day.name=customDayName(arr,i);render()});document.querySelectorAll("[data-custom-submuscle]").forEach(b=>b.onclick=()=>{const [raw,m,sub]=b.dataset.customSubmuscle.split(":");const i=Number(raw);ensureCustomSplit();const day=profile.custom_split[i];day.submuscles=day.submuscles||{};const arr=day.submuscles[m]||[];const at=arr.indexOf(sub);if(at>=0)arr.splice(at,1);else arr.push(sub);if(arr.length)day.submuscles[m]=arr;else delete day.submuscles[m];render()});document.querySelectorAll("[data-custom-frequency]").forEach(b=>b.onclick=()=>{const [m,raw]=b.dataset.customFrequency.split(":");adjustCustomMuscleFrequency(m,Number(raw));render()});document.querySelectorAll("[data-custom-priority]").forEach(b=>b.onclick=()=>{const m=b.dataset.customPriority;profile.priority_muscles=profile.priority_muscles||[];const i=profile.priority_muscles.indexOf(m);if(i>=0)profile.priority_muscles.splice(i,1);else profile.priority_muscles.push(m);render()});
 document.querySelectorAll("[data-sport]").forEach(b=>b.onclick=()=>{profile.sport=b.dataset.sport;render()});document.querySelectorAll("[data-core-frequency]").forEach(b=>b.onclick=()=>{profile.core_workouts_per_week=Math.min(+b.dataset.coreFrequency,+profile.days_per_week);render()});document.querySelectorAll("[data-cardio-frequency]").forEach(b=>b.onclick=()=>{profile.cardio_workouts_per_week=Math.min(+b.dataset.cardioFrequency,+profile.days_per_week);if(!["light","moderate","high","extended"].includes(profile.cardio_preference))profile.cardio_preference="moderate";render()});const nutritionDate=document.querySelector("#nutritionDate");
 if(nutritionDate)nutritionDate.onchange=()=>{S.nutritionDate=nutritionDate.value;S.nutrition=null;loadNutrition();};
@@ -2061,7 +2095,7 @@ document.querySelectorAll("[data-nutrition-edit]").forEach(b=>b.onclick=async()=
 document.querySelectorAll("[data-nutrition-quicklog]").forEach(b=>b.onclick=async()=>{await api(`/me/nutrition/saved-foods/${b.dataset.nutritionQuicklog}/quick-log`,{method:"POST",body:JSON.stringify({entry_date:nutritionDateValue(),meal_type:"Meal"})});S.nutrition=null;await loadNutrition();toast("Saved food logged");});
 document.querySelectorAll("[data-notification-dismiss]").forEach(b=>b.onclick=async()=>{await api("/me/notifications/dismiss",{method:"POST",body:JSON.stringify({notification_key:b.dataset.notificationDismiss})});await loadNotifications()});
 document.querySelectorAll("[data-pr-view]").forEach(b=>b.onclick=()=>{S.prView=b.dataset.prView;render();});
-document.querySelectorAll("[data-pr-lift-filter]").forEach(b=>b.onclick=()=>{S.prLiftFilter=b.dataset.prLiftFilter;render();});
+document.querySelectorAll("[data-pr-lift-filter]").forEach(b=>b.onclick=()=>{S.prLiftFilter=b.dataset.prLiftFilter;render();});document.querySelectorAll("[data-exhist]").forEach(b=>b.onclick=()=>{S.historyExercise=Number(b.dataset.exhist);go("exercisehistory")});document.querySelectorAll("[data-pr-group]").forEach(b=>b.onclick=()=>{const k=b.dataset.prGroup;S.prCollapsedGroups[k]=!S.prCollapsedGroups[k];render()});
 document.querySelectorAll("[data-body-range]").forEach(b=>b.onclick=()=>{S.bodyMetricRange=b.dataset.bodyRange;loadBodyMetrics()});
 document.querySelectorAll("[data-body-delete]").forEach(b=>b.onclick=async()=>{if(confirm("Delete this body check-in?")){await api(`/me/body-metrics/${b.dataset.bodyDelete}`,{method:"DELETE"});await loadBodyMetrics();loadProgressIntelligence();toast("Check-in deleted")}});
 
