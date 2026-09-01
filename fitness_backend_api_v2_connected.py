@@ -2238,7 +2238,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"14.94.0"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"15.0.0"}
 
 
 @app.get("/me/coach/briefing")
@@ -3046,6 +3046,30 @@ def set_programming_authority(req: ProgrammingAuthorityRequest, authorization: O
 @app.get("/me/training/strategy-dashboard")
 def me_strategy_dashboard(authorization: Optional[str]=Header(None)):
     user=_current_account(authorization); return strategy_intelligence_v14.strategy_dashboard(user["user_id"],DB_PATH)
+
+@app.get("/me/training/response")
+def me_training_response(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); return training_intelligence_v14.training_response_engine(user["user_id"],DB_PATH)
+
+@app.get("/me/training/muscle-response")
+def me_muscle_response(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); return training_intelligence_v14.muscle_response_model(user["user_id"],DB_PATH)
+
+@app.get("/me/training/exercise-effectiveness")
+def me_exercise_effectiveness(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); return training_intelligence_v14.exercise_effectiveness_engine(user["user_id"],DB_PATH)
+
+@app.get("/me/training/program-optimizer")
+def me_program_optimizer(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); return training_intelligence_v14.adaptive_program_optimizer(user["user_id"],DB_PATH)
+
+@app.get("/me/training/program-review")
+def me_program_review(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); return training_intelligence_v14.program_review(user["user_id"],DB_PATH)
+
+@app.get("/me/training/adaptive-system")
+def me_adaptive_system(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization); return training_intelligence_v14.adaptive_training_system(user["user_id"],DB_PATH)
 
 # ---------------------------------------------------------
 # Forge PWA frontend

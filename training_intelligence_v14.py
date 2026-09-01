@@ -364,3 +364,93 @@ def explainable_programming(user_id,db_path):
                       "applied":d.get("applied")})
     return {"version":"1.0","governance":gov,"cards":cards,
             "legend":{"session":"Today only","week":"Current/next training week","program":"Persistent programming change"}}
+
+def training_response_engine(user_id,db_path):
+    """Close the loop between prescriptions, completed work, effort, and prior Forge decisions."""
+    plan,exercises=_current_exercises(user_id,db_path)
+    decisions=database.list_programming_decisions(user_id,120,db_path)
+    rows=[]
+    for e in exercises:
+        try: ps=progression_strategy(user_id,e["exercise_id"],db_path)
+        except Exception: ps={}
+        hist=database.get_exercise_history(user_id,e["exercise_id"],12,db_path) or []
+        completed=len(hist); avg_rpe=round(sum(float(x.get("rpe") or 0) for x in hist)/completed,1) if completed else None
+        success=(ps.get("status")=="progressing")
+        rows.append({"exercise_id":e["exercise_id"],"name":e.get("name"),"exposures":completed,
+                     "progression_status":ps.get("status","new"),"avg_rpe":avg_rpe,
+                     "response":"positive" if success else "negative" if ps.get("status")=="regressing" else "neutral",
+                     "decision_success":success if completed>=3 else None,
+                     "fatigue_efficiency":"favorable" if success and (avg_rpe or 0)<=8.5 else "review" if completed>=3 else "learning"})
+    return {"version":"1.0","loop":"prescription -> performance -> recovery -> response","exercises":rows,
+            "decisions_evaluated":len(decisions),"evidence_policy":"Persistent conclusions require repeated exposures."}
+
+def muscle_response_model(user_id,db_path):
+    dev=muscle_development_intelligence(user_id,db_path); resp=training_response_engine(user_id,db_path)
+    _,exercises=_current_exercises(user_id,db_path); emap=_muscle_map(db_path)
+    by_id={x["exercise_id"]:x for x in resp["exercises"]}; out=[]
+    for m in dev.get("muscles",[]):
+        name=m.get("muscle") or m.get("name"); related=[]
+        for e in exercises:
+            targets=emap.get(e["exercise_id"],[])
+            if any((t.get("broad_muscle")==name or t.get("muscle")==name) for t in targets): related.append(by_id.get(e["exercise_id"],{}))
+        pos=sum(x.get("response")=="positive" for x in related); neg=sum(x.get("response")=="negative" for x in related)
+        observed=len([x for x in related if x.get("exposures",0)>=3])
+        state="responding" if pos>neg and observed else "stalled" if neg>pos and observed else "learning"
+        out.append({"muscle":name,"state":state,"observed_exercises":observed,"positive_signals":pos,"negative_signals":neg,
+                    "confidence":"high" if observed>=3 else "medium" if observed>=1 else "low",
+                    "volume_status":m.get("status"),"recommendation":"preserve" if state=="responding" else "review programming" if state=="stalled" else "collect more data"})
+    return {"version":"1.0","muscles":out,"principle":"Observed individual response modifies generic volume assumptions only after repeated evidence."}
+
+def exercise_effectiveness_engine(user_id,db_path):
+    resp=training_response_engine(user_id,db_path); rot=rotation_plateau_engine(user_id,db_path)
+    rmap={x["exercise_id"]:x for x in rot.get("exercises",[])}; rows=[]
+    for x in resp["exercises"]:
+        rr=rmap.get(x["exercise_id"],{}); score=50
+        score+=18 if x["response"]=="positive" else -15 if x["response"]=="negative" else 0
+        score+=10 if x["fatigue_efficiency"]=="favorable" else -6 if x["fatigue_efficiency"]=="review" else 0
+        score+=10 if rr.get("recommendation")=="retain" else -12 if rr.get("recommendation")=="rotate" else 0
+        score+=min(12,int(x.get("exposures") or 0))
+        score=max(0,min(100,score))
+        rows.append({"exercise_id":x["exercise_id"],"name":x["name"],"effectiveness_score":score,
+                     "tier":"excellent" if score>=80 else "productive" if score>=65 else "learning" if score>=45 else "review",
+                     "response":x["response"],"fatigue_efficiency":x["fatigue_efficiency"],
+                     "rotation":rr.get("recommendation","retain")})
+    rows.sort(key=lambda z:z["effectiveness_score"],reverse=True)
+    return {"version":"1.0","exercises":rows,"formula":"progress + consistency + fatigue efficiency + retention evidence"}
+
+def adaptive_program_optimizer(user_id,db_path):
+    strategy=database.get_training_strategy_state(user_id,db_path); authority=database.get_programming_authority(user_id,db_path)
+    muscles=muscle_response_model(user_id,db_path); eff=exercise_effectiveness_engine(user_id,db_path); forecast=recovery_forecast(user_id,db_path)
+    changes=[]
+    for m in muscles["muscles"]:
+        if m["state"]=="stalled" and m["confidence"]!="low":
+            changes.append({"type":"muscle_programming","target":m["muscle"],"action":"review_volume_or_frequency","domain":"weekly_volume","evidence":f'{m["negative_signals"]} negative response signals'})
+    for e in eff["exercises"]:
+        if e["tier"]=="review":
+            changes.append({"type":"exercise_rotation","target":e["name"],"action":"consider_rotation","domain":"exercise_substitutions","evidence":f'Effectiveness score {e["effectiveness_score"]}'})
+    if forecast["next_session_mode"]=="recovery":
+        changes.append({"type":"recovery","target":"next session","action":"reduce_demand","domain":"set_count","evidence":"Recovery forecast is elevated"})
+    for c in changes:
+        c["authority"]=authority.get(c["domain"],"recommend_only")
+        c["may_auto_apply"]=c["authority"]=="auto_apply"
+    return {"version":"1.0","strategy":strategy,"recommendations":changes,
+            "authority":authority,"rule":"Optimization never exceeds the user-selected authority for its domain."}
+
+def program_review(user_id,db_path):
+    opt=adaptive_program_optimizer(user_id,db_path); muscles=muscle_response_model(user_id,db_path); eff=exercise_effectiveness_engine(user_id,db_path)
+    wins=[m for m in muscles["muscles"] if m["state"]=="responding"][:5]
+    concerns=[m for m in muscles["muscles"] if m["state"]=="stalled"][:5]
+    keep=[e for e in eff["exercises"] if e["tier"] in {"excellent","productive"}][:6]
+    review=[e for e in eff["exercises"] if e["tier"]=="review"][:6]
+    return {"version":"1.0","last_block":{"responding_muscles":wins,"concerns":concerns},
+            "next_block":{"keep_exercises":keep,"review_exercises":review,"proposed_changes":opt["recommendations"]},
+            "explainability":"Every proposed change includes evidence and the authority mode controlling whether it can be applied."}
+
+def adaptive_training_system(user_id,db_path):
+    return {"version":"15.0.0","architecture":["profile","plan","workout","performance","recovery","response","strategy","next_plan"],
+            "strategy":database.get_training_strategy_state(user_id,db_path),
+            "governance":decision_governance(user_id,db_path),"response":training_response_engine(user_id,db_path),
+            "muscle_response":muscle_response_model(user_id,db_path),"exercise_effectiveness":exercise_effectiveness_engine(user_id,db_path),
+            "optimizer":adaptive_program_optimizer(user_id,db_path),"program_review":program_review(user_id,db_path),
+            "authority":database.get_programming_authority(user_id,db_path),
+            "principles":["backend-authoritative session state","evidence before persistent adaptation","user authority gates every automatic programming domain","all meaningful changes remain explainable"]}

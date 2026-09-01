@@ -73,8 +73,6 @@ startCalendarPolling();
 }catch{}
 S.route=plan?"home":"goal";
 if(plan){await restoreSession();await reconcileSession({silent:true});}
-// App launches always land on Home. An active workout remains resumable,
-// but it no longer hijacks startup and opens a random exercise/rest screen.
 if(plan)S.route="home";
 if(new URLSearchParams(location.search).get("return_to")==="calendar"&&plan)S.route="calendarsettings";
 }catch{
@@ -98,7 +96,6 @@ const remain=Math.max(0,Number(s.rest_duration_seconds)-elapsed);
 if(remain>0){S.restRemaining=remain;S.restTotal=Number(s.rest_duration_seconds);return;}
 try{await api("/me/session/rest/clear",{method:"POST",body:JSON.stringify({session_id:s.session_id})})}catch{}
 }
-// Preserve the active session/position only. Startup routing is handled by loadExisting().
 }catch(e){console.warn("Session restore failed",e)}
 }
 async function reconcileSession({silent=false}={}){
@@ -2472,5 +2469,4 @@ const u=d.providers?.usda||{}, o=d.providers?.openfoodfacts||{};
 alert(`Nutrition Providers\nUSDA: ${u.status||"unknown"} — ${u.detail||""}\nOpen Food Facts: ${o.status||"unknown"} — ${o.detail||""}`);
 }catch(err){ alert("Could not check nutrition provider status: "+err.message); }
 });
-// v14.39.0: keep current-week form media warm without blocking the workout UI.
 window.addEventListener("online",()=>{if(authToken&&plan)cacheCurrentPlanDemos(true)});
