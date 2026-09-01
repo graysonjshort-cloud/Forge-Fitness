@@ -57,8 +57,8 @@ subprocess.run(["node","--check",str(ROOT/"app.js")],check=True,capture_output=T
 for module in sorted((ROOT/"js").glob("*.js")):
     subprocess.run(["node","--check",str(module)],check=True,capture_output=True,text=True)
 for name in ["forge_core.js","forge_api.js","forge_equipment.js","forge_pwa.js"]:
-    assert f'/js/{name}?v=15.10.0' in index, f"Missing module script: {name}"
-assert '/app.js?v=15.10.0' in index
+    assert f'/js/{name}?v=15.10.1' in index, f"Missing module script: {name}"
+assert '/app.js?v=15.10.1' in index
 assert len(app) < 250000, "app.js modularization regression"
 assert 'function normalizedExerciseTargets()' in app, "Sparse exercise target normalization missing"
 assert 'exercises_per_workout:normalizedExerciseTargets()' in app, "Rebuild payload must normalize per-workout targets"

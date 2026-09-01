@@ -1,6 +1,6 @@
 {
-  "version": "15.10.0",
-  "channel": "production-candidate",
+  "version": "15.10.1",
+  "channel": "production-candidate-patch",
   "feature_freeze": true,
   "required_flows": [
     "generate-edit-start-log-swap-reload-resume-finish",
@@ -25,5 +25,11 @@
     "unrecoverable stale workout state",
     "service worker missing current JS module",
     "app.js >= 250000 bytes"
+  ],
+  "patch_focus": [
+    "UI readability",
+    "pathway integrity",
+    "rest timer override fix",
+    "restore active-workout set controls"
   ]
 }

@@ -1478,3 +1478,55 @@ body.keyboard-open #view{padding-bottom:max(20px,var(--keyboard-inset))}
 @media(max-width:340px){.bottom-nav{gap:1px}.bottom-nav button{padding-left:2px;padding-right:2px}.bottom-nav small{font-size:8px}.focus-workout-top h1{font-size:21px}.home-quick-actions{grid-template-columns:1fr}}
 @media(min-width:700px){.phone-shell{max-width:760px;margin-inline:auto}}
 @media(display-mode:standalone){.topbar{padding-top:max(12px,var(--safe-top))}body{user-select:none}input,textarea{user-select:text}}
+
+/* v15.10.1 — UI rhythm, readability, and restored set controls */
+#view{line-height:1.45}
+h1,h2,h3{line-height:1.14;letter-spacing:-.012em}
+p{line-height:1.52}
+.muted{line-height:1.5}
+.eyebrow{line-height:1.35;letter-spacing:.11em}
+.row{gap:12px}
+.card{padding:15px}
+.card>p:last-child{margin-bottom:0}
+.section-heading{margin-top:22px;margin-bottom:10px}
+.exercise-list{display:grid;gap:9px}
+.exercise-item{grid-template-columns:30px minmax(0,1fr) 18px;gap:11px;padding:12px}
+.exercise-item-copy{display:grid;gap:7px;min-width:0;text-align:left}
+.exercise-item-copy strong{font-size:13px;line-height:1.25;white-space:normal}
+.exercise-meta{display:flex;gap:6px;flex-wrap:wrap}
+.exercise-meta small{font-size:9px;line-height:1.2;padding:4px 7px;border-radius:999px;background:#191f25;border:1px solid #293039;color:#aeb7c0}
+.exercise-chevron{align-self:center;color:#77818b;font-size:18px}
+.focus-workout-top{margin-bottom:14px}
+.focus-workout-top>div{min-width:0}
+.focus-workout-top h1{overflow-wrap:anywhere}
+.focus-prescription{display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:10px;margin-bottom:14px}
+.focus-prescription .focus-target{margin:0;min-width:0}
+.set-count-control{background:#11161b;border:1px solid #303842;border-radius:14px;padding:12px;display:flex;flex-direction:column;justify-content:center;gap:7px}
+.set-count-control>small{font-size:8px;font-weight:900;color:#aeb7c0;letter-spacing:.08em}
+.set-count-control>div{display:grid;grid-template-columns:34px 1fr 34px;gap:7px;align-items:center}
+.set-count-control button{min-width:34px;min-height:34px;border-radius:9px;border:1px solid #3a434d;background:#1c2228;color:#fff;font-size:20px;font-weight:800}
+.set-count-control button:disabled{opacity:.35}
+.set-count-control b{text-align:center;font-size:21px}
+.set-count-control>span{font-size:8.5px;color:#87929d;line-height:1.25}
+.focus-previous .card{padding:13px}
+.focus-inputs{margin:14px 0}
+.focus-effort{margin:14px 0}
+.focus-secondary{margin-top:4px}
+.focus-secondary>.card,.focus-secondary>details{margin:0}
+.forge-adjustment summary b{line-height:1.3}
+.notification-card p,.nutrition-saved-card p,.training-module-card p{line-height:1.45}
+.more-sheet button small{line-height:1.35}
+@media(max-width:390px){
+  .card{padding:14px}
+  .focus-prescription{grid-template-columns:1fr}
+  .set-count-control{display:grid;grid-template-columns:1fr auto;align-items:center}
+  .set-count-control>small,.set-count-control>span{grid-column:1}
+  .set-count-control>div{grid-column:2;grid-row:1 / span 2;min-width:112px}
+  .exercise-item{padding:11px}
+  .exercise-meta small{font-size:8.5px}
+}
+@media(max-width:340px){
+  .focus-workout-top{grid-template-columns:34px minmax(0,1fr) 44px;gap:8px}
+  .focus-prescription{gap:8px}
+  .exercise-meta{gap:4px}
+}
