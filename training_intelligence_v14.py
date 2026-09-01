@@ -454,3 +454,62 @@ def adaptive_training_system(user_id,db_path):
             "optimizer":adaptive_program_optimizer(user_id,db_path),"program_review":program_review(user_id,db_path),
             "authority":database.get_programming_authority(user_id,db_path),
             "principles":["backend-authoritative session state","evidence before persistent adaptation","user authority gates every automatic programming domain","all meaningful changes remain explainable"]}
+
+def persistent_adaptation_candidates(user_id,db_path):
+    """v15.1: evidence-gated persistent progression proposals for the active plan."""
+    _,exercises=_current_exercises(user_id,db_path)
+    authority=database.get_programming_authority(user_id,db_path)
+    rows=[]
+    seen=set()
+    actionable={'increase_load','reduce_load','add_reps','increase_duration','reduce_duration'}
+    for e in exercises:
+        eid=int(e.get('exercise_id') or 0)
+        if not eid or eid in seen: continue
+        seen.add(eid)
+        mode='timed' if str(e.get('exercise_type') or '').lower()=='timed' else 'bodyweight' if str(e.get('progression_method') or '').lower()=='bodyweight' else 'weight'
+        t=database.get_latest_exercise_targets(user_id,eid,db_path,int(e.get('min_reps') or 1),int(e.get('max_reps') or 12),mode,use_persistent=False)
+        state=database.get_exercise_progression_state(user_id,eid,db_path) or {}
+        if not t: continue
+        samples=int(t.get('sample_count') or state.get('exposure_count') or 0)
+        confidence=str(t.get('confidence') or 'low')
+        action=str(t.get('action') or 'hold')
+        eligible=samples>=3 and confidence=='high' and action in actionable
+        ev=f"{eid}:{state.get('status','new')}:{state.get('exposure_count',samples)}:{action}:{t.get('suggested_weight')}:{t.get('suggested_reps')}:{t.get('suggested_duration_seconds')}"
+        prior=database.get_persistent_program_target(user_id,eid,db_path)
+        mode_auth=authority.get('session_load','recommend_only')
+        rows.append({'exercise_id':eid,'name':e.get('name'),'action':action,'target':t,'sample_count':samples,'confidence':confidence,
+                     'eligible':eligible,'evidence_key':ev,'authority':mode_auth,'requires_confirmation':mode_auth=='ask_first',
+                     'may_auto_apply':eligible and mode_auth=='auto_apply','already_applied':bool(prior and prior.get('evidence_key')==ev),
+                     'reason':t.get('reason') or 'Repeated performance evidence supports this progression.'})
+    return {'version':'15.1','candidates':rows,'policy':{'minimum_samples':3,'required_confidence':'high','authority_domain':'session_load',
+            'idempotent':True,'rule':'Session-only auto-regulation is never persisted from a single workout.'}}
+
+def apply_persistent_adaptation(user_id,exercise_id,evidence_key,confirmed=False,db_path=None):
+    db_path=db_path or database.DEFAULT_DB_PATH
+    data=persistent_adaptation_candidates(user_id,db_path)
+    c=next((x for x in data['candidates'] if int(x['exercise_id'])==int(exercise_id)),None)
+    if not c: raise ValueError('No current adaptation candidate for this exercise')
+    if c['evidence_key']!=evidence_key: raise ValueError('Adaptation evidence changed. Refresh recommendations before applying.')
+    if not c['eligible']: raise ValueError('This adaptation does not yet meet the persistent evidence threshold')
+    if c['already_applied']:
+        return {'status':'duplicate','applied':False,'candidate':c,'message':'This evidence has already been applied.'}
+    auth=c['authority']
+    if auth=='recommend_only': raise ValueError('This programming domain is set to Recommend Only')
+    if auth=='ask_first' and not confirmed:
+        return {'status':'confirmation_required','applied':False,'candidate':c}
+    old=database.get_persistent_program_target(user_id,exercise_id,db_path)
+    saved=database.save_persistent_program_target(user_id,exercise_id,c['target'],evidence_key,c['reason'],c['confidence'],db_path)
+    if saved.get('applied'):
+        database.record_programming_decision(user_id,decision_type='persistent_progression',scope='exercise',duration='persistent',target_type='exercise',
+            target_id=exercise_id,target_name=c.get('name'),old_value=old,new_value=saved.get('target'),evidence=c['reason'],confidence=c['confidence'],
+            applied=True,source='forge_15_1_persistent_application',db_path=db_path)
+    return {'status':'applied' if saved.get('applied') else 'duplicate','applied':bool(saved.get('applied')),'candidate':c,'target':saved.get('target')}
+
+def apply_auto_persistent_adaptations(user_id,db_path):
+    results=[]
+    for c in persistent_adaptation_candidates(user_id,db_path)['candidates']:
+        if c['may_auto_apply'] and not c['already_applied']:
+            try: results.append(apply_persistent_adaptation(user_id,c['exercise_id'],c['evidence_key'],True,db_path))
+            except ValueError as e: results.append({'exercise_id':c['exercise_id'],'status':'skipped','reason':str(e)})
+    return {'version':'15.1','results':results,'applied_count':sum(bool(x.get('applied')) for x in results)}
+

@@ -1,0 +1,29 @@
+{
+  "version": "15.10.0",
+  "channel": "production-candidate",
+  "feature_freeze": true,
+  "required_flows": [
+    "generate-edit-start-log-swap-reload-resume-finish",
+    "custom-split",
+    "ppl",
+    "3-to-6-training-days",
+    "specialization",
+    "deload",
+    "offline-reconnect",
+    "persistence-restart",
+    "stale-session-recovery",
+    "android-pwa",
+    "ios-pwa",
+    "expired-auth",
+    "stale-service-worker"
+  ],
+  "release_blockers": [
+    "missing frontend/backend API contract",
+    "duplicate workout write after retry",
+    "unsafe offline replay",
+    "active-session exercise mismatch",
+    "unrecoverable stale workout state",
+    "service worker missing current JS module",
+    "app.js >= 250000 bytes"
+  ]
+}

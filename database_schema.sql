@@ -380,6 +380,12 @@ CREATE TABLE IF NOT EXISTS notification_settings (
  user_id INTEGER PRIMARY KEY, workout_reminders INTEGER NOT NULL DEFAULT 1,
  nutrition_reminders INTEGER NOT NULL DEFAULT 1, calendar_conflict_alerts INTEGER NOT NULL DEFAULT 1,
  morning_brief INTEGER NOT NULL DEFAULT 1, reminder_minutes_before INTEGER NOT NULL DEFAULT 90,
+    recovery_reminders INTEGER NOT NULL DEFAULT 1,
+    deload_reminders INTEGER NOT NULL DEFAULT 1,
+    missed_workout_reminders INTEGER NOT NULL DEFAULT 1,
+    incomplete_workout_reminders INTEGER NOT NULL DEFAULT 1,
+    schedule_change_alerts INTEGER NOT NULL DEFAULT 1,
+    browser_notifications INTEGER NOT NULL DEFAULT 0,
  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS dismissed_notifications (

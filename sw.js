@@ -1,8 +1,31 @@
-const CACHE="forge-v14-84-production-v1";
+const CACHE="forge-v15-10-production-candidate-v1";
 const APP_SHELL=[
-  "/","/index.html","/styles.css?v=15.0.0","/js/forge_core.js?v=15.0.0","/js/forge_api.js?v=15.0.0","/js/forge_equipment.js?v=15.0.0","/js/forge_pwa.js?v=15.0.0","/js/forge_coach.js?v=15.0.0","/app.js?v=15.0.0","/manifest.webmanifest?v=15.0.0",
-  "/assets/pwa/forge-icon-192-v14343.png","/assets/pwa/forge-icon-512-v14343.png",
-  "/assets/pwa/forge-icon-maskable-192-v14343.png","/assets/pwa/forge-icon-maskable-512-v14343.png",
+  "/",
+  "/index.html",
+  "/styles.css?v=15.10.0",
+  "/js/forge_core.js?v=15.10.0",
+  "/js/forge_api.js?v=15.10.0",
+  "/js/forge_equipment.js?v=15.10.0",
+  "/js/forge_pwa.js?v=15.10.0",
+  "/js/forge_features.js?v=15.10.0",
+  "/js/forge_nutrition.js?v=15.10.0",
+  "/js/forge_workout.js?v=15.10.0",
+  "/js/forge_plan.js?v=15.10.0",
+  "/js/forge_progress.js?v=15.10.0",
+  "/js/forge_coach.js?v=15.10.0",
+  "/js/forge_offline.js?v=15.10.0",
+  "/js/forge_notifications.js?v=15.10.0",
+  "/js/forge_cache.js?v=15.10.0",
+  "/js/forge_health.js?v=15.10.0",
+  "/js/forge_notifications_ui.js?v=15.10.0",
+  "/js/forge_mobile.js?v=15.10.0",
+  "/js/forge_production.js?v=15.10.0",
+  "/app.js?v=15.10.0",
+  "/manifest.webmanifest?v=15.10.0",
+  "/assets/pwa/forge-icon-192-v14343.png",
+  "/assets/pwa/forge-icon-512-v14343.png",
+  "/assets/pwa/forge-icon-maskable-192-v14343.png",
+  "/assets/pwa/forge-icon-maskable-512-v14343.png",
   "/assets/pwa/apple-touch-icon.png"
 ];
 

@@ -1048,7 +1048,7 @@ def get_personal_records(user_id: int, limit: int = 100, db_path=DEFAULT_DB_PATH
     return records[:limit]
 
 
-def get_latest_exercise_targets(user_id: int, exercise_id: int, db_path=DEFAULT_DB_PATH,
+def _calculate_latest_exercise_targets(user_id: int, exercise_id: int, db_path=DEFAULT_DB_PATH,
                                 min_reps: int | None=None, max_reps: int | None=None,
                                 load_mode: str | None=None) -> dict[str, Any] | None:
     """Build an adaptive next-set target from recent logged performance.
@@ -1132,6 +1132,54 @@ def get_latest_exercise_targets(user_id: int, exercise_id: int, db_path=DEFAULT_
 
 
 
+def ensure_persistent_program_targets(db_path=DEFAULT_DB_PATH) -> None:
+    with session(db_path) as con:
+        con.execute("""CREATE TABLE IF NOT EXISTS persistent_program_targets (
+            user_id INTEGER NOT NULL, exercise_id INTEGER NOT NULL, evidence_key TEXT NOT NULL,
+            load_mode TEXT NOT NULL DEFAULT 'weight', suggested_weight REAL, suggested_reps INTEGER,
+            suggested_duration_seconds INTEGER, action TEXT NOT NULL, evidence TEXT NOT NULL,
+            confidence TEXT NOT NULL DEFAULT 'medium', source TEXT NOT NULL DEFAULT 'forge_15_1',
+            applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY(user_id,exercise_id), UNIQUE(user_id,evidence_key))""")
+
+def get_persistent_program_target(user_id:int, exercise_id:int, db_path=DEFAULT_DB_PATH):
+    ensure_persistent_program_targets(db_path)
+    with session(db_path) as con:
+        r=con.execute("SELECT * FROM persistent_program_targets WHERE user_id=? AND exercise_id=?",(user_id,exercise_id)).fetchone()
+    return dict(r) if r else None
+
+def save_persistent_program_target(user_id:int, exercise_id:int, target:dict, evidence_key:str, evidence:str, confidence:str='high', db_path=DEFAULT_DB_PATH):
+    ensure_persistent_program_targets(db_path)
+    with session(db_path) as con:
+        prior=con.execute("SELECT * FROM persistent_program_targets WHERE user_id=? AND exercise_id=?",(user_id,exercise_id)).fetchone()
+        if prior and prior['evidence_key']==evidence_key:
+            return {'applied':False,'duplicate':True,'target':dict(prior)}
+        con.execute("""INSERT INTO persistent_program_targets
+            (user_id,exercise_id,evidence_key,load_mode,suggested_weight,suggested_reps,suggested_duration_seconds,action,evidence,confidence,applied_at)
+            VALUES(?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)
+            ON CONFLICT(user_id,exercise_id) DO UPDATE SET evidence_key=excluded.evidence_key,load_mode=excluded.load_mode,
+            suggested_weight=excluded.suggested_weight,suggested_reps=excluded.suggested_reps,suggested_duration_seconds=excluded.suggested_duration_seconds,
+            action=excluded.action,evidence=excluded.evidence,confidence=excluded.confidence,applied_at=CURRENT_TIMESTAMP""",
+            (user_id,exercise_id,evidence_key,target.get('load_mode') or 'weight',target.get('suggested_weight'),target.get('suggested_reps'),
+             target.get('suggested_duration_seconds'),target.get('action') or 'hold',evidence,confidence))
+        row=con.execute("SELECT * FROM persistent_program_targets WHERE user_id=? AND exercise_id=?",(user_id,exercise_id)).fetchone()
+    return {'applied':True,'duplicate':False,'target':dict(row)}
+
+def get_latest_exercise_targets(user_id: int, exercise_id: int, db_path=DEFAULT_DB_PATH, min_reps: int | None = None, max_reps: int | None = None, load_mode: str | None = None, use_persistent: bool = True) -> dict[str, Any] | None:
+    calculated=_calculate_latest_exercise_targets(user_id,exercise_id,db_path,min_reps,max_reps,load_mode)
+    if not use_persistent:
+        return calculated
+    persistent=get_persistent_program_target(user_id,exercise_id,db_path)
+    if not persistent:
+        return calculated
+    out=dict(calculated or {})
+    out.update({k:persistent.get(k) for k in ('load_mode','suggested_weight','suggested_reps','suggested_duration_seconds','action') if persistent.get(k) is not None})
+    out['persistent_target']=True
+    out['persistent_evidence']=persistent.get('evidence')
+    out['persistent_applied_at']=persistent.get('applied_at')
+    return out
+
+
 def get_session_intelligence(user_id: int, session_id: int, exercise_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
     """Return live, session-only coaching after a logged set.
 
@@ -1157,7 +1205,9 @@ def get_session_intelligence(user_id: int, session_id: int, exercise_id: int, db
             raise ValueError("Exercise is not part of this active workout")
     rows = get_exercise_performance_for_session(session_id, exercise_id, db_path)
     valid = [r for r in rows if not bool(r.get("skipped"))]
-    completed = len(valid)
+    carried_completed = get_session_swap_carry(session_id, exercise_id, db_path)
+    completed_current = len(valid)
+    completed = carried_completed + completed_current
     planned = max(1, int(plan["sets"] or 1))
     base_rest = max(15, int(plan["rest_seconds"] or 60))
     rpes = [float(r["difficulty"]) for r in valid if r.get("difficulty") is not None]
@@ -1306,6 +1356,8 @@ def get_session_intelligence(user_id: int, session_id: int, exercise_id: int, db
         "average_rpe": round(avg_rpe, 2),
         "performance_drop_percent": round(max(0.0, decay), 1),
         "completed_sets": completed,
+        "completed_sets_on_replacement": completed_current,
+        "carried_completed_sets": carried_completed,
         "planned_sets": planned,
         "recommended_total_sets": total_sets,
         "remaining_sets": max(0, total_sets-completed),
@@ -1591,6 +1643,21 @@ def get_substitutions_for_user(user_id: int, exercise_id: int, db_path=DEFAULT_D
     return out
 
 
+def ensure_session_exercise_transitions(db_path=DEFAULT_DB_PATH) -> None:
+    with session(db_path) as con:
+        con.execute("""CREATE TABLE IF NOT EXISTS session_exercise_transitions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, session_id INTEGER NOT NULL, workout_id INTEGER NOT NULL, exercise_order INTEGER NOT NULL,
+            old_exercise_id INTEGER NOT NULL, new_exercise_id INTEGER NOT NULL, carried_completed_sets INTEGER NOT NULL DEFAULT 0,
+            swapped_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)""")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_session_exercise_transitions_session_order ON session_exercise_transitions(session_id,exercise_order,id DESC)")
+
+def get_session_swap_carry(session_id:int, exercise_id:int, db_path=DEFAULT_DB_PATH) -> int:
+    ensure_session_exercise_transitions(db_path)
+    with session(db_path) as con:
+        r=con.execute("SELECT carried_completed_sets FROM session_exercise_transitions WHERE session_id=? AND new_exercise_id=? ORDER BY id DESC LIMIT 1",(session_id,exercise_id)).fetchone()
+    return int(r['carried_completed_sets']) if r else 0
+
+
 def swap_workout_exercise(user_id: int, workout_id: int, old_exercise_id: int,
                           new_exercise_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
     allowed = {x["id"]: x for x in get_substitutions_for_user(user_id, old_exercise_id, db_path)}
@@ -1613,6 +1680,23 @@ def swap_workout_exercise(user_id: int, workout_id: int, old_exercise_id: int,
         ).fetchone()
         if not owned:
             raise ValueError("Exercise is not part of this workout")
+
+        # v15.2: if this is the currently active exercise, preserve the immutable session/workout
+        # and carry the completed set position forward to the replacement. Historical rows are never rewritten.
+        active=con.execute("""SELECT ws.id AS session_id,COALESCE(ss.current_exercise_index,0) AS current_exercise_index,
+            COALESCE(ss.current_set_index,0) AS current_set_index FROM workout_sessions ws
+            LEFT JOIN session_state ss ON ss.session_id=ws.id
+            WHERE ws.workout_id=? AND ws.status='active' ORDER BY ws.started_at DESC,ws.id DESC LIMIT 1""",(workout_id,)).fetchone()
+        transition=None
+        if active and int(active['current_exercise_index'])==int(owned['exercise_order']):
+            carried=int(con.execute("SELECT COUNT(*) FROM exercise_performance WHERE session_id=? AND exercise_id=? AND skipped=0",(active['session_id'],old_exercise_id)).fetchone()[0])
+            carried=max(carried,int(active['current_set_index'] or 0))
+            ensure_session_exercise_transitions(db_path)
+            con.execute("""INSERT INTO session_exercise_transitions(session_id,workout_id,exercise_order,old_exercise_id,new_exercise_id,carried_completed_sets)
+                VALUES(?,?,?,?,?,?)""",(active['session_id'],workout_id,owned['exercise_order'],old_exercise_id,new_exercise_id,carried))
+            con.execute("UPDATE session_state SET current_set_index=?,updated_at=CURRENT_TIMESTAMP WHERE session_id=?",(carried,active['session_id']))
+            transition={'session_id':int(active['session_id']),'exercise_order':int(owned['exercise_order']),'old_exercise_id':old_exercise_id,
+                        'new_exercise_id':new_exercise_id,'carried_completed_sets':carried,'historical_rows_rewritten':False}
 
         con.execute(
             """UPDATE workout_exercises
@@ -1649,7 +1733,9 @@ def swap_workout_exercise(user_id: int, workout_id: int, old_exercise_id: int,
             (user_id,new_exercise_id,workout_id,"exercise_swap",str(old_exercise_id),str(new_exercise_id),
              new.get("reason") or "User-selected substitution"),
         )
-    return new
+    result=dict(new)
+    result['session_transition']=transition
+    return result
 
 
 def update_workout_exercise_sets(user_id: int, workout_id: int, exercise_id: int, sets: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
@@ -2474,17 +2560,29 @@ def set_workout_schedule_from_calendar(user_id: int, workout_id: int, target_day
 
 
 def get_notification_settings(user_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    extra={
+        "recovery_reminders":"INTEGER NOT NULL DEFAULT 1",
+        "deload_reminders":"INTEGER NOT NULL DEFAULT 1",
+        "missed_workout_reminders":"INTEGER NOT NULL DEFAULT 1",
+        "incomplete_workout_reminders":"INTEGER NOT NULL DEFAULT 1",
+        "schedule_change_alerts":"INTEGER NOT NULL DEFAULT 1",
+        "browser_notifications":"INTEGER NOT NULL DEFAULT 0",
+    }
     with session(db_path) as con:
+        cols={r["name"] for r in con.execute("PRAGMA table_info(notification_settings)").fetchall()}
+        for name,ddl in extra.items():
+            if name not in cols: con.execute(f"ALTER TABLE notification_settings ADD COLUMN {name} {ddl}")
         con.execute("INSERT OR IGNORE INTO notification_settings(user_id) VALUES (?)",(user_id,))
         row=con.execute("SELECT * FROM notification_settings WHERE user_id=?",(user_id,)).fetchone()
     out=dict(row)
-    for k in ("workout_reminders","nutrition_reminders","calendar_conflict_alerts","morning_brief"): out[k]=bool(out[k])
+    for k in ("workout_reminders","nutrition_reminders","calendar_conflict_alerts","morning_brief","recovery_reminders","deload_reminders","missed_workout_reminders","incomplete_workout_reminders","schedule_change_alerts","browser_notifications"):
+        out[k]=bool(out.get(k,0))
     return out
 
 def update_notification_settings(user_id: int, values: dict[str, Any], db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
     get_notification_settings(user_id,db_path); fields=[]; args=[]
     for k,v in values.items():
-        if k not in {"workout_reminders","nutrition_reminders","calendar_conflict_alerts","morning_brief","reminder_minutes_before"}: continue
+        if k not in {"workout_reminders","nutrition_reminders","calendar_conflict_alerts","morning_brief","recovery_reminders","deload_reminders","missed_workout_reminders","incomplete_workout_reminders","schedule_change_alerts","browser_notifications","reminder_minutes_before"}: continue
         if k=="reminder_minutes_before": v=max(15,min(360,int(v)))
         else: v=1 if bool(v) else 0
         fields.append(f"{k}=?"); args.append(v)
@@ -4120,3 +4218,66 @@ def save_programming_authority(user_id,values,db_path=DEFAULT_DB_PATH):
         for d,v in dict(values or {}).items():
             if d in current and v in valid:con.execute("INSERT INTO programming_authority(user_id,domain,mode,updated_at) VALUES(?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(user_id,domain) DO UPDATE SET mode=excluded.mode,updated_at=CURRENT_TIMESTAMP",(user_id,d,v))
     return get_programming_authority(user_id,db_path)
+
+def get_data_integrity_report(user_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    """v15.7 Forge Health Check. Read-only audit of recoverable and review-only data problems."""
+    issues=[]
+    def add(code,severity,count,repairable,detail):
+        if count: issues.append({"code":code,"severity":severity,"count":int(count),"repairable":bool(repairable),"detail":detail})
+    with session(db_path) as con:
+        active_programs=int(con.execute("SELECT COUNT(*) FROM programs WHERE user_id=? AND status='active'",(user_id,)).fetchone()[0])
+        add("multiple_active_programs","high",max(0,active_programs-1),False,"More than one program is active; Forge will not choose one automatically.")
+        stale=int(con.execute("""SELECT COUNT(*) FROM workout_sessions ws JOIN workouts w ON w.id=ws.workout_id
+            JOIN program_weeks pw ON pw.id=w.program_week_id JOIN programs p ON p.id=pw.program_id
+            WHERE p.user_id=? AND ws.status='active' AND p.status!='active'""",(user_id,)).fetchone()[0])
+        add("stale_active_sessions","medium",stale,True,"Active sessions attached to replaced programs can be safely abandoned.")
+        dup=int(con.execute("""SELECT COUNT(*) FROM (SELECT ws.workout_id,COUNT(*) c FROM workout_sessions ws
+            JOIN workouts w ON w.id=ws.workout_id JOIN program_weeks pw ON pw.id=w.program_week_id
+            JOIN programs p ON p.id=pw.program_id WHERE p.user_id=? AND p.status='active' AND ws.status='active'
+            GROUP BY ws.workout_id HAVING c>1)""",(user_id,)).fetchone()[0])
+        add("duplicate_active_sessions","medium",dup,True,"Only the newest active session for a workout should remain active.")
+        orphan_state=int(con.execute("""SELECT COUNT(*) FROM session_state ss LEFT JOIN workout_sessions ws ON ws.id=ss.session_id
+            WHERE ws.id IS NULL""").fetchone()[0])
+        add("orphan_session_state","low",orphan_state,True,"Session-state rows without a workout session can be removed.")
+        bad_positions=int(con.execute("""SELECT COUNT(*) FROM session_state ss JOIN workout_sessions ws ON ws.id=ss.session_id
+            JOIN workouts w ON w.id=ws.workout_id JOIN program_weeks pw ON pw.id=w.program_week_id JOIN programs p ON p.id=pw.program_id
+            WHERE p.user_id=? AND (ss.current_exercise_index<0 OR ss.current_set_index<0 OR
+            ss.current_exercise_index >= (SELECT COUNT(*) FROM workout_exercises we WHERE we.workout_id=w.id))""",(user_id,)).fetchone()[0])
+        add("invalid_session_position","medium",bad_positions,True,"Workout position is outside the current workout and can be reconciled.")
+        empty_workouts=int(con.execute("""SELECT COUNT(*) FROM workouts w JOIN program_weeks pw ON pw.id=w.program_week_id
+            JOIN programs p ON p.id=pw.program_id WHERE p.user_id=? AND p.status='active'
+            AND NOT EXISTS(SELECT 1 FROM workout_exercises we WHERE we.workout_id=w.id)""",(user_id,)).fetchone()[0])
+        add("empty_active_workouts","high",empty_workouts,False,"An active-plan workout has no exercises and needs plan review.")
+        malformed=0
+        rows=con.execute("""SELECT pw.plan_json FROM program_weeks pw JOIN programs p ON p.id=pw.program_id WHERE p.user_id=?""",(user_id,)).fetchall()
+        for row in rows:
+            try: json.loads(row["plan_json"] or "{}")
+            except Exception: malformed+=1
+        add("malformed_plan_json","high",malformed,False,"Stored plan JSON is malformed; Forge will not overwrite it automatically.")
+    return {"version":"1.0","status":"healthy" if not issues else "repairable" if all(x["repairable"] for x in issues) else "review",
+            "issues":issues,"repairable_count":sum(x["count"] for x in issues if x["repairable"]),
+            "review_count":sum(x["count"] for x in issues if not x["repairable"]),
+            "rule":"Forge auto-repairs only state that can be reconstructed without changing training history or choosing between valid programs."}
+
+def repair_data_integrity(user_id: int, db_path=DEFAULT_DB_PATH) -> dict[str, Any]:
+    """Apply only deterministic, non-destructive v15.7 repairs."""
+    repaired={"stale_sessions_abandoned":0,"duplicate_sessions_abandoned":0,"orphan_session_state_removed":0,"positions_reconciled":0}
+    with session(db_path) as con:
+        stale=con.execute("""SELECT ws.id FROM workout_sessions ws JOIN workouts w ON w.id=ws.workout_id
+            JOIN program_weeks pw ON pw.id=w.program_week_id JOIN programs p ON p.id=pw.program_id
+            WHERE p.user_id=? AND ws.status='active' AND p.status!='active'""",(user_id,)).fetchall()
+        for row in stale:
+            con.execute("UPDATE workout_sessions SET status='abandoned',completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP) WHERE id=?",(row["id"],))
+            repaired["stale_sessions_abandoned"]+=1
+        groups=con.execute("""SELECT ws.workout_id,MAX(ws.id) keep_id FROM workout_sessions ws JOIN workouts w ON w.id=ws.workout_id
+            JOIN program_weeks pw ON pw.id=w.program_week_id JOIN programs p ON p.id=pw.program_id
+            WHERE p.user_id=? AND p.status='active' AND ws.status='active' GROUP BY ws.workout_id HAVING COUNT(*)>1""",(user_id,)).fetchall()
+        for g in groups:
+            cur=con.execute("UPDATE workout_sessions SET status='abandoned',completed_at=COALESCE(completed_at,CURRENT_TIMESTAMP) WHERE workout_id=? AND status='active' AND id<>?",(g["workout_id"],g["keep_id"]))
+            repaired["duplicate_sessions_abandoned"]+=max(0,cur.rowcount)
+        cur=con.execute("DELETE FROM session_state WHERE session_id NOT IN (SELECT id FROM workout_sessions)")
+        repaired["orphan_session_state_removed"]=max(0,cur.rowcount)
+    before=get_session_diagnostics(user_id,db_path)
+    sync=reconcile_active_session(user_id,None,db_path)
+    if sync.get("status")=="ok": repaired["positions_reconciled"]=1
+    return {"status":"repaired","repairs":repaired,"session":sync,"report":get_data_integrity_report(user_id,db_path)}

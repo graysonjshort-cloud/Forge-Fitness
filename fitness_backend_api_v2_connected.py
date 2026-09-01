@@ -306,6 +306,43 @@ def _proactive_notifications(user_id: int, db_path=DB_PATH) -> list[dict]:
                 add("calendar_conflict","Calendar conflict",f"{workout['name']} overlaps with something on your calendar.{extra}","high","Help me move today's workout.",str(workout["workout_id"]))
         except Exception: pass
 
+    # v15.6 recovery, deload, missed-session, and incomplete-session reminders.
+    if settings.get("missed_workout_reminders") and workout and workout.get("status") not in {"completed","active"}:
+        when=workout.get("scheduled_time") or database.get_time_settings(user_id,db_path).get("default_workout_time","17:00")
+        if current > _time_minutes(when)+120:
+            add("missed_workout","Workout may have been missed",f"{workout['name']} was scheduled for {when}. You can reschedule it instead of losing the session.","high","Help me reschedule today's workout.",str(workout["workout_id"]))
+
+    if settings.get("incomplete_workout_reminders"):
+        try:
+            active=database.reconcile_active_session(user_id,None,db_path)
+            if active and active.get("session_id") and active.get("status") not in {"none","completed"}:
+                add("incomplete_workout","Workout still in progress","You have an unfinished workout session. Resume it when you're ready.","high","Resume my workout.",str(active.get("session_id")))
+        except Exception: pass
+
+    if settings.get("recovery_reminders"):
+        try:
+            forecast=training_intelligence_v14.recovery_forecast(user_id,db_path)
+            if forecast.get("next_session_mode")=="recovery":
+                add("recovery","Recovery is the priority","Forge expects elevated fatigue for the next session. Keep training demand controlled.","normal","Why is Forge recommending recovery?")
+        except Exception: pass
+
+    if settings.get("deload_reminders"):
+        try:
+            meso=_mesocycle_snapshot(user_id,db_path)
+            if str(meso.get("phase","")).lower()=="deload":
+                add("deload","Deload week active","This block is in a deload phase. Keep the planned reduction instead of chasing normal volume.","normal","Explain my deload.")
+        except Exception: pass
+
+    if settings.get("schedule_change_alerts"):
+        try:
+            with database.session(db_path) as con:
+                row=con.execute("""SELECT workout_id,old_value,new_value FROM progression_events
+                                   WHERE user_id=? AND event_type='calendar_reschedule'
+                                   AND date(created_at)=date('now') ORDER BY id DESC LIMIT 1""",(user_id,)).fetchone()
+            if row:
+                add("schedule_change","Workout schedule changed",f"Your workout moved from {row['old_value']} to {row['new_value']}.","normal","Show me my updated schedule.",str(row["workout_id"]))
+        except Exception: pass
+
     if settings["nutrition_reminders"] and current>=1020:
         t=day["targets"]; v=day["totals"]; r=day["remaining"]
         if float(v["protein_g"])/max(1,float(t["protein_g"]))<.60 and r["protein_g"]>=30:
@@ -612,6 +649,12 @@ class NotificationSettingsRequest(BaseModel):
     nutrition_reminders: Optional[bool] = None
     calendar_conflict_alerts: Optional[bool] = None
     morning_brief: Optional[bool] = None
+    recovery_reminders: Optional[bool] = None
+    deload_reminders: Optional[bool] = None
+    missed_workout_reminders: Optional[bool] = None
+    incomplete_workout_reminders: Optional[bool] = None
+    schedule_change_alerts: Optional[bool] = None
+    browser_notifications: Optional[bool] = None
     reminder_minutes_before: Optional[int] = Field(None, ge=15, le=360)
 
 class NotificationDismissRequest(BaseModel):
@@ -644,6 +687,12 @@ class SpecializationRequest(BaseModel):
 
 class ProgrammingAuthorityRequest(BaseModel):
     controls: dict[str,str] = {}
+
+class PersistentAdaptationApplyRequest(BaseModel):
+    exercise_id: int
+    evidence_key: str
+    confirmed: bool = False
+
 
 class ReadinessEvaluationRequest(BaseModel):
     energy: float = Field(3, ge=1, le=5)
@@ -956,6 +1005,19 @@ def _current_account(authorization: Optional[str]) -> dict:
     user=database.get_user_from_token(token,DB_PATH)
     if not user: raise HTTPException(401,"Session expired or invalid")
     return user
+
+@app.get("/release")
+def release_info():
+    return {
+        "app":"Forge Fitness",
+        "version":"15.10.0",
+        "channel":"production-candidate",
+        "feature_freeze":True,
+        "schema_policy":"migration-safe",
+        "workout_write_policy":"idempotent-and-session-reconciled",
+        "automatic_programming_policy":"user-authority-gated",
+        "pwa_cache":"forge-v15-10-production-candidate-v1",
+    }
 
 @app.get("/health")
 def health():
@@ -2035,7 +2097,8 @@ def me_swap_exercise(workout_id: int, request: SwapExerciseRequest,
             evidence=result.get("reason") or "User selected a ranked substitution",confidence="high",db_path=DB_PATH)
     except ValueError as e:
         raise HTTPException(400,str(e))
-    return {"status":"swapped","exercise":result}
+    sync=database.reconcile_active_session(user["user_id"],None,DB_PATH)
+    return {"status":"swapped","exercise":result,"session":sync}
 
 
 @app.get("/me/plan/editor-snapshot")
@@ -2228,6 +2291,16 @@ def me_session_diagnostics(authorization: Optional[str]=Header(None)):
     user=_current_account(authorization)
     return database.get_session_diagnostics(user["user_id"],DB_PATH)
 
+@app.get("/me/system/integrity")
+def me_system_integrity(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return database.get_data_integrity_report(user["user_id"],DB_PATH)
+
+@app.post("/me/system/integrity/repair")
+def me_system_integrity_repair(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return database.repair_data_integrity(user["user_id"],DB_PATH)
+
 @app.get("/me/system/health")
 def me_system_health(authorization: Optional[str]=Header(None)):
     """v14.55 authenticated production diagnostics; contains no secrets."""
@@ -2238,7 +2311,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"15.0.0"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"15.10.0"}
 
 
 @app.get("/me/coach/briefing")
@@ -3070,6 +3143,25 @@ def me_program_review(authorization: Optional[str]=Header(None)):
 @app.get("/me/training/adaptive-system")
 def me_adaptive_system(authorization: Optional[str]=Header(None)):
     user=_current_account(authorization); return training_intelligence_v14.adaptive_training_system(user["user_id"],DB_PATH)
+
+
+@app.get("/me/training/adaptation-candidates")
+def me_adaptation_candidates(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.persistent_adaptation_candidates(user["user_id"],DB_PATH)
+
+@app.post("/me/training/adaptations/apply")
+def me_apply_persistent_adaptation(request: PersistentAdaptationApplyRequest, authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    try:
+        return training_intelligence_v14.apply_persistent_adaptation(user["user_id"],request.exercise_id,request.evidence_key,request.confirmed,DB_PATH)
+    except ValueError as e:
+        raise HTTPException(400,str(e))
+
+@app.post("/me/training/adaptations/apply-auto")
+def me_apply_auto_adaptations(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.apply_auto_persistent_adaptations(user["user_id"],DB_PATH)
 
 # ---------------------------------------------------------
 # Forge PWA frontend
