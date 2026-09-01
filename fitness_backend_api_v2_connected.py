@@ -1010,13 +1010,13 @@ def _current_account(authorization: Optional[str]) -> dict:
 def release_info():
     return {
         "app":"Forge Fitness",
-        "version":"15.10.1",
+        "version":"15.10.2",
         "channel":"production-candidate",
         "feature_freeze":True,
         "schema_policy":"migration-safe",
         "workout_write_policy":"idempotent-and-session-reconciled",
         "automatic_programming_policy":"user-authority-gated",
-        "pwa_cache":"forge-v15-10-1-ui-cleanup-v1",
+        "pwa_cache":"forge-v15-10-2-progression-ui-v1",
     }
 
 @app.get("/health")
@@ -2311,7 +2311,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"15.10.1"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"15.10.2"}
 
 
 @app.get("/me/coach/briefing")

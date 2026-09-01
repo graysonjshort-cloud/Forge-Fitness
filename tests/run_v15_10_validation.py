@@ -3,9 +3,9 @@ import json,re
 r=Path(__file__).resolve().parents[1]
 idx=(r/'index.html').read_text(); sw=(r/'sw.js').read_text(); api=(r/'fitness_backend_api_v2_connected.py').read_text(); app=(r/'app.js').read_text()
 meta=json.loads((r/'RELEASE_CANDIDATE.json').read_text())
-assert meta['version']=='15.10.1' and meta['feature_freeze'] is True
+assert meta['version']=='15.10.2' and meta['feature_freeze'] is True
 assert '/release' in api and 'production-candidate' in api
-assert 'forge-v15-10-1-ui-cleanup-v1' in sw
+assert 'forge-v15-10-2-progression-ui-v1' in sw
 scripts=re.findall(r'<script src="([^"]+)"',idx)
 for src in scripts:
     assert src in sw, f'service worker missing {src}'
