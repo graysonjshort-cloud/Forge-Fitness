@@ -120,14 +120,14 @@ async function persistPosition(){
 if(!session)return;
 try{await api("/me/session/position",{method:"POST",queueable:true,body:JSON.stringify({session_id:session.session_id,exercise_index:S.ei,set_index:S.set})})}catch(e){console.warn(e)}
 }
-async function beginPersistentRest(seconds){
-S.restRemaining=seconds;S.restTotal=seconds;
+async function beginPersistentRest(seconds,context=null){
+S.restRemaining=seconds;S.restTotal=seconds;S.restContext=context||S.restContext||null;
 if(session){try{await api("/me/session/rest/start",{method:"POST",queueable:true,body:JSON.stringify({session_id:session.session_id,duration_seconds:seconds})})}catch(e){console.warn(e)}}
 go("timer");
 }
 async function clearPersistentRest(){
 if(session){try{await api("/me/session/rest/clear",{method:"POST",queueable:true,body:JSON.stringify({session_id:session.session_id})})}catch{}}
-S.restRemaining=0;
+S.restRemaining=0;S.restContext=null;
 }
 function deviceTimePayload(){
 const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC";
@@ -351,13 +351,13 @@ fill="#e8edf1"/>
 </div>
 <div class=welcome-copy>
 <h2>Train with purpose.<br>Progress with proof.</h2>
-<p>Adaptive workouts, nutrition, progress tracking, and coaching — all in one place.</p>
+<p>Training, nutrition, progress, and coaching in one place.</p>
 </div>
 <div class=welcome-actions>
 <button class=btn data-a=register-screen>Get Started</button>
 <button class="btn dark" data-a=login-screen>Log In</button>
 </div>
-<p class=welcome-footnote>Built around your schedule, equipment, and goals.</p>
+<p class=welcome-footnote>Built around your goals and schedule.</p>
 </div>`;
 }
 function register(){
@@ -374,7 +374,7 @@ return `<p class=eyebrow>WELCOME BACK</p><h2>Welcome Back</h2><div class=big-spa
 <label class=field>Email<input name=email type=email autocomplete=email placeholder="john.doe@email.com" required></label>
 <label class=field>Password<input name=password type=password autocomplete=current-password placeholder="••••••••" required></label>
 <div style="text-align:right;color:var(--red2);font-size:10px">Forgot Password?</div><button class=btn type=submit>Log In</button></form>
-<div class=spacer></div><div class=auth-help><b>Google Calendar connects after sign-in.</b><span>Your Forge account and Calendar connection stay separate.</span></div>
+<div class=spacer></div><div class=auth-help><b>Connect Google Calendar after sign-in.</b><span>Your Forge and Google accounts stay separate.</span></div>
 <div class=spacer></div><div class=auth-link>Don't have an account? <b data-a=register-screen>Register</b></div>`;
 }
 async function submitRegister(ev){
@@ -391,14 +391,14 @@ try{plan=await api("/me/plan/current");go("home")}catch{plan=null;go("goal")}toa
 }
 function goal(){
 const opts=[["Build Muscle","Build size and strength","build_muscle"],["Lose Weight","Reduce body fat","lose_fat"],["Improve Strength","Lift heavier over time","get_stronger"],["Improve Endurance","Build work capacity","improve_fitness"],["General Fitness","Stay active and capable","general_fitness"]];
-return `${dots(0)}<h2>What's your goal?</h2><p class=muted>Select the primary goal you want to achieve.</p><div class=big-spacer></div><div class=stack>${opts.map(o=>`<button class="choice-card ${profile.goal===o[2]?"selected":""}" data-goal=${o[2]}><div><strong>${o[0]}</strong><small>${o[1]}</small></div></button>`).join("")}</div><div class=big-spacer></div><button class=btn data-a=next>Next</button>`;
+return `${dots(0)}<h2>What's your goal?</h2><p class=muted>Choose your main training goal.</p><div class=big-spacer></div><div class=stack>${opts.map(o=>`<button class="choice-card ${profile.goal===o[2]?"selected":""}" data-goal=${o[2]}><div><strong>${o[0]}</strong><small>${o[1]}</small></div></button>`).join("")}</div><div class=big-spacer></div><button class=btn data-a=next>Next</button>`;
 }
 function experience(){
 const opts=[["Beginner","New to training","beginner"],["Intermediate","1–3 years training","intermediate"],["Advanced","3+ years training","advanced"]];
-return `${dots(1)}<h2>Your experience level?</h2><p class=muted>This helps us tailor your plan to your level.</p><div class=big-spacer></div><div class=stack>${opts.map(o=>`<button class="choice-card ${profile.experience===o[2]?"selected":""}" data-exp=${o[2]}><div><strong>${o[0]}</strong><small>${o[1]}</small></div></button>`).join("")}</div><div class=big-spacer></div><button class=btn data-a=next>Next</button>`;
+return `${dots(1)}<h2>Your experience level?</h2><p class=muted>This sets your starting difficulty.</p><div class=big-spacer></div><div class=stack>${opts.map(o=>`<button class="choice-card ${profile.experience===o[2]?"selected":""}" data-exp=${o[2]}><div><strong>${o[0]}</strong><small>${o[1]}</small></div></button>`).join("")}</div><div class=big-spacer></div><button class=btn data-a=next>Next</button>`;
 }
 function schedule(){
-return `${dots(2)}<h2>How many days?</h2><p class=muted>How many days per week can you train?</p><div class=big-spacer></div><div class=choice-grid>${[2,3,4,5,6].map(n=>`<button class="choice-tile ${profile.days_per_week===n?"selected":""}" data-days=${n}><span><b>${n} Days</b><small>${n===2?"Minimal":n===3?"Recommended":n===4?"Balanced":"High frequency"}</small></span></button>`).join("")}</div><div class=big-spacer></div><p class=eyebrow>SESSION LENGTH</p><div class=chips>${[20,30,45,60,90].map(n=>`<button class="chip ${profile.minutes_per_workout===n?"selected":""}" data-mins=${n}>${n} min</button>`).join("")}</div><div class=big-spacer></div><p class=eyebrow>EXERCISES PER WORKOUT</p><p class=muted>Choose how many strength exercises Forge should target each training day.</p><div class=chips>${[3,4,5,6,7,8,9,10].map(n=>`<button class="chip ${Number(profile.exercises_per_day||6)===n?"selected":""}" data-exercise-count=${n}>${n}</button>`).join("")}</div><div class=big-spacer></div><button class=btn data-a=next>Next</button>`;
+return `${dots(2)}<h2>How many days?</h2><p class=muted>How many days can you train?</p><div class=big-spacer></div><div class=choice-grid>${[2,3,4,5,6].map(n=>`<button class="choice-tile ${profile.days_per_week===n?"selected":""}" data-days=${n}><span><b>${n} Days</b><small>${n===2?"Minimal":n===3?"Recommended":n===4?"Balanced":"High frequency"}</small></span></button>`).join("")}</div><div class=big-spacer></div><p class=eyebrow>SESSION LENGTH</p><div class=chips>${[20,30,45,60,90].map(n=>`<button class="chip ${profile.minutes_per_workout===n?"selected":""}" data-mins=${n}>${n} min</button>`).join("")}</div><div class=big-spacer></div><p class=eyebrow>EXERCISES PER WORKOUT</p><p class=muted>Choose a target number of exercises per workout.</p><div class=chips>${[3,4,5,6,7,8,9,10].map(n=>`<button class="chip ${Number(profile.exercises_per_day||6)===n?"selected":""}" data-exercise-count=${n}>${n}</button>`).join("")}</div><div class=big-spacer></div><button class=btn data-a=next>Next</button>`;
 }
 function equipmentLogView(onboarding=true){
 const selected=S.equipmentLog;
@@ -412,7 +412,7 @@ let catalog=S.equipmentCatalog.filter(c=>
 const groups={};for(const c of catalog){(groups[c.category]??=[]).push(c)}
 return `${onboarding?dots(3):'<p class=eyebrow>PROFILE</p>'}
 <h2>${onboarding?"Build your equipment log":"Equipment Log"}</h2>
-<p class=muted>Forge uses this log to choose exercises, substitutions, and AI Coach recommendations.</p>
+<p class=muted>Forge uses this to choose exercises and swaps.</p>
 <div class=big-spacer></div><p class=eyebrow>QUICK SETUP</p>
 <div class=equipment-presets>
 <button data-equipment-preset=full_gym>Full Gym</button>
@@ -448,7 +448,7 @@ if(!item)return `<h2>Equipment Details</h2><p class=muted>Equipment not found.</
 const c=S.equipmentCatalog.find(x=>x.key===item.key);
 const schema=c?.detail_schema||{};
 const fields=Object.entries(schema);
-return `<p class=eyebrow>EQUIPMENT DETAILS</p><h2>${esc(item.name)}</h2><p class=muted>Add useful limits or features so Forge can make better recommendations.</p>
+return `<p class=eyebrow>EQUIPMENT DETAILS</p><h2>${esc(item.name)}</h2><p class=muted>Add anything Forge should know about this item.</p>
 <div class=big-spacer></div>
 <div class=equipment-detail-form>
 ${fields.length?fields.map(([key,type])=>{
@@ -456,7 +456,7 @@ const label=key.replaceAll("_"," ").replace(/\b\w/g,m=>m.toUpperCase());
 const val=item.details?.[key];
 if(type==="boolean")return `<label class=equipment-bool><span>${esc(label)}</span><input type=checkbox data-equipment-detail="${key}" ${val?"checked":""}></label>`;
 return `<label class=field>${esc(label)}<input type=number step=any min=0 data-equipment-detail="${key}" value="${val??""}" placeholder="Optional"></label>`;
-}).join(""):`<div class=card><p class=muted>No structured fields are required for this item.</p></div>`}
+}).join(""):`<div class=card><p class=muted>Optional details only.</p></div>`}
 <label class=field>Notes<input id=equipmentNotes value="${esc(item.details?.notes||"")}" placeholder="Optional notes"></label>
 </div>
 <div class=big-spacer></div><button class=btn data-a=equipment-detail-save>Save Details</button>`;
@@ -548,7 +548,7 @@ return `<div class="exercise-demo-player demo-placeholder three-d-pending">
 <div class=three-d-pending-mark>3D</div>
 <strong>${esc(demo.name)}</strong>
 <small>High-quality 3D demo in production</small>
-<p>Forge has retired the SVG diagram for this exercise. Setup, form cues, breathing, and mistakes remain available while the 3D loop is produced and reviewed.</p>
+<p>Form cues remain available while the 3D demo is being prepared.</p>
 </div>`;
 }
 async function openFormDemo(id,ret="exercise"){S.formDemoExercise=Number(id);S.formDemoReturn=ret;S.formDemo=null;S.formDemoTab="demo";S.demoAngle="primary";go("formdemo");try{S.formDemo=await api(`/me/exercises/${id}/form-demo`);if(S.route==="formdemo")render()}catch(e){toast(e.message)}}
@@ -575,12 +575,12 @@ const r=S.demoReview;if(!r)return `<p class=eyebrow>DEMO REVIEW</p><h2>Loading c
 const auditItem=(S.demoAudit||[]).find(x=>Number(x.id)===Number(S.demoReviewExercise));
 const reviewPreview=auditItem?.demo_asset?`<div class=exercise-demo-player><img src="${esc(auditItem.demo_asset)}" alt="${esc(r.exercise_name)} review animation"></div><div class=spacer></div>`:"";
 const fields=[["correct_exercise","Correct exercise"],["setup","Setup & equipment"],["range_of_motion","Range of motion"],["joint_alignment","Joint alignment"],["loop_quality","Loop quality"],["mobile_tested","Tested on phone"]];
-return `<p class=eyebrow>DEMO REVIEW</p><h2>${esc(r.exercise_name)}</h2><p class=muted>Only mark items passed after checking the actual animation.</p>
+return `<p class=eyebrow>DEMO REVIEW</p><h2>${esc(r.exercise_name)}</h2><p class=muted>Mark each item only after reviewing the animation.</p>
 <div class=demo-review-queue-bar><button data-a=demo-review-prev ${S.demoReviewQueueIndex<=0?"disabled":""}>‹ Previous</button><span>${S.demoReviewQueue.length?`${S.demoReviewQueueIndex+1}/${S.demoReviewQueue.length}`:"Review"}</span><button data-a=demo-review-next ${S.demoReviewQueueIndex>=S.demoReviewQueue.length-1?"disabled":""}>Next ›</button></div>
 ${reviewPreview}<div class=card>${fields.map(([k,n])=>`<label class=demo-review-item><input type=checkbox data-demo-review="${k}" ${r[k]?"checked":""}><span><b>${n}</b><small>${r[k]?"Passed":"Needs review"}</small></span></label>`).join("")}</div>
 <div class=spacer></div><label class=field>Review notes<textarea data-demo-review-notes rows=4 placeholder="Record anything that should be corrected…">${esc(r.notes||"")}</textarea></label>
 <button class=btn data-a=save-demo-review>Save Review</button>
-${r.complete?`<div class="card demo-reviewed-banner"><b>✓ Reviewed</b><p>All six checks passed. Forge can display this demo as reviewed.</p></div>`:`<p class="muted demo-review-warning">This demo remains Asset Ready until every check passes.</p>`}`;
+${r.complete?`<div class="card demo-reviewed-banner"><b>✓ Reviewed</b><p>All checks passed. This demo is ready.</p></div>`:`<p class="muted demo-review-warning">This demo stays pending until every check passes.</p>`}`;
 }
 function demoaudit(){
 const rows=S.demoAudit;
@@ -599,7 +599,7 @@ const d=S.formDemo;if(!d)return `<p class=eyebrow>FORM DEMO</p><h2>Loading exerc
 let body=S.formDemoTab==="setup"?`<div class=card><p class=eyebrow>SETUP</p>${d.setup_cues.map((x,i)=>`<div class=form-cue-row><b>${i+1}</b><span>${esc(x)}</span></div>`).join("")}</div>`:
 S.formDemoTab==="mistakes"?`<div class=card><p class=eyebrow>COMMON MISTAKES</p>${d.common_mistakes.map(x=>`<div class="form-cue-row mistake"><b>!</b><span>${esc(x)}</span></div>`).join("")}</div>`:
 `${exerciseDemoPlayer(d)}<div class=spacer></div><div class=card><p class=eyebrow>FORM CUES</p>${d.form_cues.map((x,i)=>`<div class=form-cue-row><b>${i+1}</b><span>${esc(x)}</span></div>`).join("")}</div>`;
-return `<p class=eyebrow>EXERCISE FORM</p><h2>${esc(d.name)}</h2><p class=muted>${esc(d.primary_muscle)} • ${esc(d.equipment)}</p><button class="form-demo-offline-btn" data-a=cache-plan-demos>↓ Make This Week's Demos Available Offline</button><button class="form-demo-audit-btn" data-a=open-demo-audit>View Demo Library Coverage</button><div class=form-demo-tabs>${[["demo","Demo"],["setup","Setup"],["mistakes","Mistakes"]].map(([v,n])=>`<button class="${S.formDemoTab===v?"active":""}" data-form-demo-tab="${v}">${n}</button>`).join("")}</div>${body}<div class=spacer></div><div class=card><p class=eyebrow>BREATHING</p><p>${esc(d.breathing_cue)}</p></div><div class=spacer></div><div class="card form-safety"><p class=eyebrow>CONTROL</p><p>${esc(d.safety_note)}</p></div>`;
+return `<p class=eyebrow>EXERCISE FORM</p><h2>${esc(d.name)}</h2><p class=muted>${esc(d.primary_muscle)} • ${esc(d.equipment)}</p><button class="form-demo-offline-btn" data-a=cache-plan-demos>Save This Week’s Demos Offline</button><button class="form-demo-audit-btn" data-a=open-demo-audit>View Demo Library Coverage</button><div class=form-demo-tabs>${[["demo","Demo"],["setup","Setup"],["mistakes","Mistakes"]].map(([v,n])=>`<button class="${S.formDemoTab===v?"active":""}" data-form-demo-tab="${v}">${n}</button>`).join("")}</div>${body}<div class=spacer></div><div class=card><p class=eyebrow>BREATHING</p><p>${esc(d.breathing_cue)}</p></div><div class=spacer></div><div class="card form-safety"><p class=eyebrow>CONTROL</p><p>${esc(d.safety_note)}</p></div>`;
 }
 async function loadSubstitutionIntelligence(){
 const ex=w()?.exercises?.[S.ei];if(!ex)return;
@@ -622,7 +622,7 @@ const pref=e.user_preference||"neutral";
 const lvl=n=>["","Low","Low","Moderate","High","Very High"][Math.max(1,Math.min(5,Number(n||1)))];
 return `<p class=eyebrow>EXERCISE INTELLIGENCE</p><h2>${esc(e.name)}</h2><p class=muted>${esc(e.primary_muscle)} • ${esc(e.difficulty)}</p>
 <div class=big-spacer></div>
-<button class=exercise-directory-hero data-form-demo="${e.id}" data-form-return=exercisedetail><div class=form-demo-icon>▶</div><strong>Open Form Guide</strong><span>Technique • setup • mistakes</span></button>
+<button class=exercise-directory-hero data-form-demo="${e.id}" data-form-return=exercisedetail><div class=form-demo-icon>▶</div><strong>Open Form Guide</strong><span>Setup • technique • mistakes</span></button>
 <div class=spacer></div>
 <div class=exercise-directory-facts>
 <div><small>Sets</small><b>${e.default_sets}</b></div>
@@ -638,7 +638,7 @@ return `<p class=eyebrow>EXERCISE INTELLIGENCE</p><h2>${esc(e.name)}</h2><p clas
 <div class=settings-status-row><span>Joint stress</span><b>${e.joint_stress}/5</b></div>
 </div>
 <div class=spacer></div>
-<div class=card><p class=eyebrow>MY PREFERENCE</p><p class=muted>Forge uses this when generating and rebuilding your plan.</p>
+<div class=card><p class=eyebrow>MY PREFERENCE</p><p class=muted>Used when Forge builds your plan.</p>
 <div class=chips>
 <button class="chip ${pref==="favorite"?"selected":""}" data-exercise-pref=favorite>★ Favorite</button>
 <button class="chip ${pref==="avoid"?"selected":""}" data-exercise-pref=avoid>Avoid</button>
@@ -653,7 +653,7 @@ return `<p class=eyebrow>EXERCISE INTELLIGENCE</p><h2>${esc(e.name)}</h2><p clas
 }
 const exerciseNames=["Bench Press","Squats","Deadlifts","Pull Ups","Overhead Press","Rows","Lunges","Leg Press","Dips","Bicep Curls","Tricep Pushdowns","Hip Thrusts"];
 function preferences(){
-return `${dots(4)}<h2>Any preferences?</h2><p class=muted>Help us customize your plan.</p><div class=big-spacer></div><div class=preference-list>
+return `${dots(4)}<h2>Any preferences?</h2><p class=muted>Customize your plan.</p><div class=big-spacer></div><div class=preference-list>
 <button class=pref-row data-a=pref-avoid><span><strong>Avoid These Exercises</strong><small class=muted style="display:block">${profile.excluded_exercises.length} selected</small></span><span>›</span></button>
 <button class=pref-row data-a=pref-focus><span><strong>Focus Areas</strong><small class=muted style="display:block">${profile.priority_muscles.length} selected</small></span><span>›</span></button>
 <button class=pref-row data-a=pref-cardio-frequency><span><strong>Cardio</strong><small class=muted style="display:block">${cardioFrequencyLabel(profile.cardio_workouts_per_week)}</small></span><span>›</span></button>
@@ -670,8 +670,8 @@ return n===0?"No Direct Core":n===1?"1 workout / week":`${n} workouts / week`;
 function corepicker(){
 const max=Number(profile.days_per_week||4);
 const values=Array.from({length:max+1},(_,i)=>i);
-return `<p class=eyebrow>CORE TRAINING</p><h2>How often do you want direct core work?</h2>
-<p class=muted>Core training will be added to your regular workouts instead of becoming its own training day.</p>
+return `<p class=eyebrow>CORE TRAINING</p><h2>Core sessions per week</h2>
+<p class=muted>Core is added to your existing workout days.</p>
 <div class=big-spacer></div><div class=preference-list>
 ${values.map(v=>`<button class="pref-row ${Number(profile.core_workouts_per_week)===v?"selected":""}" data-core-frequency="${v}">
 <span><strong>${v===0?"No Direct Core":v===1?"1 Core Add-On":`${v} Core Add-Ons`}</strong>
@@ -688,7 +688,7 @@ const SPORT_OPTIONS=[
 ["track_sprint","Track / Sprinting","Posterior chain, power and sprint support"],["distance_running","Distance Running","Running durability, calves, hips and core"],
 ["swimming","Swimming","Lats, shoulders, upper back and core"],["lacrosse","Lacrosse","Power, rotation, running and shoulder strength"]];
 function sportLabel(v){return (SPORT_OPTIONS.find(x=>x[0]===v)||SPORT_OPTIONS[0])[1]}
-function sportpicker(){return `<p class=eyebrow>SPORT</p><h2>What are you training for?</h2><p class=muted>Forge will adjust exercise selection, training split, rep emphasis, and conditioning around your sport.</p><div class=big-spacer></div><div class=preference-list>${SPORT_OPTIONS.map(([v,n,d])=>`<button class="pref-row ${profile.sport===v?"selected":""}" data-sport="${v}"><span><strong>${n}</strong><small class=muted style="display:block">${d}</small></span><span>${profile.sport===v?"✓":"›"}</span></button>`).join("")}</div><div class=big-spacer></div><button class=btn data-a=pref-done>Done</button>`}
+function sportpicker(){return `<p class=eyebrow>SPORT</p><h2>What are you training for?</h2><p class=muted>Forge will tune training around your sport.</p><div class=big-spacer></div><div class=preference-list>${SPORT_OPTIONS.map(([v,n,d])=>`<button class="pref-row ${profile.sport===v?"selected":""}" data-sport="${v}"><span><strong>${n}</strong><small class=muted style="display:block">${d}</small></span><span>${profile.sport===v?"✓":"›"}</span></button>`).join("")}</div><div class=big-spacer></div><button class=btn data-a=pref-done>Done</button>`}
 const CARDIO_OPTIONS=[["light","Light","10 min • Easy pace focused on recovery and aerobic base"],["moderate","Moderate","15 min • A balanced training pace"],["high","High","20 min • Harder conditioning with more interval work"],["extended","Intense","25+ min • Longer aerobic conditioning sessions"]];
 const SPLIT_OPTIONS=[["auto","Forge Recommended","Automatically choose for your schedule"],["full_body","Full Body","Train the whole body each workout"],["upper_lower","Upper / Lower","Alternate upper- and lower-body days"],["push_pull_legs","Push / Pull / Legs","Separate pushing, pulling, and leg training"],["body_part","Body Part Split","Focus on fewer muscle groups each day"],["hybrid","Hybrid","Mix full-body and focused sessions"],["custom","Custom Split","Choose the muscle groups trained on each day"]];
 const CUSTOM_SPLIT_MUSCLES=["Chest","Back","Shoulders","Biceps","Triceps","Quads","Hamstrings","Glutes","Calves","Core","Forearms"];
@@ -749,8 +749,8 @@ return n===0?"No Cardio":n===1?"1 workout / week":`${n} workouts / week`;
 function cardiofrequencypicker(){
 const max=Number(profile.days_per_week||4);
 const values=Array.from({length:max+1},(_,i)=>i);
-return `<p class=eyebrow>CARDIO TRAINING</p><h2>How often do you want cardio?</h2>
-<p class=muted>Cardio will be added to your regular workouts instead of becoming a separate training day.</p>
+return `<p class=eyebrow>CARDIO TRAINING</p><h2>Cardio sessions per week</h2>
+<p class=muted>Cardio is added to your existing workout days.</p>
 <div class=big-spacer></div><div class=preference-list>
 ${values.map(v=>`<button class="pref-row ${Number(profile.cardio_workouts_per_week)===v?"selected":""}" data-cardio-frequency="${v}">
 <span><strong>${v===0?"No Cardio":v===1?"1 Cardio Add-On":`${v} Cardio Add-Ons`}</strong>
@@ -758,10 +758,10 @@ ${values.map(v=>`<button class="pref-row ${Number(profile.cardio_workouts_per_we
 <span>${Number(profile.cardio_workouts_per_week)===v?"✓":"›"}</span></button>`).join("")}
 </div><div class=big-spacer></div><button class=btn data-a=pref-done>Done</button>`;
 }
-function cardiopicker(){return `<p class=eyebrow>CARDIO INTENSITY</p><h2>How hard should cardio feel?</h2><p class=muted>This changes cardio duration and whether Forge favors steady-state or interval work.</p><div class=big-spacer></div><div class=preference-list>${CARDIO_OPTIONS.map(([v,n,d])=>`<button class="pref-row ${profile.cardio_preference===v?"selected":""}" data-cardio="${v}"><span><strong>${n}</strong><small class=muted style="display:block">${d}</small></span><span>${profile.cardio_preference===v?"✓":"›"}</span></button>`).join("")}</div><div class=big-spacer></div><button class=btn data-a=pref-done>Done</button>`}
-function splitpicker(){return `<p class=eyebrow>WORKOUT SPLIT</p><h2>Choose your training split</h2><p class=muted>Forge rebuilds the whole plan when a saved split changes.</p><div class=big-spacer></div><div class=preference-list>${SPLIT_OPTIONS.map(([v,n,d])=>{const allowed=splitAllowed(v);return `<button class="pref-row ${profile.workout_split===v?"selected":""}" data-split="${v}" ${allowed?"":"disabled"}><span><strong>${n}</strong><small class=muted style="display:block">${allowed?d:"Requires at least 3 training days"}</small></span><span>${profile.workout_split===v?"✓":"›"}</span></button>`}).join("")}</div>${profile.workout_split==="custom"?`<div class=spacer></div><button class="btn dark" data-a=edit-custom-split>Configure Custom Days</button>`:""}<div class=big-spacer></div><button class=btn data-a=pref-done>Done</button>`}
+function cardiopicker(){return `<p class=eyebrow>CARDIO INTENSITY</p><h2>Cardio intensity</h2><p class=muted>Controls duration and steady-state vs. intervals.</p><div class=big-spacer></div><div class=preference-list>${CARDIO_OPTIONS.map(([v,n,d])=>`<button class="pref-row ${profile.cardio_preference===v?"selected":""}" data-cardio="${v}"><span><strong>${n}</strong><small class=muted style="display:block">${d}</small></span><span>${profile.cardio_preference===v?"✓":"›"}</span></button>`).join("")}</div><div class=big-spacer></div><button class=btn data-a=pref-done>Done</button>`}
+function splitpicker(){return `<p class=eyebrow>WORKOUT SPLIT</p><h2>Choose your training split</h2><p class=muted>Changing your split rebuilds the plan.</p><div class=big-spacer></div><div class=preference-list>${SPLIT_OPTIONS.map(([v,n,d])=>{const allowed=splitAllowed(v);return `<button class="pref-row ${profile.workout_split===v?"selected":""}" data-split="${v}" ${allowed?"":"disabled"}><span><strong>${n}</strong><small class=muted style="display:block">${allowed?d:"Requires at least 3 training days"}</small></span><span>${profile.workout_split===v?"✓":"›"}</span></button>`}).join("")}</div>${profile.workout_split==="custom"?`<div class=spacer></div><button class="btn dark" data-a=edit-custom-split>Configure Custom Days</button>`:""}<div class=big-spacer></div><button class=btn data-a=pref-done>Done</button>`}
 function splitAllowed(v){if(v==="push_pull_legs")return profile.days_per_week>=3;return true}
-function customsplit(){ensureCustomSplit();const intel=customSplitInsights();return `<p class=eyebrow>CUSTOM SPLIT 3.0</p><h2>Build a precise training week</h2><p class=muted>Keep the broad muscle groups, then optionally target specific sections inside each one. If no subsection is selected, Forge trains the whole muscle group.</p><div class=big-spacer></div><div class=card><p class=eyebrow>WEEKLY MUSCLE TARGETS</p><h3>Frequency & priority</h3><p class=muted>Use + / − to change weekly frequency. Priority increases selection and volume emphasis.</p>${CUSTOM_SPLIT_MUSCLES.map(m=>`<div class=row style="padding:10px 0;border-bottom:1px solid var(--border)"><div><strong>${m}</strong><small class=muted style="display:block">${intel.frequency[m]}× / week • ${(profile.priority_muscles||[]).includes(m)?"High priority":"Standard priority"}</small></div><div class=row style="gap:6px"><button class=chip data-custom-frequency="${m}:-1">−</button><button class="chip ${(profile.priority_muscles||[]).includes(m)?"selected":""}" data-custom-priority="${m}">Priority</button><button class=chip data-custom-frequency="${m}:1">+</button></div></div>`).join("")}</div><div class=spacer></div>${intel.warnings.length?`<div class=card><p class=eyebrow>PLAN CHECK</p><h3>${intel.warnings.length} item${intel.warnings.length===1?"":"s"} to review</h3>${intel.warnings.map(x=>`<p class=muted>• ${esc(x)}</p>`).join("")}</div><div class=spacer></div>`:`<div class=card><p class=eyebrow>PLAN CHECK</p><h3>Split looks balanced</h3><p class=muted>Major muscle coverage and recovery spacing look reasonable.</p></div><div class=spacer></div>`}${profile.custom_split.map((day,i)=>`<div class=card><div class=row><div><p class=eyebrow>${esc(customSplitWeekday(i))} • DAY ${i+1}</p><h3>${esc(customDayName(day.muscles,i))}</h3></div><span class=muted>${day.muscles.length} group${day.muscles.length===1?"":"s"}</span></div><div class=chips>${CUSTOM_SPLIT_MUSCLES.map(m=>`<button class="chip ${day.muscles.includes(m)?"selected":""}" data-custom-muscle="${i}:${m}">${m}</button>`).join("")}</div>${day.muscles.map(m=>`<div style="margin-top:12px"><small class=muted>${m} focus • ${(day.submuscles?.[m]||[]).length?"specific sections":"whole group"}</small><div class=chips style="margin-top:6px">${(MUSCLE_SUBSECTIONS[m]||[]).map(sub=>`<button class="chip ${(day.submuscles?.[m]||[]).includes(sub)?"selected":""}" data-custom-submuscle="${i}:${m}:${sub}">${sub}</button>`).join("")}</div></div>`).join("")}</div><div class=spacer></div>`).join("")}<button class=btn data-a=custom-split-done>Use Custom Split</button>`}
+function customsplit(){ensureCustomSplit();const intel=customSplitInsights();return `<p class=eyebrow>CUSTOM SPLIT 3.0</p><h2>Build your training week</h2><p class=muted>Choose broad muscles, then add specific sections only if needed.</p><div class=big-spacer></div><div class=card><p class=eyebrow>WEEKLY MUSCLE TARGETS</p><h3>Frequency & priority</h3><p class=muted>Adjust weekly frequency and mark priorities.</p>${CUSTOM_SPLIT_MUSCLES.map(m=>`<div class=row style="padding:10px 0;border-bottom:1px solid var(--border)"><div><strong>${m}</strong><small class=muted style="display:block">${intel.frequency[m]}× / week • ${(profile.priority_muscles||[]).includes(m)?"High priority":"Standard priority"}</small></div><div class=row style="gap:6px"><button class=chip data-custom-frequency="${m}:-1">−</button><button class="chip ${(profile.priority_muscles||[]).includes(m)?"selected":""}" data-custom-priority="${m}">Priority</button><button class=chip data-custom-frequency="${m}:1">+</button></div></div>`).join("")}</div><div class=spacer></div>${intel.warnings.length?`<div class=card><p class=eyebrow>PLAN CHECK</p><h3>${intel.warnings.length} item${intel.warnings.length===1?"":"s"} to review</h3>${intel.warnings.map(x=>`<p class=muted>• ${esc(x)}</p>`).join("")}</div><div class=spacer></div>`:`<div class=card><p class=eyebrow>PLAN CHECK</p><h3>Split looks balanced</h3><p class=muted>Coverage and recovery spacing look good.</p></div><div class=spacer></div>`}${profile.custom_split.map((day,i)=>`<div class=card><div class=row><div><p class=eyebrow>${esc(customSplitWeekday(i))} • DAY ${i+1}</p><h3>${esc(customDayName(day.muscles,i))}</h3></div><span class=muted>${day.muscles.length} group${day.muscles.length===1?"":"s"}</span></div><div class=chips>${CUSTOM_SPLIT_MUSCLES.map(m=>`<button class="chip ${day.muscles.includes(m)?"selected":""}" data-custom-muscle="${i}:${m}">${m}</button>`).join("")}</div>${day.muscles.map(m=>`<div style="margin-top:12px"><small class=muted>${m} focus • ${(day.submuscles?.[m]||[]).length?"specific sections":"whole group"}</small><div class=chips style="margin-top:6px">${(MUSCLE_SUBSECTIONS[m]||[]).map(sub=>`<button class="chip ${(day.submuscles?.[m]||[]).includes(sub)?"selected":""}" data-custom-submuscle="${i}:${m}:${sub}">${sub}</button>`).join("")}</div></div>`).join("")}</div><div class=spacer></div>`).join("")}<button class=btn data-a=custom-split-done>Use Custom Split</button>`}
 function preferencepicker(){
 const avoid=S.prefMode==="avoid",vals=avoid?(S.exerciseDirectory?.exercises?.map(x=>x.name)||exerciseNames):["Chest","Back","Shoulders","Arms","Quads","Hamstrings","Glutes","Core"],arr=avoid?profile.excluded_exercises:profile.priority_muscles;
 return `<p class=eyebrow>${avoid?"AVOID EXERCISES":"FOCUS AREAS"}</p><h2>${avoid?"Exercises to avoid":"Choose focus areas"}</h2><div class=big-spacer></div><div class=chips>${vals.map(x=>`<button class="chip ${arr.includes(x)?"selected":""}" data-prefpick="${x}">${x}</button>`).join("")}</div><div class=big-spacer></div><button class=btn data-a=pref-done>Done</button>`;
@@ -835,7 +835,7 @@ return `<div class=progress-visual-grid>
 <div class="card module-progress-card"><p class=eyebrow>CORE</p><div class=module-progress-value><b>${coreDone}</b><span>circuits completed</span></div><div class=consistency-track><i style="width:${plannedCore?Math.min(100,coreDone/plannedCore*100):0}%"></i></div><small>${plannedCore} core circuit${plannedCore===1?"":"s"} currently scheduled</small></div>
 <div class="card module-progress-card"><p class=eyebrow>CARDIO</p><div class=module-progress-value><b>${cardioDone}</b><span>sessions completed</span></div><div class=consistency-track><i style="width:${plannedCardio?Math.min(100,cardioDone/plannedCardio*100):0}%"></i></div><small>${Math.round(cardioMin)} total cardio min • ${plannedCardio} currently scheduled</small></div>
 <div class="card muscle-volume-card expanded-muscle-volume"><div class=muscle-volume-head><div><p class=eyebrow>WEEKLY MUSCLE VOLUME</p><h3>${allMuscles.length} trained muscle groups</h3></div><span>${Object.values(muscles).reduce((a,b)=>a+b,0)} total sets</span></div>
-${allMuscles.length?allMuscles.map(([muscle,sets])=>`<div class=volume-row><span>${esc(muscle)}</span><b>${sets} sets</b><i><u style="width:${Math.round(sets/max*100)}%"></u></i></div>`).join(""):`<div class=polished-empty><b>Volume appears after your plan is built</b><span>Forge will summarize weekly set distribution here.</span></div>`}
+${allMuscles.length?allMuscles.map(([muscle,sets])=>`<div class=volume-row><span>${esc(muscle)}</span><b>${sets} sets</b><i><u style="width:${Math.round(sets/max*100)}%"></u></i></div>`).join(""):`<div class=polished-empty><b>Volume appears after plan generation</b><span>Weekly set distribution will appear here.</span></div>`}
 </div>
 </div>`;
 }
@@ -843,7 +843,7 @@ function nutritionMealGroups(entries){
 const order=["Breakfast","Lunch","Dinner","Snack","Pre-Workout","Post-Workout","Meal"];
 const groups={};(entries||[]).forEach(x=>(groups[x.meal_type||"Meal"]??=[]).push(x));
 const keys=[...order.filter(k=>groups[k]),...Object.keys(groups).filter(k=>!order.includes(k))];
-if(!keys.length)return `<div class="card polished-empty"><b>Nothing logged yet</b><span>Log your first meal to start tracking today’s calories and macros.</span><button class="btn dark compact" data-a=nutrition-add>Log Food</button></div>`;
+if(!keys.length)return `<div class="card polished-empty"><b>Nothing logged yet</b><span>Log a meal to start today’s nutrition.</span><button class="btn dark compact" data-a=nutrition-add>Log Food</button></div>`;
 return keys.map(k=>{
 const rows=groups[k],cal=rows.reduce((a,x)=>a+Number(x.calories||0),0);
 return `<section class=meal-section><div class=meal-section-head><h3>${esc(k)}</h3><span>${Math.round(cal)} kcal</span></div>
@@ -857,7 +857,7 @@ const c=S.readinessCheckin||{energy:3,soreness:2,motivation:3,sleep:3,minutes:Nu
 S.readinessCheckin=c;
 const scale=(key,label,low,high)=>`<div class=readiness-field><div class=row><b>${label}</b><span>${c[key]}/5</span></div><div class=readiness-scale>${[1,2,3,4,5].map(v=>`<button class="${Number(c[key])===v?"selected":""}" data-readiness-key="${key}" data-readiness-value="${v}">${v}</button>`).join("")}</div><small>${low} → ${high}</small></div>`;
 const planned=Number(ww.estimated_minutes||profile.minutes_per_workout||45);
-return `<p class=eyebrow>15-SECOND CHECK-IN</p><h2>How ready are you today?</h2><p class=muted>Recovery Intelligence 2.0 combines this check-in with recent fatigue and today’s available time. It adapts the session without unnecessarily rewriting your training block.</p><div class=big-spacer></div>
+return `<p class=eyebrow>15-SECOND CHECK-IN</p><h2>How ready are you today?</h2><p class=muted>Forge uses this check-in to adjust today’s session without changing your whole training block.</p><div class=big-spacer></div>
 <div class="card readiness-checkin-card">${scale("energy","Energy","Drained","Excellent")}${scale("soreness","Soreness","None","Very sore")}${scale("motivation","Motivation","Low","High")}${scale("sleep","Sleep quality","Poor","Great")}
 <div class=readiness-field><div class=row><b>Time available</b><span>${c.minutes} min</span></div><div class=time-choice-grid>${[20,30,45,planned].filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b).map(v=>`<button class="${Number(c.minutes)===v?"selected":""}" data-readiness-minutes="${v}">${v===planned?`${v} min • full`:`${v} min`}</button>`).join("")}</div></div></div>
 <div class=big-spacer></div><button class=btn data-a=readiness-apply>Adjust Today’s Workout</button><div class=spacer></div><button class="btn dark" data-a=readiness-skip>Run Original Workout</button>`;
@@ -888,12 +888,12 @@ if(adj.setReduction>0)ww.exercises.forEach((e,i)=>{ if(i>0)e.sets=Math.max(1,Num
 function todayAdjustmentBanner(){
 const a=S.todayAdjustment;if(!a)return "";
 const tone=a.mode==="recovery"?"recover":a.mode==="push"?"ready":"moderate";
-return `<div class="card today-adjustment ${tone}"><div class=row><div><p class=eyebrow>TODAY’S ADJUSTMENT</p><h3>${a.mode==="normal"?"Original session":a.mode==="recovery"?"Recovery-biased session":a.mode==="push"?"High-readiness session":"Controlled session"}</h3></div><b>${a.score}/5</b></div><p class=muted>${esc(a.reason)}</p>${a.proposed_changes?.length?`<div class=program-change-preview><p class=eyebrow>PROPOSED CHANGES — REVIEW BEFORE APPLYING</p>${a.proposed_changes.map(c=>`<div class=adaptation-note><span><b>${esc(c.area)}</b><small>${esc(c.reason)}</small></span><strong>${esc(c.proposed)}</strong></div>`).join("")}</div>`:""}<small>${esc(a.loadCue)}</small></div>`;
+return `<div class="card today-adjustment ${tone}"><div class=row><div><p class=eyebrow>TODAY’S ADJUSTMENT</p><h3>${a.mode==="normal"?"Original session":a.mode==="recovery"?"Recovery-biased session":a.mode==="push"?"High-readiness session":"Controlled session"}</h3></div><b>${a.score}/5</b></div><p class=muted>${esc(a.reason)}</p>${a.proposed_changes?.length?`<div class=program-change-preview><p class=eyebrow>PROPOSED CHANGES</p>${a.proposed_changes.map(c=>`<div class=adaptation-note><span><b>${esc(c.area)}</b><small>${esc(c.reason)}</small></span><strong>${esc(c.proposed)}</strong></div>`).join("")}</div>`:""}<small>${esc(a.loadCue)}</small></div>`;
 }
 async function loadTrainingDashboard(){if(S.trainingDashboard?.loading)return;S.trainingDashboard={loading:true};try{S.trainingDashboard=await api("/me/training-dashboard");if(["home","progress"].includes(S.route))render()}catch(e){console.warn("Training dashboard failed",e)}}
 async function loadMuscleDevelopment(){if(S.muscleDevelopmentLoading||S.muscleDevelopment)return;S.muscleDevelopmentLoading=true;try{S.muscleDevelopment=await api("/me/training/muscle-development");if(S.route==="progress")render()}catch(e){console.warn("Muscle development failed",e)}finally{S.muscleDevelopmentLoading=false}}
-function muscleDevelopmentCard(){const d=S.muscleDevelopment;if(!d)return "";const rows=(d.muscles||[]).slice(0,8);return `<div class="card muscle-development-card"><div class=row><div><p class=eyebrow>MUSCLE DEVELOPMENT INTELLIGENCE</p><h3>Stimulus + progression</h3></div><b>${d.summary?.needs_review||0} review</b></div><p class=muted>Forge compares effective volume with whether the exercises training each muscle are actually progressing.</p><div class=muscle-status-grid>${rows.map(x=>`<div><span><b>${esc(x.muscle)}</b><small>${x.actual_sets}/${x.target_sets} sets • ${esc(x.development_status.replaceAll("_"," "))}</small></span><i><u style="width:${Math.min(100,x.percent||0)}%"></u></i><small>${esc(x.recommendation)}</small></div>`).join("")}</div></div>`}
-function trainingDashboardCard(){const d=S.trainingDashboard;if(!d||d.loading)return `<div class=card><p class=eyebrow>TRAINING BLOCK</p><h3>Loading block intelligence…</h3></div>`;const m=d.mesocycle||{},top=(d.muscles||[]).slice(0,8);return `<div class="card training-command-card"><div class=row><div><p class=eyebrow>TRAINING DASHBOARD 3.0</p><h3>Block ${m.block_number} • Week ${m.week_in_block}/${m.block_length}</h3></div><b>${esc(String(m.phase||""))}</b></div><p class=muted>${d.week.completed}/${d.week.planned} workouts • ${d.week.adherence_percent}% complete • ${m.fatigue_score}/10 fatigue</p><div class=muscle-status-grid>${top.map(x=>`<div><span><b>${esc(x.muscle)}</b><small>${x.actual_sets}/${x.target_sets} effective sets</small></span><i><u style="width:${Math.min(100,x.percent)}%"></u></i></div>`).join("")}</div><div class=spacer></div><small>Current programming direction: <b>${esc(d.progression_mode)}</b></small></div>`}
+function muscleDevelopmentCard(){const d=S.muscleDevelopment;if(!d)return "";const rows=(d.muscles||[]).slice(0,8);return `<div class="card muscle-development-card"><div class=row><div><p class=eyebrow>MUSCLE DEVELOPMENT</p><h3>Stimulus + progression</h3></div><b>${d.summary?.needs_review||0} review</b></div><p class=muted>Compares weekly volume with actual exercise progress.</p><div class=muscle-status-grid>${rows.map(x=>`<div><span><b>${esc(x.muscle)}</b><small>${x.actual_sets}/${x.target_sets} sets • ${esc(x.development_status.replaceAll("_"," "))}</small></span><i><u style="width:${Math.min(100,x.percent||0)}%"></u></i><small>${esc(x.recommendation)}</small></div>`).join("")}</div></div>`}
+function trainingDashboardCard(){const d=S.trainingDashboard;if(!d||d.loading)return `<div class=card><p class=eyebrow>TRAINING BLOCK</p><h3>Loading block intelligence…</h3></div>`;const m=d.mesocycle||{},top=(d.muscles||[]).slice(0,8);return `<div class="card training-command-card"><div class=row><div><p class=eyebrow>TRAINING DASHBOARD 3.0</p><h3>Block ${m.block_number} • Week ${m.week_in_block}/${m.block_length}</h3></div><b>${esc(String(m.phase||""))}</b></div><p class=muted>${d.week.completed}/${d.week.planned} workouts • ${d.week.adherence_percent}% complete • ${m.fatigue_score}/10 fatigue</p><div class=muscle-status-grid>${top.map(x=>`<div><span><b>${esc(x.muscle)}</b><small>${x.actual_sets}/${x.target_sets} effective sets</small></span><i><u style="width:${Math.min(100,x.percent)}%"></u></i></div>`).join("")}</div><div class=spacer></div><small>Current direction <b>${esc(d.progression_mode)}</b></small></div>`}
 function weeklyInsightsCard(){
 const workouts=plan?.workouts||[],done=workouts.filter(x=>x.status==="completed").length;
 const history=S.homeDashboard?.history||[],intel=S.homeDashboard?.intelligence||{};
@@ -932,7 +932,7 @@ ${todayWorkout.status==="completed"
 ${todayWorkout.core_module?`<div class=spacer></div><small>Core: ${todayWorkout.module_status?.core?.status==="completed"?"✓ Complete":"Scheduled"}</small>`:""}${todayWorkout.cardio_module?`<small>Cardio: ${todayWorkout.module_status?.cardio?.status==="completed"?"✓ Complete":"Scheduled"}</small>`:""}
 </div>
 <div class="workout-status-mark ${todayWorkout.status==="completed"?"done":""}">${todayWorkout.status==="completed"?"✓":"▶"}</div>
-</div>`:`<div class="card hero-workout recovery-home"><div class=copy><p class=eyebrow>RECOVERY DAY</p><h2>No workout scheduled today</h2><p class=muted>Recover, refuel, or ask Forge Coach to move a workout here.</p><div class=spacer></div><button class="btn dark" data-coach-route=coach>Ask Forge Coach</button></div></div>`;
+</div>`:`<div class="card hero-workout recovery-home"><div class=copy><p class=eyebrow>RECOVERY DAY</p><h2>No workout scheduled today</h2><p class=muted>Recover, refuel, or move a workout here.</p><div class=spacer></div><button class="btn dark" data-coach-route=coach>Ask Forge Coach</button></div></div>`;
 return `<div class=row><div><p class=muted>Welcome back,</p><h2>${esc(S.name)}!</h2></div><button class=notification-bell data-a=open-notifications>🔔${S.notifications?.unread_count?`<b>${S.notifications.unread_count}</b>`:""}</button></div>
 <div class=spacer></div><div class=row><p class=eyebrow>TODAY</p><small class=muted>${new Date().toLocaleDateString([], {weekday:"long",month:"short",day:"numeric"})}</small></div>
 <div class=spacer></div>${card}
@@ -950,9 +950,9 @@ const completed=ww?.status==="completed";
 return `<div class="day-dot ${completed?"done":i===today?"today":""}">${d}<b>${completed?"✓":ww?(i===today?"▶":"•"):"—"}</b></div>`;
 }).join("")}</div>
 <div class=big-spacer></div><div class=row><h3>Coming Up</h3><button class="text-action" data-nav=plan>Full plan</button></div><div class=spacer></div>
-${upcoming.length?`<div class=upcoming-list>${upcoming.map(x=>`<button class=upcoming-workout data-w=${workouts.indexOf(x)}><span><small>${esc(x.scheduled_day_name||"Upcoming")} • ${esc(x.scheduled_time||S.timeSettings?.default_workout_time||"17:00")}</small><b>${esc(x.name)}</b></span><em>${x.estimated_minutes||profile.minutes_per_workout} min</em></button>`).join("")}</div>`:`<div class=polished-empty><b>No more workouts scheduled this week</b><span>Finish strong, recover, and your next training week will be ready.</span></div>`}
+${upcoming.length?`<div class=upcoming-list>${upcoming.map(x=>`<button class=upcoming-workout data-w=${workouts.indexOf(x)}><span><small>${esc(x.scheduled_day_name||"Upcoming")} • ${esc(x.scheduled_time||S.timeSettings?.default_workout_time||"17:00")}</small><b>${esc(x.name)}</b></span><em>${x.estimated_minutes||profile.minutes_per_workout} min</em></button>`).join("")}</div>`:`<div class=polished-empty><b>Training week complete</b><span>Recover and get ready for next week.</span></div>`}
 <div class=spacer></div><div class=home-completion-summary><div class=home-completion-count><strong>${done}/${workouts.length}</strong><span class=muted>Workouts Completed</span></div>
-<div class=home-completed-list>${done?workouts.filter(w=>w.status==="completed").map(w=>`<div class=home-completed-workout><span class=completed-check>✓</span><span><strong>${esc(w.name)}</strong><small>${esc(w.scheduled_day_name||"Completed")}</small></span></div>`).join(""):`<div class=polished-empty compact-empty><b>Completed workouts appear here</b><span>Complete a session to start your history.</span></div>`}</div></div>`;
+<div class=home-completed-list>${done?workouts.filter(w=>w.status==="completed").map(w=>`<div class=home-completed-workout><span class=completed-check>✓</span><span><strong>${esc(w.name)}</strong><small>${esc(w.scheduled_day_name||"Completed")}</small></span></div>`).join(""):`<div class=polished-empty compact-empty><b>Completed workouts appear here</b><span>Complete a workout to build your history.</span></div>`}</div></div>`;
 }
 function moduleExerciseTarget(e){
 return isTimedExercise(e)?`${e.min_reps}-${e.max_reps} sec`:`${e.min_reps}-${e.max_reps} reps`;
@@ -988,13 +988,13 @@ const current=ww.exercises[Math.min(S.ei,ww.exercises.length-1)];
 const completedExerciseCount=session?Math.min(S.ei,ww.exercises.length):0;
 const workoutPct=Math.round(completedExerciseCount/Math.max(1,ww.exercises.length)*100);
 const remainingMinutes=Math.max(1,Math.round((ww.estimated_minutes||profile.minutes_per_workout||45)*(1-workoutPct/100)));
-return `${todayAdjustmentBanner()}<div class=workout-head><div><p class=eyebrow>${session?"WORKOUT IN PROGRESS":"TODAY'S SESSION"}</p><h2>${esc(ww.name)}</h2><p class=muted>${ww.exercises.length} exercises • ${ww.estimated_minutes||profile.minutes_per_workout} min${ww.execution_summary?` • ${ww.execution_summary.warmup_sets} warm-up sets`:""}</p></div><span class=workout-percent>${workoutPct}%${session?`<small style="display:block">~${remainingMinutes} min left</small>`:""}</span></div>
+return `${todayAdjustmentBanner()}<div class=workout-head><div><p class=eyebrow>${session?"WORKOUT IN PROGRESS":"SESSION"}</p><h2>${esc(ww.name)}</h2><p class=muted>${ww.exercises.length} exercises • ${ww.estimated_minutes||profile.minutes_per_workout} min${ww.execution_summary?` • ${ww.execution_summary.warmup_sets} warm-up sets`:""}</p></div><span class=workout-percent>${workoutPct}%${session?`<small style="display:block">~${remainingMinutes} min left</small>`:""}</span></div>
 <div class=workout-progress-track><i style="width:${workoutPct}%"></i></div>
-${session&&current?`<div class="card active-exercise-card"><div class=row><div><small>CURRENT EXERCISE</small><h2>${esc(current.name)}</h2><p>${current.sets} sets • ${current.min_reps}-${current.max_reps} reps • ${current.rest_seconds||60}s rest</p></div><span class=active-set-badge>Set ${S.set+1}</span></div><button class=btn data-a=openexercise>Continue Logging</button></div>`:""}
-<div class=section-heading><div><p class=eyebrow>EXERCISE LIST</p><h3>${session?"Session roadmap":"What you’ll do"}</h3></div></div>
-<div class=exercise-list>${ww.exercises.map((e,i)=>`<button class="exercise-item ${i===S.ei?"selected":""} ${session&&i<S.ei?"exercise-done":""}" data-ex=${i}><span class=exercise-num>${session&&i<S.ei?"✓":i+1}</span><span class=exercise-item-copy><strong>${esc(e.name)}</strong><span class=exercise-meta><small>${e.sets} sets</small><small>${e.min_reps}-${e.max_reps} reps</small><small>${esc(e.primary_muscle||"Strength")}</small>${e.superset_group?`<small>Superset ${esc(e.superset_group)}</small>`:""}</span></span><span class=exercise-chevron>›</span></button>`).join("")}</div>
+${session&&current?`<div class="card active-exercise-card"><div class=row><div><small>CURRENT EXERCISE</small><h2>${esc(current.name)}</h2><p>${effectiveSetCount(current)} sets • ${current.min_reps}-${current.max_reps} reps • ${current.rest_seconds||60}s base rest</p></div><span class=active-set-badge>Set ${S.set+1}</span></div><button class=btn data-a=openexercise>Continue</button></div>`:""}
+<div class=section-heading><div><p class=eyebrow>EXERCISE LIST</p><h3>${session?"Workout map":"What you’ll do"}</h3></div></div>
+<div class=exercise-list>${ww.exercises.map((e,i)=>`<button class="exercise-item ${i===S.ei?"selected":""} ${session&&i<S.ei?"exercise-done":""}" data-ex=${i}><span class=exercise-num>${session&&i<S.ei?"✓":i+1}</span><span class=exercise-item-copy><strong>${esc(e.name)}</strong><span class=exercise-meta><small>${session&&i===S.ei?effectiveSetCount(e):e.sets} sets</small><small>${e.min_reps}-${e.max_reps} reps</small><small>${esc(e.primary_muscle||"Strength")}</small>${e.superset_group?`<small>Superset ${esc(e.superset_group)}</small>`:""}</span></span><span class=exercise-chevron>›</span></button>`).join("")}</div>
 ${coreModuleCard(ww)}${cardioModuleCard(ww)}
-<div class=big-spacer></div>${session?`<button class="btn dark" data-a=abandon>End Workout Early</button>`:`<button class=btn data-a=startworkout>Start Workout</button><div class=spacer></div><button class="btn dark" data-a=workout-builder>Edit Workout</button>`}`;
+<div class=big-spacer></div>${session?`<button class="btn dark" data-a=abandon>End Workout</button>`:`<button class=btn data-a=startworkout>Start Workout</button><div class=spacer></div><button class="btn dark" data-a=workout-builder>Edit Workout</button>`}`;
 }
 function isTimedExercise(e){
 return e?.tracking_mode==="timed" || /plank|hold|wall sit/i.test(e?.name||"");
@@ -1033,19 +1033,23 @@ const last=recall?`${recall.weight!=null?`${Number(recall.weight)} lb × `:""}${
 const sessionPct=Math.round(((done+(S.set/Math.max(1,e.sets)))/Math.max(1,total))*100);
 return `<div class="card workout-flow-card"><div class=row><div><p class=eyebrow>WORKOUT FLOW 4.0</p><h3>${done+1}/${total} • ${esc(e.name)}</h3></div><b>${sessionPct}%</b></div><div class=workout-progress-track><i style="width:${sessionPct}%"></i></div><div class=flow-grid><span><small>LAST LOGGED</small><b>${esc(last)}</b></span><span><small>NEXT</small><b>${esc(next)}</b></span></div></div>`;
 }
+function exerciseinspect(){
+const ww=w(),i=Math.max(0,Math.min(Number(S.inspectEi||0),(ww?.exercises?.length||1)-1)),e=ww?.exercises?.[i];if(!e)return workout();
+return `<div class=focus-workout-top><button class=focus-back data-nav=workout aria-label="Back to workout">‹</button><div><p class=eyebrow>PREVIEW • EXERCISE ${i+1} OF ${ww.exercises.length}</p><h1>${esc(e.name)}</h1><p class=focus-set>${e.sets} sets • ${e.min_reps}-${e.max_reps} reps</p></div><button class=focus-demo data-form-demo="${e.exercise_id}" data-form-return=exerciseinspect>Form</button></div><div class=card><p class=eyebrow>PLANNED</p><h3>${e.sets} sets • ${e.rest_seconds||60}s rest</h3><p class=muted>${esc(e.primary_muscle||"Strength")} • ${esc(e.equipment||"Bodyweight")}</p></div><div class=spacer></div><button class="btn dark" data-nav=workout>Back to Workout</button><p class="muted inspect-note">Preview only — workout position stays unchanged.</p>`;
+}
 function exercise(){
-const e=w().exercises[S.ei],timed=isTimedExercise(e),bodyweight=isBodyweightExercise(e),setNum=S.set+1;
+const e=w().exercises[S.ei],timed=isTimedExercise(e),bodyweight=isBodyweightExercise(e),setNum=S.set+1,totalSets=effectiveSetCount(e),nextRest=latestRestFor(e);
 if(timed&&!S.exerciseTimerTarget)S.exerciseTimerTarget=Math.max(5,Math.round((Number(e.min_reps||20)+Number(e.max_reps||60))/2));
 const target=timed?`${S.exerciseTimerTarget} sec`:`${e.min_reps}-${e.max_reps} reps`;
 const clock=`${String(Math.floor(S.exerciseElapsed/60)).padStart(2,"0")}:${String(S.exerciseElapsed%60).padStart(2,"0")}`;
-const adjustment=S.liveAdjustment?`<details class="card forge-adjustment"><summary><span><small>FORGE ADJUSTMENT • AUTO-REGULATION 3.0</small><b>${esc(S.liveAdjustment.title)}</b></span><em>Why?</em></summary><p>${esc(S.liveAdjustment.detail)}</p>${S.sessionIntelligence?.next_set?`<div class=progression-metrics><span><b>${S.sessionIntelligence.next_set.load_adjustment_percent>0?"+":""}${S.sessionIntelligence.next_set.load_adjustment_percent}%</b><small>load</small></span><span><b>RPE ≤ ${S.sessionIntelligence.next_set.effort_cap}</b><small>cap</small></span><span><b>${S.sessionIntelligence.next_set.rest_seconds}s</b><small>rest</small></span></div>`:""}</details>`:"";
-return `<div class=focus-workout-top><button class=focus-back data-nav=workout aria-label="Back to workout">‹</button><div><p class="eyebrow workout-context"><span>${esc(w().name)}</span><span>Exercise ${S.ei+1} of ${w().exercises.length}</span></p><h1>${esc(e.name)}</h1><p class=focus-set>Set ${setNum} of ${e.sets}</p></div><button class=focus-demo data-form-demo="${e.exercise_id}" data-form-return=exercise>Form</button></div>
-<div class=focus-prescription><div class=focus-target><small>TARGET</small><strong>${target}</strong><span>${e.rest_seconds||60}s rest</span></div><div class=set-count-control><small>SETS TODAY</small><div><button type=button data-setchange=-1 aria-label="Remove one set" ${Number(e.sets)<=Math.max(1,session?S.set+1:1)?"disabled":""}>−</button><b>${e.sets}</b><button type=button data-setchange=1 aria-label="Add one set" ${Number(e.sets)>=12?"disabled":""}>+</button></div><span>Adjust total sets</span></div></div>
+const adjustment=S.liveAdjustment?`<details class="card forge-adjustment"><summary><span><small>FORGE ADJUSTMENT</small><b>${esc(S.liveAdjustment.title)}</b></span><em>Why?</em></summary><p>${esc(S.liveAdjustment.detail)}</p>${S.sessionIntelligence?.next_set?`<div class=progression-metrics><span><b>${S.sessionIntelligence.next_set.load_adjustment_percent>0?"+":""}${S.sessionIntelligence.next_set.load_adjustment_percent}%</b><small>load</small></span><span><b>RPE ≤ ${S.sessionIntelligence.next_set.effort_cap}</b><small>cap</small></span><span><b>${S.sessionIntelligence.next_set.rest_seconds}s</b><small>rest</small></span></div>`:""}</details>`:"";
+return `<div class=focus-workout-top><button class=focus-back data-nav=workout aria-label="Back to workout">‹</button><div><p class="eyebrow workout-context"><span class=workout-context-name>${esc(w().name)}</span><span class=workout-context-count>Exercise ${S.ei+1} of ${w().exercises.length}</span></p><h1>${esc(e.name)}</h1><p class=focus-set>Set ${Math.min(setNum,totalSets)} of ${totalSets}</p></div><button class=focus-demo data-form-demo="${e.exercise_id}" data-form-return=exercise>Form</button></div>
+<div class=focus-prescription><div class=focus-target><small>TARGET</small><strong>${target}</strong><span>${nextRest?`${nextRest}s next rest`:`${e.rest_seconds||60}s base rest`}</span></div><div class=set-count-control><small>SETS TODAY</small><div><button type=button data-setchange=-1 aria-label="Remove one set" ${totalSets<=Math.max(1,session?S.set+1:1)?"disabled":""}>−</button><b>${totalSets}</b><button type=button data-setchange=1 aria-label="Add one set" ${totalSets>=12?"disabled":""}>+</button></div><span>Adjust sets</span></div></div>
 <div id=recallCard class="focus-previous">${exerciseRecallMarkup(e)}</div>
 ${timed?`<div class=focus-timer><div id=exerciseClock>${clock}</div><div class=set-adjuster timed-target-adjuster><button type=button data-timer-target=-5>−5s</button><span><b>${S.exerciseTimerTarget}s</b><small>target</small></span><button type=button data-timer-target=5>+5s</button></div><div class=exercise-actions><button class=btn data-a=exercise-timer-toggle>${S.exerciseTimerRunning?"Pause":"Start Timer"}</button><button class="btn dark" data-a=exercise-timer-reset>Reset</button></div></div><input id=durationSeconds type=hidden value="${S.exerciseElapsed}">`:
 `<div class="focus-inputs ${bodyweight?"bodyweight":""}">${bodyweight?`<label>Load<select class=log-input id=loadMode><option value=bodyweight selected>Bodyweight</option><option value=weight>Added Weight</option></select></label><label id=addedWeightRow style="display:none">Added weight<input class=log-input id=weight type=number inputmode=decimal min=0 step=2.5 placeholder="0"></label>`:`<label>Weight <small>lb</small><input class=log-input id=weight type=number inputmode=decimal min=0 step=2.5 placeholder="0"></label>`}<label>Reps<input class=log-input id=reps type=number inputmode=numeric min=1 step=1 value="${e.min_reps}"></label></div>`}
 <div class=focus-effort><div><b>Effort</b><small>Good reps left</small></div><div class=effort-options><button type=button class=effort-choice data-rpe=6><b>Easy</b><small>4+</small></button><button type=button class="effort-choice selected" data-rpe=7><b>Moderate</b><small>3</small></button><button type=button class=effort-choice data-rpe=8><b>Hard</b><small>2</small></button><button type=button class=effort-choice data-rpe=9><b>Very Hard</b><small>1</small></button><button type=button class=effort-choice data-rpe=10><b>Limit</b><small>0</small></button></div><input id=rpe type=hidden value=7></div>
-<button class="btn focus-complete" data-a=completeset>Complete ${timed?"Timed Set":"Set"}</button>
+<button class="btn focus-complete" data-a=completeset>Complete ${timed?"Timed Set":"Set"}</button>${S.sessionIntelligence?.optional_extra_set&&S.set>=Number(S.sessionIntelligence?.planned_sets||e.sets)?`<button class="btn dark finish-exercise" data-a=finish-exercise>Finish Exercise</button><small class=optional-set-note>Bonus set is optional.</small>`:""}
 <div class=focus-secondary>${adjustment}${exerciseProgressionCard()}<button class="btn dark" data-a=swap-exercise>Swap Exercise</button><button class="text-action skip-set-action" data-a=skip-set>Skip this set</button></div>`;
 }
 function stopCoreTimer(){
@@ -1154,7 +1158,7 @@ const seq=coreSequence(m),total=seq.length,completed=seq.filter(x=>S.coreComplet
 S.coreSequenceIndex=Math.min(nextIncompleteCoreIndex(m,S.coreSequenceIndex),total);
 if(S.coreSequenceIndex>=total){
 return `<p class=eyebrow>CORE CIRCUIT</p><h2>${esc(m.name)}</h2>
-<div class="card sequential-core-complete"><div class=completion-check>✓</div><h3>All ${total} sets complete</h3><p class=muted>Your reps, hold times, and effort are saved. Finish the circuit to store this session for progression.</p></div>
+<div class="card sequential-core-complete"><div class=completion-check>✓</div><h3>All ${total} sets complete</h3><p class=muted>Your work is saved. Finish the circuit to complete the session.</p></div>
 <div class=big-spacer></div><button class=btn data-a=complete-core-module>Finish Core Circuit</button>`;
 }
 const step=seq[S.coreSequenceIndex],e=step.exercise,key=step.key,timed=isTimedExercise(e);
@@ -1185,12 +1189,13 @@ if(!m)return `<h2>Cardio</h2><p class=muted>No cardio module selected.</p>`;
 return `<p class=eyebrow>CARDIO TRACKING</p><h2>${esc(m.name)}</h2><p class=muted>${esc(m.reason||"Goal-aware cardio")}</p>
 <div class=big-spacer></div><div class=card>
 <div class=logging-grid><div class=logging-row><label>Completed Minutes</label><input class=log-input id=cardioMinutes type=number min=0 step=1 value="${m.minutes||15}"></div><div class=logging-row><label>Distance <small>optional</small></label><input class=log-input id=cardioDistance type=number min=0 step=.01 placeholder="0"></div><div class=logging-row><label>Pace <small>optional</small></label><input class=log-input id=cardioPace type=text placeholder="e.g. 10:00 / mi"></div></div>
-<div class=effort-section><div class=effort-heading><strong>Effort / RIR</strong><small>How hard did the session feel?</small></div><div class=effort-options>${effortChoiceHTML(effort,"cardio")}</div><input id=cardioRpe type=hidden value="${effort}"></div>
+<div class=effort-section><div class=effort-heading><strong>Effort / RIR</strong><small>Session effort</small></div><div class=effort-options>${effortChoiceHTML(effort,"cardio")}</div><input id=cardioRpe type=hidden value="${effort}"></div>
 </div><div class=big-spacer></div><button class=btn data-a=complete-cardio-module>Complete Cardio</button>`;
 }
 function timer(){
-const t=S.restRemaining||w().exercises[S.ei].rest_seconds||60,mm=String(Math.floor(t/60)).padStart(2,"0"),ss=String(t%60).padStart(2,"0"),e=w().exercises[S.ei];
-return `<div class=center><p class=eyebrow>RECOVERY BETWEEN SETS</p><h2>Rest Timer</h2><p class=muted>Next: ${esc(e.name)} • Set ${S.set+1} of ${e.sets}</p><div class=ring><div><strong id=restClock>${mm}:${ss}</strong><span class=muted>Remaining</span></div></div><div class=timer-actions><button data-addrest=30>+30s</button><button data-addrest=60>+1m</button><button data-a=skiprest>Skip</button></div><div class=big-spacer></div><button class=btn data-a=skiprest>Start Next Set</button><div class=spacer></div><button class="btn dark" data-a=view-workout-rest>View Workout While Resting</button></div>`;
+const e=w().exercises[S.ei],t=S.restRemaining||S.restTotal||e.rest_seconds||60,mm=String(Math.floor(t/60)).padStart(2,"0"),ss=String(t%60).padStart(2,"0"),ctx=S.restContext;
+const restNote=ctx&&Number(ctx.recommended)!==Number(ctx.base)?`Rest adjusted: ${ctx.base}s → ${ctx.recommended}s.`:`Rest: ${Number(ctx?.recommended||S.restTotal||e.rest_seconds||60)}s.`;
+return `<div class=center><p class=eyebrow>RECOVERY BETWEEN SETS</p><h2>Rest Timer</h2><p class=muted>Next: ${esc(e.name)} • Set ${Math.min(S.set+1,effectiveSetCount(e))} of ${effectiveSetCount(e)}</p><p class="rest-explanation">${esc(restNote)}</p><div class=ring><div><strong id=restClock>${mm}:${ss}</strong><span class=muted>Remaining</span></div></div><div class=timer-actions><button data-addrest=30>+30s</button><button data-addrest=60>+1m</button><button data-a=skiprest>Skip</button></div><div class=big-spacer></div><button class=btn data-a=skiprest>Next Set</button><div class=spacer></div><button class="btn dark" data-a=view-workout-rest>View Workout</button></div>`;
 }
 function modulemove(){
 const type=S.moduleMoveType,sourceIndex=S.moduleMoveSourceIndex,source=plan?.workouts?.[sourceIndex];
@@ -1213,7 +1218,7 @@ return S.cardioSwapOptions.map(x=>`<button class="card swap-option ${Number(S.se
 }
 function cardioswap(){
 return `<p class=eyebrow>SWAP CARDIO</p><h2>Choose Cardio Exercise</h2>
-<p class=muted>Only cardio options that work with your Equipment Log are shown.</p>
+<p class=muted>Only compatible cardio options are shown.</p>
 <div class=spacer></div><div id=cardioSwapList class=stack>${cardioSwapMarkup()}</div>
 <div class=big-spacer></div><div class=row><button class="btn dark" style="width:48%" data-a=cancel-cardio-swap>Cancel</button><button class=btn style="width:48%" data-a=apply-cardio-swap>Swap</button></div>`;
 }
@@ -1248,7 +1253,7 @@ function swapOptionsMarkup(e){
 const key=`${Number(e?.exercise_id||0)}:${S.swapReason}`;
 if(S.swapOptionsKey!==key||S.swapOptionsLoading)return `<div class=card><p class=muted>Loading substitutions…</p></div>`;
 const compatible=(S.swapOptions||[]).filter(x=>x.equipment_compatible&&x.user_preference!=="painful");
-if(!compatible.length)return `<div class=card><p class=muted>No compatible substitutions found for your equipment and preferences.</p></div>`;
+if(!compatible.length)return `<div class=card><p class=muted>No compatible swaps found.</p></div>`;
 return compatible.map((x,i)=>`<button class="card swap-option smart-swap-option ${Number(S.selectedSwap)===Number(x.id)?"selected":""}" data-swap=${x.id}>
 <div class=row><div><p class=eyebrow>${i===0?"BEST MATCH":esc(x.primary_muscle)}</p><h3>${esc(x.name)}</h3>
 <p class=muted>${esc(x.equipment)} • ${x.min_reps}-${x.max_reps} reps</p><div class=swap-match-tags><span>${esc(x.smart_reason||"similar movement")}</span>${x.user_preference==="favorite"?"<span>★ Favorite</span>":""}</div></div><div class=swap-score><b>${Math.max(0,Math.round(Number(x.substitution_score||0)+swapBonus(x,e)))}</b><small>match</small></div></div></button>`).join("");
@@ -1262,7 +1267,7 @@ const reasons=[
 ["equipment","Equipment unavailable"],
 ["variety","Want variety"]
 ];
-return `${substitutionIntelligenceCard()}<div class=spacer></div><p class=eyebrow>SMART SUBSTITUTION</p><h2>Swap ${esc(e?.name||"Exercise")}</h2><p class=muted>Tell Forge why you’re swapping so the best matches rise to the top.</p><div class=swap-reason-grid>${reasons.map(([k,l])=>`<button class="${S.swapReason===k?"selected":""}" data-swap-reason="${k}">${l}</button>`).join("")}</div><div class=spacer></div><input class=swap-search placeholder="Search alternatives"><div class=row><p class=eyebrow>BEST MATCHES</p><small class=muted>ranked for this reason</small></div><div class=spacer></div><div id=swapList class=stack>${swapOptionsMarkup(e)}</div><div class=big-spacer></div>${S.swapReason==="discomfort"?`<div class="card pain-swap-note"><b>Discomfort swap</b><span>Forge will mark the current exercise as painful so it is strongly deprioritized in future substitutions. This is not a diagnosis; stop the movement if it causes pain.</span></div><div class=spacer></div>`:""}<div class=row><button class="btn dark" style="width:48%" data-a=back-exercise>Cancel</button><button class=btn style="width:48%" data-a=swap-selected>Swap</button></div>`;
+return `${substitutionIntelligenceCard()}<div class=spacer></div><p class=eyebrow>SMART SUBSTITUTION</p><h2>Swap ${esc(e?.name||"Exercise")}</h2><p class=muted>Tell Forge why you want a swap.</p><div class=swap-reason-grid>${reasons.map(([k,l])=>`<button class="${S.swapReason===k?"selected":""}" data-swap-reason="${k}">${l}</button>`).join("")}</div><div class=spacer></div><input class=swap-search placeholder="Search alternatives"><div class=row><p class=eyebrow>BEST MATCHES</p><small class=muted>ranked for this reason</small></div><div class=spacer></div><div id=swapList class=stack>${swapOptionsMarkup(e)}</div><div class=big-spacer></div>${S.swapReason==="discomfort"?`<div class="card pain-swap-note"><b>Discomfort swap</b><span>Forge will avoid this exercise in future swaps. Stop if the movement causes pain.</span></div><div class=spacer></div>`:""}<div class=row><button class="btn dark" style="width:48%" data-a=back-exercise>Cancel</button><button class=btn style="width:48%" data-a=swap-selected>Swap</button></div>`;
 }
 async function loadSwapOptions(){
 const e=w()?.exercises?.[S.ei];if(!e)return;
@@ -1291,7 +1296,7 @@ go("exercise");
 function complete(){
 const prs=S.workoutPRs||[],unique=[],seen=new Set();for(const pr of prs){const k=`${pr.exercise_name}|${pr.type}`;if(!seen.has(k)){seen.add(k);unique.push(pr)}}
 const sum=S.completedWorkoutSummary||{},duration=sum.duration_minutes??(S.sessionStartedAt?Math.max(1,Math.round((Date.now()-S.sessionStartedAt)/60000)):null),volume=sum.total_volume;
-return `<div class=center><div class=complete-shield>💪</div><p class=eyebrow>SESSION COMPLETE</p><h2>${esc(w()?.name||"Workout")}</h2><p class=muted>Strong work, ${esc(S.name)}. Here’s what you accomplished.</p><div class=spacer></div><div class="metrics completion-metrics"><div class=metric><strong>${duration??"—"}</strong><span>Minutes</span></div><div class=metric><strong>${w()?.exercises?.length||0}</strong><span>Exercises</span></div><div class=metric><strong>${sum.total_sets??w()?.exercises?.reduce((a,e)=>a+e.sets,0)??0}</strong><span>Sets</span></div><div class=metric><strong>${volume!=null?Math.round(volume).toLocaleString():"—"}</strong><span>Volume lb</span></div></div>${unique.length?`<div class=spacer></div><div class=completion-prs><p class=eyebrow>NEW PERSONAL RECORDS</p>${unique.slice(0,4).map(pr=>`<div class=pr-card><p class=eyebrow>🏆 ${esc(pr.label)}</p><h3>${esc(pr.exercise_name)}</h3><strong>${pr.value} ${esc(pr.unit)}</strong></div>`).join("")}</div>`:""}<div class=spacer></div><div class="card completion-next-card"><p class=eyebrow>NEXT SESSION</p><h3>${unique.length?"Progress captured":"Consistency captured"}</h3><p class=muted>Forge will use your logged reps, load, and effort to set the next progression target.</p></div><div class=big-spacer></div><p>How was this workout?</p><div class=spacer></div><div class=feelings>${[["😟","Too Hard"],["😡","Hard"],["🙂","Just Right"],["😎","Easy"],["🔥","Too Easy"]].map(x=>`<button class="feel ${S.feel===x[1]?"selected":""}" data-feel="${x[1]}"><span>${x[0]}</span>${x[1]}</button>`).join("")}</div><div class=big-spacer></div><button class=btn data-a=finish>Finish Workout</button><div class=spacer></div><div class=complete-secondary><button class="btn dark" data-a=finish-progress>View Progress</button><button class="btn dark" data-a=finish-nutrition>Log Nutrition</button></div></div>`;
+return `<div class=center><div class=complete-shield>💪</div><p class=eyebrow>SESSION COMPLETE</p><h2>${esc(w()?.name||"Workout")}</h2><p class=muted>Strong work, ${esc(S.name)}. Here’s what you accomplished.</p><div class=spacer></div><div class="metrics completion-metrics"><div class=metric><strong>${duration??"—"}</strong><span>Minutes</span></div><div class=metric><strong>${w()?.exercises?.length||0}</strong><span>Exercises</span></div><div class=metric><strong>${sum.total_sets??w()?.exercises?.reduce((a,e)=>a+e.sets,0)??0}</strong><span>Sets</span></div><div class=metric><strong>${volume!=null?Math.round(volume).toLocaleString():"—"}</strong><span>Volume lb</span></div></div>${unique.length?`<div class=spacer></div><div class=completion-prs><p class=eyebrow>NEW PERSONAL RECORDS</p>${unique.slice(0,4).map(pr=>`<div class=pr-card><p class=eyebrow>🏆 ${esc(pr.label)}</p><h3>${esc(pr.exercise_name)}</h3><strong>${pr.value} ${esc(pr.unit)}</strong></div>`).join("")}</div>`:""}<div class=spacer></div><div class="card completion-next-card"><p class=eyebrow>NEXT SESSION</p><h3>${unique.length?"Progress captured":"Consistency captured"}</h3><p class=muted>Forge uses this set to update your next target.</p></div><div class=big-spacer></div><p>How was this workout?</p><div class=spacer></div><div class=feelings>${[["😟","Too Hard"],["😡","Hard"],["🙂","Just Right"],["😎","Easy"],["🔥","Too Easy"]].map(x=>`<button class="feel ${S.feel===x[1]?"selected":""}" data-feel="${x[1]}"><span>${x[0]}</span>${x[1]}</button>`).join("")}</div><div class=big-spacer></div><button class=btn data-a=finish>Finish Workout</button><div class=spacer></div><div class=complete-secondary><button class="btn dark" data-a=finish-progress>View Progress</button><button class="btn dark" data-a=finish-nutrition>Log Nutrition</button></div></div>`;
 }
 async function loadCompletedWorkoutSummary(){
 if(!S.lastSessionId)return;
@@ -1319,7 +1324,7 @@ function nutrition(){
 const n=S.nutrition,t=n?.targets||{calories:2200,protein_g:150,carbs_g:250,fat_g:70},v=n?.totals||{calories:0,protein_g:0,carbs_g:0,fat_g:0},r=n?.remaining||{};
 const calPct=nutritionProgress(v.calories,t.calories);
 return `<div class=row><div><p class=eyebrow>NUTRITION</p><h2>Nutrition</h2></div><input id=nutritionDate type=date value="${nutritionDateValue()}" class=nutrition-date></div>
-<p class=muted>Fuel training and recovery without losing sight of the daily target.</p>
+<p class=muted>Fuel training while staying on target.</p>
 <div class=big-spacer></div>
 <div class=nutrition-dashboard-hero>
 <div class=nutrition-ring-large style="--p:${calPct}"><div><b>${Math.max(0,Math.round(r.calories??(t.calories-v.calories)))}</b><small>kcal remaining</small></div></div>
@@ -1328,7 +1333,7 @@ return `<div class=row><div><p class=eyebrow>NUTRITION</p><h2>Nutrition</h2></di
 <div class=spacer></div><div class=nutrition-macros>
 ${[["Protein","protein_g","g"],["Carbs","carbs_g","g"],["Fat","fat_g","g"]].map(([label,key,unit])=>`<div class=macro-card><div class=row><small>${label}</small><b>${Math.round(v[key]||0)}/${t[key]}${unit}</b></div><div class=macro-track><i style="width:${nutritionProgress(v[key],t[key])}%"></i></div><em>${Math.max(0,Math.round((r[key]??(t[key]-v[key]))||0))}${unit} left</em></div>`).join("")}</div>
 ${(S.nutritionSavedFoods||[]).filter(x=>!S.nutritionFavoritesOnly||x.is_favorite).length?`<div class=big-spacer></div><div class=row><h3>Quick Log</h3><small class=muted>${S.nutritionFavoritesOnly?"Favorites":"Recent & saved foods"}</small></div><div class=nutrition-saved-strip>${S.nutritionSavedFoods.filter(x=>!S.nutritionFavoritesOnly||x.is_favorite).map(x=>`<div class="card nutrition-saved-card"><button class=nutrition-favorite data-nutrition-favorite="${x.id}" data-favorite="${x.is_favorite?0:1}">${x.is_favorite?"★":"☆"}</button><h3>${esc(x.food_name)}</h3><p class=muted>${x.calories} kcal • P ${Math.round(x.protein_g)}g</p><button class="btn dark compact" data-nutrition-quicklog="${x.id}">+ Log</button></div>`).join("")}</div>`:""}
-<div class=big-spacer></div><div class="card nutrition-training-card"><p class=eyebrow>TRAINING + NUTRITION</p><h3>Fuel around today’s training</h3><p class=muted>Forge Coach can use your workout and remaining macros together.</p><div class=row><button class="btn dark compact" data-nutrition-coach="How should I eat for my workout today?">Pre-workout</button><button class="btn dark compact" data-nutrition-coach="What should I eat after my workout today?">Recovery</button></div></div>
+<div class=big-spacer></div><div class="card nutrition-training-card"><p class=eyebrow>TRAINING + NUTRITION</p><h3>Fuel today’s training</h3><p class=muted>Coach can use your workout and remaining macros.</p><div class=row><button class="btn dark compact" data-nutrition-coach="How should I eat for my workout today?">Pre-workout</button><button class="btn dark compact" data-nutrition-coach="What should I eat after my workout today?">Recovery</button></div></div>
 <div class=big-spacer></div><div class=row><h3>Meals</h3><button class="btn dark compact" data-a=nutrition-targets>Targets</button></div><div class=spacer></div><div class=nutrition-tools><button class="btn dark compact" data-a=nutrition-copy-yesterday>Copy Yesterday</button><button class="btn dark compact ${S.nutritionFavoritesOnly?"selected":""}" data-a=nutrition-favorites-only>${S.nutritionFavoritesOnly?"All Saved":"Favorites"}</button></div><div class=spacer></div>
 <div class=nutrition-entry-list>${nutritionMealGroups(n?.entries||[])}</div>
 ${S.nutritionEditingTargets?`<div class=nutrition-modal><div class=nutrition-dialog><p class=eyebrow>DAILY TARGETS</p><h2>Nutrition Targets</h2><div class=nutrition-form><label>Calories<input id=targetCalories type=number min=0 value="${t.calories}"></label><label>Protein (g)<input id=targetProtein type=number min=0 value="${t.protein_g}"></label><label>Carbs (g)<input id=targetCarbs type=number min=0 value="${t.carbs_g}"></label><label>Fat (g)<input id=targetFat type=number min=0 value="${t.fat_g}"></label></div><div class=spacer></div><button class=btn data-a=nutrition-save-targets>Save Targets</button><div class=spacer></div><button class="btn dark" data-a=nutrition-close-modal>Cancel</button></div></div>`:""}`;
@@ -1344,7 +1349,7 @@ return `<p class=eyebrow>NUTRITION</p><h2>Add Food</h2><p class=muted>${nutritio
 }
 function workoutbuilder(){
 const ww=w();if(!ww)return home();
-return `<p class=eyebrow>PLAN EDITOR 2.0</p><h2>${esc(ww.name)}</h2><p class=muted>Edit exercise order, sets, reps, rest, locks, and move exercises between training days. Forge keeps the current program synchronized.</p>${S.planEditorSnapshot?.warnings?.length?`<div class=spacer></div><div class="card"><p class=eyebrow>PROGRAM WARNINGS</p>${S.planEditorSnapshot.warnings.slice(0,3).map(x=>`<small>${esc(x)}</small>`).join("<br>")}</div>`:""}<div class=big-spacer></div>
+return `<p class=eyebrow>PLAN EDITOR 2.0</p><h2>${esc(ww.name)}</h2><p class=muted>Edit exercises, sets, reps, rest, locks, and workout days.</p>${S.planEditorSnapshot?.warnings?.length?`<div class=spacer></div><div class="card"><p class=eyebrow>PROGRAM WARNINGS</p>${S.planEditorSnapshot.warnings.slice(0,3).map(x=>`<small>${esc(x)}</small>`).join("<br>")}</div>`:""}<div class=big-spacer></div>
 <div class=stack>${ww.exercises.map((e,i)=>`<div class="card builder-row"><div class=row><div><small>${i+1}</small><h3>${esc(e.name)}</h3></div><div><button data-builder-move="${i}:-1">↑</button><button data-builder-move="${i}:1">↓</button></div></div><div class=builder-fields><label>Sets<input data-builder-sets=${e.exercise_id} type=number min=1 max=12 value=${e.sets}></label><label>Min reps<input data-builder-min=${e.exercise_id} type=number min=1 value=${e.min_reps}></label><label>Max reps<input data-builder-max=${e.exercise_id} type=number min=1 value=${e.max_reps}></label><label>Rest<input data-builder-rest=${e.exercise_id} type=number min=15 step=15 value=${e.rest_seconds||60}></label></div><div class=row><button class="text-action" data-builder-lock="${S.wi}:${e.exercise_id}">${(S.planLocks?.[S.wi]||[]).includes(Number(e.exercise_id))?"🔒 Locked":"Lock exercise"}</button><button class="text-action" data-builder-exclude="${e.exercise_id}:${encodeURIComponent(e.name)}">Never include</button><button class="text-action" data-builder-remove=${e.exercise_id}>Remove</button></div><div class=spacer></div><div class=row><select data-builder-target="${e.exercise_id}">${(plan.workouts||[]).map((x,j)=>j===S.wi?"":`<option value="${x.workout_id}">Move to ${esc(x.name)}</option>`).join("")}</select><button class="btn dark compact" data-builder-transfer="${e.exercise_id}">Move</button></div></div>`).join("")}</div>
 <div class=big-spacer></div><button class=btn data-a=builder-add>Add Exercise</button>`;
 }
@@ -1362,7 +1367,7 @@ return `<p class=eyebrow>PERSONAL RECORDS</p><h2>Personal Records</h2>
 <div class=spacer></div><div class=pr-tabs>
 <button class="${S.prView==="exercise"?"active":""}" data-pr-view=exercise>By Exercise</button>
 <button class="${S.prView==="lift"?"active":""}" data-pr-view=lift>By Lift Type</button></div>
-${S.prView==="lift"?`<div class=spacer></div><p class=muted>View your records grouped by movement type.</p>
+${S.prView==="lift"?`<div class=spacer></div><p class=muted>Browse records by movement type.</p>
 <div class=pr-lift-filters>${[["all","All"],["lower","Lower Body"],["upper","Upper Body"],["core","Core"],["conditioning","Conditioning"]].map(([v,l])=>`<button class="${S.prLiftFilter===v?"active":""}" data-pr-lift-filter="${v}">${l}</button>`).join("")}</div>`:""}
 <div class=spacer></div><div id=prList class=stack>${S.prLoaded?(S.prView==="lift"?renderPRLiftGroups(S.prRecords||[]):renderPRExerciseList(S.prRecords||[])):`<div class=card><p class=muted>Loading PRs…</p></div>`}</div>`;
 }
@@ -1377,18 +1382,18 @@ const v=exerciseHistoryMarkup();return `<p class=eyebrow>EXERCISE HISTORY</p><h2
 }
 function exerciseRecallMarkup(e){
 if(S.exerciseRecallExerciseId!==e.exercise_id){
-return `<p class=eyebrow>PREVIOUS PERFORMANCE</p><p class=muted>Loading your last performance and next target...</p>`;
+return `<p class=eyebrow>PREVIOUS PERFORMANCE</p><p class=muted>Loading last performance…</p>`;
 }
 const data=S.exerciseRecall;
 if(!data){
 return S.exerciseRecallLoading
-? `<p class=eyebrow>PREVIOUS PERFORMANCE</p><p class=muted>Loading your last performance and next target...</p>`
-: `<p class=eyebrow>TRAINING HISTORY</p><p class=muted>No previous data available yet.</p>`;
+? `<p class=eyebrow>PREVIOUS PERFORMANCE</p><p class=muted>Loading last performance…</p>`
+: `<p class=eyebrow>TRAINING HISTORY</p><p class=muted>No previous data yet.</p>`;
 }
 const sets=data.sets||[];
 const last=sets.length?sets[sets.length-1]:null;
 const suggestion=data.progression_suggestion;
-if(!last)return `<p class=eyebrow>FIRST SESSION</p><h3>No previous sets yet</h3><p class=muted>Log this exercise and Forge will remember it next time.</p>`;
+if(!last)return `<p class=eyebrow>FIRST SESSION</p><h3>No previous sets yet</h3><p class=muted>Log this exercise to build its history.</p>`;
 const action=suggestion?suggestion.action.replaceAll("_"," "):"repeat";
 const targetLabel=suggestion?.load_mode==="timed"?`${suggestion.suggested_duration_seconds} sec`:suggestion?.load_mode==="bodyweight"?`${suggestion.suggested_reps} reps`:suggestion?`${Number(suggestion.suggested_weight||0).toFixed(1).replace(/\.0$/,'')} lb × ${suggestion.suggested_reps||e.min_reps}`:`${last.weight??0} lb`;
 const recent=sets.slice(-4).reverse();
@@ -1433,7 +1438,7 @@ if(card&&S.route==="exercise"&&Number(w()?.exercises?.[S.ei]?.exercise_id)===exe
 if(S.exerciseRecallExerciseId===exerciseId){
 S.exerciseRecall=null;
 const card=document.querySelector("#recallCard");
-if(card)card.innerHTML=`<p class=eyebrow>TRAINING HISTORY</p><p class=muted>No previous data available yet.</p>`;
+if(card)card.innerHTML=`<p class=eyebrow>TRAINING HISTORY</p><p class=muted>No previous data yet.</p>`;
 }
 }finally{
 if(S.exerciseRecallExerciseId===exerciseId)S.exerciseRecallLoading=false;
@@ -1461,7 +1466,7 @@ const e=Number(r.best_e1rm||0),w=Number(r.max_weight||0),reps=Number(r.best_reps
 return e>0?`${e.toFixed(1).replace(/\.0$/,"")} lb est. 1RM`:w>0?`${w.toFixed(1).replace(/\.0$/,"")} lb max`:`${reps} reps`;
 }
 function renderPRExerciseList(rows){
-if(!rows.length)return `<div class=card><p class=muted>No PRs yet. Log some workouts first.</p></div>`;
+if(!rows.length)return `<div class=card><p class=muted>No PRs yet.</p></div>`;
 return rows.map(r=>`<button class="card pr-exercise-card" data-exhist="${r.exercise_id}">
 <div class=row><div><p class=eyebrow>${esc(r.name)}</p><h3>${Number(r.max_weight||0).toFixed(1).replace(/\.0$/,"")} lb max</h3>
 <p class=muted>Estimated 1RM ${Number(r.best_e1rm||0).toFixed(1).replace(/\.0$/,"")} lb • Rep PR ${r.best_reps} • Set-volume PR ${Number(r.best_volume_set||0).toFixed(0)} lb</p><small>${esc((r.trend||"steady").toUpperCase())}</small></div><span>›</span></div></button>`).join("");
@@ -1472,7 +1477,7 @@ const other=rows.filter(r=>!PR_LIFT_GROUPS.some(g=>g.patterns.includes(r.movemen
 if(other.length)groups.push({key:"other",label:"Other",scope:"all",icon:"•",records:other});
 if(S.prLiftFilter!=="all")groups=groups.filter(g=>g.scope===S.prLiftFilter);
 groups=groups.filter(g=>g.records.length);
-if(!groups.length)return `<div class=card><h3>No records in this lift type yet</h3><p class=muted>Complete exercises in this category to build records.</p></div>`;
+if(!groups.length)return `<div class=card><h3>No records in this category</h3><p class=muted>Complete these exercises to build records.</p></div>`;
 return groups.map(g=>{
 const sorted=g.records.slice().sort((a,b)=>Number(b.best_e1rm||b.max_weight||0)-Number(a.best_e1rm||a.max_weight||0));
 const top=sorted[0],collapsed=!!S.prCollapsedGroups[g.key];
@@ -1512,7 +1517,7 @@ S.progressHubLoading=true;
 try{S.progressHub=await api("/me/progress/hub");if(S.route==="progress")render()}catch(e){console.warn("Progress hub load failed",e)}finally{S.progressHubLoading=false}
 }
 function progressHubOverview(){
-const h=S.progressHub;if(!h)return `<div class="card progress-hub-card"><p class=eyebrow>PROGRESS HUB</p><h3>Connecting your training data…</h3></div>`;
+const h=S.progressHub;if(!h)return `<div class="card progress-hub-card"><p class=eyebrow>PROGRESS HUB</p><h3>Loading training data…</h3></div>`;
 const k=h.kpis||{};
 return `<div class="card progress-hub-card"><div class=row><div><p class=eyebrow>PROGRESS HUB 2.0</p><h3>${esc(h.headline||"Your long-term picture")}</h3></div><b>${h.score==null?"—":h.score}/100</b></div>
 <div class=progress-hub-kpis>
@@ -1534,7 +1539,7 @@ if(S.route==="progress")render();
 }
 function progressIntelligenceCard(){
 const x=S.progressIntelligence;
-if(!x)return `<div class="card progress-intelligence-card"><p class=eyebrow>PROGRESS INTELLIGENCE</p><h3>Analyzing your training...</h3><p class=muted>Forge is combining your recent training, strength, recovery, and nutrition data.</p></div>`;
+if(!x)return `<div class="card progress-intelligence-card"><p class=eyebrow>PROGRESS INTELLIGENCE</p><h3>Analyzing your training...</h3><p class=muted>Combining training, recovery, and nutrition.</p></div>`;
 const score=x.score==null?"—":x.score;
 return `<div class="card progress-intelligence-card ${esc(x.status)}">
 <div class=row><div><p class=eyebrow>PROGRESS INTELLIGENCE</p><h3>${esc(x.headline)}</h3></div><div class=progress-score><b>${score}</b><small>/100</small></div></div>
@@ -1575,21 +1580,21 @@ ${S.bodyMetricModal?bodyMetricModal():""}`;
 }
 function bodyMetricModal(){
 const today=new Date().toISOString().slice(0,10);
-return `<div class=nutrition-modal><div class=nutrition-dialog><p class=eyebrow>BODY CHECK-IN</p><h2>Log Measurements</h2><p class=muted>Only fill in what you measured today.</p>
+return `<div class=nutrition-modal><div class=nutrition-dialog><p class=eyebrow>BODY CHECK-IN</p><h2>Log Measurements</h2><p class=muted>Enter only what you measured.</p>
 <div class=nutrition-form><label>Date<input id=bodyDate type=date value="${today}"></label><label>Weight (lb)<input id=bodyWeight type=number min=0 step=.1 placeholder="e.g. 185.4"></label>
 <div class=body-measure-grid><label>Body Fat (%)<input id=bodyFat type=number min=0 step=.1></label><label>Waist (in)<input id=bodyWaist type=number min=0 step=.1></label><label>Chest (in)<input id=bodyChest type=number min=0 step=.1></label><label>Hips (in)<input id=bodyHips type=number min=0 step=.1></label><label>Arm (in)<input id=bodyArm type=number min=0 step=.1></label><label>Thigh (in)<input id=bodyThigh type=number min=0 step=.1></label></div><label>Notes<input id=bodyNotes maxlength=500 placeholder="Optional"></label></div>
 <div class=spacer></div><button class=btn data-a=body-metric-save>Save Check-In</button><div class=spacer></div><button class="btn dark" data-a=body-metric-close>Cancel</button></div></div>`;
 }
 async function loadIntelligenceCore(){if(S.intelligenceCoreLoading||S.intelligenceCore)return;S.intelligenceCoreLoading=true;try{S.intelligenceCore=await api("/me/intelligence/core");if(["coach","progress"].includes(S.route))render()}catch(e){console.warn("Intelligence Core failed",e)}finally{S.intelligenceCoreLoading=false}}
 async function loadExplainableProgramming(){if(S.explainableProgrammingLoading||S.explainableProgramming)return;S.explainableProgrammingLoading=true;try{S.explainableProgramming=await api("/me/intelligence/explain");if(["coach","progress"].includes(S.route))render()}catch(e){console.warn("Explainable programming failed",e)}finally{S.explainableProgrammingLoading=false}}
-function explainableProgrammingCard(){const x=S.explainableProgramming;if(!x)return "";const cards=(x.cards||[]).slice(0,5),g=x.governance?.winner;return `<div class="card"><div class=row><div><p class=eyebrow>WHY FORGE CHANGED IT</p><h3>Explainable programming</h3></div>${g?`<b>${esc(String(g.action||"hold").toUpperCase())}</b>`:""}</div><p class=muted>${g?esc(g.reason):"Every meaningful programming change includes its evidence, confidence, scope, and duration."}</p>${cards.length?cards.map(d=>`<div class=coach4-prog><b>${esc(d.title)}${d.target?` • ${esc(d.target)}`:""}</b><span>${esc(d.confidence||"medium")} confidence • ${esc(d.scope||"program")} • ${esc(d.duration||"persistent")}</span><small>${esc(d.why||"Programming evidence")}</small></div>`).join(""):`<small>No programming changes need explanation yet.</small>`}</div>`}
-function intelligenceCoreCard(){const c=S.intelligenceCore;if(!c)return "";const ds=(c.decisions||[]).slice(0,5);return `<div class="card intelligence-core-card"><div class=row><div><p class=eyebrow>FORGE INTELLIGENCE CORE</p><h3>Programming decisions</h3></div><b>${c.decision_counts?.applied||0}</b></div><p class=muted>One source of truth for what Forge changed, why, and how long the change lasts.</p>${ds.length?`<div class=stack>${ds.map(d=>`<div class=coach4-prog><b>${esc(String(d.decision_type).replaceAll("_"," "))}</b><span>${esc(d.scope)} • ${esc(d.duration)} • ${esc(d.confidence)} confidence</span><small>${esc(d.evidence)}</small></div>`).join("")}</div>`:`<small>No programming changes recorded yet.</small>`}</div>`}
+function explainableProgrammingCard(){const x=S.explainableProgramming;if(!x)return "";const cards=(x.cards||[]).slice(0,5),g=x.governance?.winner;return `<div class="card"><div class=row><div><p class=eyebrow>WHY FORGE CHANGED IT</p><h3>Explainable programming</h3></div>${g?`<b>${esc(String(g.action||"hold").toUpperCase())}</b>`:""}</div><p class=muted>${g?esc(g.reason):"Every meaningful programming change includes its evidence, confidence, scope, and duration."}</p>${cards.length?cards.map(d=>`<div class=coach4-prog><b>${esc(d.title)}${d.target?` • ${esc(d.target)}`:""}</b><span>${esc(d.confidence||"medium")} confidence • ${esc(d.scope||"program")} • ${esc(d.duration||"persistent")}</span><small>${esc(d.why||"Programming evidence")}</small></div>`).join(""):`<small>No programming changes yet.</small>`}</div>`}
+function intelligenceCoreCard(){const c=S.intelligenceCore;if(!c)return "";const ds=(c.decisions||[]).slice(0,5);return `<div class="card intelligence-core-card"><div class=row><div><p class=eyebrow>FORGE INTELLIGENCE CORE</p><h3>Programming decisions</h3></div><b>${c.decision_counts?.applied||0}</b></div><p class=muted>See what changed, why, and for how long.</p>${ds.length?`<div class=stack>${ds.map(d=>`<div class=coach4-prog><b>${esc(String(d.decision_type).replaceAll("_"," "))}</b><span>${esc(d.scope)} • ${esc(d.duration)} • ${esc(d.confidence)} confidence</span><small>${esc(d.evidence)}</small></div>`).join("")}</div>`:`<small>No programming changes recorded yet.</small>`}</div>`}
 async function loadStrategyDashboard(){if(S.strategyDashboardLoading||S.strategyDashboard)return;S.strategyDashboardLoading=true;try{S.strategyDashboard=await api("/me/training/strategy-dashboard");if(["home","progress","coach"].includes(S.route))render()}catch(e){console.warn("Strategy dashboard failed",e)}finally{S.strategyDashboardLoading=false}}
-function strategyDashboardCard(){const d=S.strategyDashboard;if(!d)return "";const st=d.strategy||{},sp=st.specialization||[],rf=d.recovery_forecast||{},a=d.authority?.controls||{},modes={recommend_only:"Recommend",ask_first:"Ask first",auto_apply:"Auto"};return `<div class="card strategy-dashboard"><div class=row><div><p class=eyebrow>TRAINING STRATEGY</p><h3>${esc(String(st.strategy||"hypertrophy_accumulation").replaceAll("_"," "))}</h3></div><b>${esc(st.mesocycle_phase||"")}</b></div><p class=muted>${esc(st.rationale||"")}</p>${sp.length?`<p><b>Specialization:</b> ${sp.map(esc).join(", ")}</p>`:""}<div class=coach4-grid><span><b>${esc(rf.next_session_mode||"normal")}</b><small>Recovery forecast</small></span><span><b>${d.rotation_summary?.retain||0}</b><small>Exercises retained</small></span><span><b>${d.rotation_summary?.rotate||0}</b><small>Rotation candidates</small></span></div><div class=spacer></div><p class=eyebrow>FORGE AUTHORITY</p>${Object.entries(a).map(([k,v])=>`<label class=row><span>${esc(k.replaceAll("_"," "))}</span><select data-authority="${esc(k)}"><option value="recommend_only" ${v==="recommend_only"?"selected":""}>Recommend only</option><option value="ask_first" ${v==="ask_first"?"selected":""}>Ask first</option><option value="auto_apply" ${v==="auto_apply"?"selected":""}>Auto-apply</option></select></label>`).join("")}<small>Authority settings define what Forge may change automatically.</small></div>`}
+function strategyDashboardCard(){const d=S.strategyDashboard;if(!d)return "";const st=d.strategy||{},sp=st.specialization||[],rf=d.recovery_forecast||{},a=d.authority?.controls||{},modes={recommend_only:"Recommend",ask_first:"Ask first",auto_apply:"Auto"};return `<div class="card strategy-dashboard"><div class=row><div><p class=eyebrow>TRAINING STRATEGY</p><h3>${esc(String(st.strategy||"hypertrophy_accumulation").replaceAll("_"," "))}</h3></div><b>${esc(st.mesocycle_phase||"")}</b></div><p class=muted>${esc(st.rationale||"")}</p>${sp.length?`<p><b>Specialization:</b> ${sp.map(esc).join(", ")}</p>`:""}<div class=coach4-grid><span><b>${esc(rf.next_session_mode||"normal")}</b><small>Recovery forecast</small></span><span><b>${d.rotation_summary?.retain||0}</b><small>Exercises retained</small></span><span><b>${d.rotation_summary?.rotate||0}</b><small>Rotation candidates</small></span></div><div class=spacer></div><p class=eyebrow>FORGE AUTHORITY</p>${Object.entries(a).map(([k,v])=>`<label class=row><span>${esc(k.replaceAll("_"," "))}</span><select data-authority="${esc(k)}"><option value="recommend_only" ${v==="recommend_only"?"selected":""}>Recommend only</option><option value="ask_first" ${v==="ask_first"?"selected":""}>Ask first</option><option value="auto_apply" ${v==="auto_apply"?"selected":""}>Auto-apply</option></select></label>`).join("")}<small>Choose what Forge may change automatically.</small></div>`}
 async function saveAuthority(domain,mode){try{const current={...(S.strategyDashboard?.authority?.controls||{}),[domain]:mode};await api("/me/programming/authority",{method:"PUT",body:JSON.stringify({controls:current})});S.strategyDashboard=null;await loadStrategyDashboard()}catch(e){toast(e.message)}}
 async function loadPlanEditorSnapshot(){if(S.planEditorLoading)return;S.planEditorLoading=true;try{S.planEditorSnapshot=await api("/me/plan/editor-snapshot");if(S.route==="workoutbuilder")render()}catch(e){console.warn("Plan editor snapshot failed",e)}finally{S.planEditorLoading=false}}
 async function loadTrainingRecords(){if(S.trainingRecords?.loading)return;S.trainingRecords={loading:true};try{S.trainingRecords=await api("/me/training-records");if(S.route==="progress")render()}catch(e){console.warn("Training records failed",e)}}
-function trainingRecordsCard(){const d=S.trainingRecords;if(!d||d.loading)return "";const cards=(d.exercise_cards||[]).slice(0,6),blocks=d.mesocycle_history||[];return `<div class="card records3-card"><div class=row><div><p class=eyebrow>TRAINING HISTORY 3.0</p><h3>Exercise progression records</h3></div><b>${d.exercise_cards.length}</b></div><div class=record-card-grid>${cards.map(x=>`<div><b>${esc(x.name)}</b><span>${x.sessions} sessions</span><strong>${x.change_percent>0?"+":""}${x.change_percent}%</strong><small>Best e1RM ${Math.round(x.best_e1rm||0)} lb • ${x.best_reps||0} rep PR</small></div>`).join("")}</div>${blocks.length?`<div class=spacer></div><p class=eyebrow>MESOCYCLE COMPARISON</p><div class=block-history>${blocks.slice(-4).map(x=>`<span><b>Block ${x.block}</b><small>${x.workouts} workouts • ${x.sets} sets • ${Math.round(x.volume).toLocaleString()} lb</small></span>`).join("")}</div>`:""}</div>`}
+function trainingRecordsCard(){const d=S.trainingRecords;if(!d||d.loading)return "";const cards=(d.exercise_cards||[]).slice(0,6),blocks=d.mesocycle_history||[];return `<div class="card records3-card"><div class=row><div><p class=eyebrow>TRAINING HISTORY 3.0</p><h3>Exercise progress</h3></div><b>${d.exercise_cards.length}</b></div><div class=record-card-grid>${cards.map(x=>`<div><b>${esc(x.name)}</b><span>${x.sessions} sessions</span><strong>${x.change_percent>0?"+":""}${x.change_percent}%</strong><small>Best e1RM ${Math.round(x.best_e1rm||0)} lb • ${x.best_reps||0} rep PR</small></div>`).join("")}</div>${blocks.length?`<div class=spacer></div><p class=eyebrow>MESOCYCLE COMPARISON</p><div class=block-history>${blocks.slice(-4).map(x=>`<span><b>Block ${x.block}</b><small>${x.workouts} workouts • ${x.sets} sets • ${Math.round(x.volume).toLocaleString()} lb</small></span>`).join("")}</div>`:""}</div>`}
 function progress(){
 const done=(plan?.workouts||[]).filter(x=>x.status==="completed").length;
 const t=S.strengthTrend;
@@ -1649,7 +1654,7 @@ return n.toFixed(1);
 }
 function renderStrengthChart(data){
 const pts=data?.points||[];
-if(!pts.length)return `<div class=chart-empty>Log working sets to build your strength progress.</div>`;
+if(!pts.length)return `<div class=chart-empty>Log working sets to build progress.</div>`;
 const W=320,H=145,PX=13,PY=18;
 let values=pts.map(p=>Number(data.mode==="overall"?(p.progress_percent??p.value):p.value));
 let min=Math.min(...values),max=Math.max(...values);
@@ -1711,7 +1716,7 @@ S.coachBriefingLoading=true;
 try{S.coachBriefing=await api("/me/coach/briefing");if(S.route==="coach")render()}catch(e){console.warn("Coach briefing failed",e)}finally{S.coachBriefingLoading=false}
 }
 function coachBriefingCard(){
-const b=S.coachBriefing;if(!b)return `<div class="card coach-briefing"><p class=eyebrow>WHOLE-DAY CONTEXT</p><h3>Building your training picture…</h3></div>`;
+const b=S.coachBriefing;if(!b)return `<div class="card coach-briefing"><p class=eyebrow>WHOLE-DAY CONTEXT</p><h3>Building your training summary…</h3></div>`;
 const chips=[
 ["Readiness",b.readiness?.label||"Unknown"],
 ["Recovery",b.recovery?.level||"Unknown"],
@@ -1719,7 +1724,7 @@ const chips=[
 ["Calendar",b.calendar?.conflicts?`${b.calendar.conflicts} conflict${b.calendar.conflicts===1?"":"s"}`:"Clear"],
 ["Nutrition",b.nutrition?.summary||"No data"]
 ];
-return `<div class="card coach-briefing"><div class=row><div><p class=eyebrow>COACH 3.0 • WHOLE-DAY CONTEXT</p><h3>${esc(b.headline||"Your training picture")}</h3></div><b>${b.score==null?"—":b.score}/100</b></div>
+return `<div class="card coach-briefing"><div class=row><div><p class=eyebrow>TODAY’S COACHING</p><h3>${esc(b.headline||"Your training picture")}</h3></div><b>${b.score==null?"—":b.score}/100</b></div>
 <div class=coach-context-chips>${chips.map(([k,v])=>`<span><small>${k}</small><b>${esc(String(v))}</b></span>`).join("")}</div>
 <div class=spacer></div><p class=muted>${esc(b.recommendation||"Keep logging so Forge can connect more signals.")}</p>
 ${(b.actions||[]).length?`<div class=coach-stack-preview><p class=eyebrow>CONNECTED ACTIONS</p>${b.actions.map((a,i)=>`<div><span>${i+1}</span><p><b>${esc(a.title)}</b><small>${esc(a.reason)}</small></p></div>`).join("")}</div>`:""}</div>`;
@@ -1737,20 +1742,20 @@ if(a.action_type==="swap_exercise")return "Swap exercise";
 return "Update";
 }
 async function loadCoach4(){if(S.coach4?.loading)return;S.coach4={loading:true};try{S.coach4=await api("/me/coach/context-v4");if(S.route==="coach")render()}catch(e){console.warn("Coach 4 context failed",e)}}
-function coach4ContextCard(){const c=S.coach4;if(!c||c.loading)return "";const m=c.mesocycle||{},muscles=(c.muscle_status||[]).slice(0,4),prog=(c.exercise_progression||[]).slice(0,3);return `<div class="card coach4-context"><div class=row><div><p class=eyebrow>COACH 4.0 • PROGRAMMING CONTEXT</p><h3>Block ${m.block_number} • Week ${m.week_in_block}/${m.block_length}</h3></div><b>${esc(m.phase||"")}</b></div><p class=muted>Forge can now explain decisions from your block phase, readiness, muscle volume, progression history, schedule, and nutrition context.</p><div class=coach4-grid>${muscles.map(x=>`<span><b>${esc(x.muscle)}</b><small>${x.actual_sets}/${x.target_sets} sets</small></span>`).join("")}</div>${prog.length?`<div class=spacer></div>${prog.map(x=>`<div class=coach4-prog><b>${esc(x.name)}</b><span>${esc(x.status)} • ${esc(x.method)}</span></div>`).join("")}`:""}</div>`}
+function coach4ContextCard(){const c=S.coach4;if(!c||c.loading)return "";const m=c.mesocycle||{},muscles=(c.muscle_status||[]).slice(0,4),prog=(c.exercise_progression||[]).slice(0,3);return `<div class="card coach4-context"><div class=row><div><p class=eyebrow>PROGRAMMING COACH</p><h3>Block ${m.block_number} • Week ${m.week_in_block}/${m.block_length}</h3></div><b>${esc(m.phase||"")}</b></div><p class=muted>Forge explains decisions using your training, recovery, schedule, and nutrition.</p><div class=coach4-grid>${muscles.map(x=>`<span><b>${esc(x.muscle)}</b><small>${x.actual_sets}/${x.target_sets} sets</small></span>`).join("")}</div>${prog.length?`<div class=spacer></div>${prog.map(x=>`<div class=coach4-prog><b>${esc(x.name)}</b><span>${esc(x.status)} • ${esc(x.method)}</span></div>`).join("")}`:""}</div>`}
 function coach(){
 const msgs=S.coachMessages||[],c=S.coachContext;
 return `${strategyDashboardCard()}<div class=spacer></div>${explainableProgrammingCard()}<div class=spacer></div>${intelligenceCoreCard()}<div class=spacer></div>${coach4ContextCard()}<div class=spacer></div><div class=row><div><p class=eyebrow>FORGE COACH</p><h2>AI Coach</h2></div><button class="btn dark compact" data-a=clear-coach>Clear</button></div>
-<p class=muted>Your training assistant, grounded in your Forge data.</p>
+<p class=muted>Coaching based on your Forge data.</p>
 <div class="coach-model-status ${S.coachStatus?.llm_enabled?"online":"fallback"}"><span>${S.coachStatus?.llm_enabled?"● AI online":"● Smart fallback"}</span><small>${S.coachStatus?.llm_enabled?esc(S.coachStatus.model||"OpenAI"):"Set OPENAI_API_KEY to enable the LLM"}</small></div>
 ${c?`<div class=spacer></div><div class=coach-context><div><b>${c.recent_completed_workouts}</b><small>Recent Workouts</small></div><div><b>${Number(c.fatigue_score||0).toFixed(1)}</b><small>Fatigue</small></div><div><b>${c.week_number||1}</b><small>Week</small></div></div>`:""}
 <div class=spacer></div>${coachBriefingCard()}
 <div class=spacer></div>
 <div class=coach-action-launcher>
-<button data-coachprompt="Review my readiness, recovery, calendar, nutrition, and recent progress together, then propose the best changes for today"><span>⚙</span><b>Adjust Today</b><small>Use recovery + recent training</small></button>
+<button data-coachprompt="Review my readiness, recovery, calendar, nutrition, and recent progress together, then propose the best changes for today"><span>⚙</span><b>Adjust Today</b><small>Use recovery + training</small></button>
 <button data-coachprompt="Find the best exercise swap for my current workout using only my equipment"><span>⇄</span><b>Smart Swap</b><small>Equipment-aware replacement</small></button>
-<button data-coachprompt="Check my calendar availability, recovery spacing, and propose the best workout placement this week"><span>▦</span><b>Calendar Intelligence</b><small>Conflicts + recovery spacing</small></button>
-<button data-coachprompt="Review my progress and tell me whether next week should progress, maintain, or recover"><span>↗</span><b>Next Week</b><small>Adaptive plan recommendation</small></button>
+<button data-coachprompt="Check my calendar availability, recovery spacing, and propose the best workout placement this week"><span>▦</span><b>Calendar Intelligence</b><small>Conflicts + recovery</small></button>
+<button data-coachprompt="Review my progress and tell me whether next week should progress, maintain, or recover"><span>↗</span><b>Next Week</b><small>Plan recommendation</small></button>
 </div>
 <div class=spacer></div><div class=coach-prompts>
 <button data-coachprompt="What am I doing today?">Today's workout</button>
@@ -1764,7 +1769,7 @@ ${c?`<div class=spacer></div><div class=coach-context><div><b>${c.recent_complet
 <button data-coachprompt="How should I eat for my workout today?">Training fuel</button>
 <button data-coachprompt="I had a large chicken sandwich and fries from Chick-fil-A for lunch">Log restaurant food</button><button id=nutritionProviderStatusBtn>Provider status</button>
 </div><div class=big-spacer></div><div class=chat id=coachChat>
-${msgs.length?msgs.map(coachMessageHTML).join(""):`<div class="bubble ai coach-rich-response"><div>Ask me about training, recovery, progress, nutrition goals, or tell me what you ate and where you got it.</div><div class=coach-response-actions><button data-coach-route=workout>Today’s Workout</button><button data-coach-route=nutrition>Nutrition</button></div></div>`}
+${msgs.length?msgs.map(coachMessageHTML).join(""):`<div class="bubble ai coach-rich-response"><div>Ask about training, recovery, progress, nutrition, or log a meal.</div><div class=coach-response-actions><button data-coach-route=workout>Today’s Workout</button><button data-coach-route=nutrition>Nutrition</button></div></div>`}
 ${S.coachAction?`<div class=coach-plan><p class=eyebrow>SUGGESTED CHANGE</p>
 <h3>${esc(S.coachAction.preview?.title||coachActionTitle(S.coachAction))}</h3>
 ${S.coachAction.preview?.from?`<div class=coach-change-row><span>${esc(S.coachAction.preview.from)}</span><b>→</b><span>${esc(S.coachAction.preview.to)}</span></div>`:""}
@@ -1833,11 +1838,11 @@ toast(`Week ${data.state?.week_number||""} generated`);
 }catch(e){toast(e.message)}
 S.adaptationBusy=false;render();
 }
-function recoveryCard(){const r=S.recoveryIntelligence;if(!r)return `<div class="card"><p class=eyebrow>RECOVERY</p><p class=muted>Analyzing recovery…</p></div>`;return `<div class="card recovery-card ${r.level}"><p class=eyebrow>RECOVERY + DELOAD INTELLIGENCE</p><h3>${esc(r.title)}</h3><p class=muted>${esc(r.recommendation||"")}</p>${(r.flags||[]).length?`<div class=stack>${r.flags.map(x=>`<small>• ${esc(x)}</small>`).join("")}</div>`:""}<div class=adaptation-metrics><div><small>Fatigue</small><b>${Number(r.fatigue_score||0).toFixed(1)}/10</b></div><div><small>Avg effort</small><b>${r.average_rpe==null?"—":Number(r.average_rpe).toFixed(1)}</b></div><div><small>Adherence</small><b>${r.adherence_percent==null?"—":Math.round(r.adherence_percent)+"%"}</b></div></div></div>`}
+function recoveryCard(){const r=S.recoveryIntelligence;if(!r)return `<div class="card"><p class=eyebrow>RECOVERY</p><p class=muted>Analyzing recovery…</p></div>`;return `<div class="card recovery-card ${r.level}"><p class=eyebrow>RECOVERY + DELOAD</p><h3>${esc(r.title)}</h3><p class=muted>${esc(r.recommendation||"")}</p>${(r.flags||[]).length?`<div class=stack>${r.flags.map(x=>`<small>• ${esc(x)}</small>`).join("")}</div>`:""}<div class=adaptation-metrics><div><small>Fatigue</small><b>${Number(r.fatigue_score||0).toFixed(1)}/10</b></div><div><small>Avg effort</small><b>${r.average_rpe==null?"—":Number(r.average_rpe).toFixed(1)}</b></div><div><small>Adherence</small><b>${r.adherence_percent==null?"—":Math.round(r.adherence_percent)+"%"}</b></div></div></div>`}
 function adaptationCard(){
-const a=S.adaptationPreview;if(!a)return `<div class="card adaptation-card"><p class=eyebrow>ADAPTIVE PROGRAMMING</p><h3>Analyzing your week…</h3><p class=muted>Forge is checking completion, recovery, strength trend, and recent effort.</p></div>`;
+const a=S.adaptationPreview;if(!a)return `<div class="card adaptation-card"><p class=eyebrow>ADAPTIVE PROGRAMMING</p><h3>Analyzing your week…</h3><p class=muted>Checking training, recovery, and recent effort.</p></div>`;
 const pct=Math.round(Number(a.completion_rate||0)*100),changes=a.proposed_changes||[],exercise=a.exercise_decisions||[],remaining=Number(a.workouts_remaining||0);
-return `<div class="card adaptation-card ${a.recommendation}"><div class=adaptation-head><div><p class=eyebrow>NEXT-WEEK ADAPTATION</p><h2>${esc(a.title)}</h2></div><span class=adaptation-badge>${esc(String(a.recommendation||"review").replaceAll("_"," "))}</span></div><p class=adaptation-summary>${esc(a.reason)}</p><div class=adaptation-review><b>Review before applying</b><span>Your current plan stays unchanged until you approve the next week.</span></div>${changes.length?`<section class=adaptation-section><div class=adaptation-section-head><div><p class=eyebrow>PROGRAM CHANGES</p><h3>What Forge recommends</h3></div><small>${changes.length} change${changes.length===1?"":"s"}</small></div><div class=adaptation-decisions>${changes.map(c=>`<article class=adaptation-decision><div><b>${esc(c.area)}</b><p>${esc(c.reason)}</p></div><span>${esc(c.proposed)}</span></article>`).join("")}</div></section>`:""}${exercise.length?`<section class=adaptation-section><div class=adaptation-section-head><div><p class=eyebrow>EXERCISE CHANGES</p><h3>Specific exercise adjustments</h3></div><small>${exercise.length} reviewed</small></div><div class=adaptation-decisions>${exercise.slice(0,8).map(x=>`<article class=adaptation-decision><div><b>${esc(x.exercise)}</b><p>${esc(x.reason)}</p></div><span>${esc(String(x.action||"hold").replaceAll("_"," "))}</span></article>`).join("")}</div></section>`:""}<div class=adaptation-metrics><div><small>Week completed</small><b>${pct}%</b></div><div><small>Fatigue</small><b>${Number(a.fatigue_score||0).toFixed(1)}/10</b></div><div><small>Volume direction</small><b>${esc(a.volume_signal||"Use recent performance")}</b></div></div><section class=adaptation-section><div class=adaptation-section-head><div><p class=eyebrow>SESSION PLAN</p><h3>${esc(a.session_change||"Keep normal session length")}</h3></div></div></section><div class=adaptation-next><p class=eyebrow>NEXT STEP</p><h3>${remaining} workout${remaining===1?"":"s"} remaining</h3><p>${remaining>0?"Complete or skip the remaining workouts. Forge will use the full week before building the next one.":"Your week is ready for final review."}</p>${remaining===0?`<button class="btn primary adaptation-apply" data-a=apply-adaptation>Apply Next Week</button>`:""}</div></div>`;
+return `<div class="card adaptation-card ${a.recommendation}"><div class=adaptation-head><div><p class=eyebrow>NEXT-WEEK ADAPTATION</p><h2>${esc(a.title)}</h2></div><span class=adaptation-badge>${esc(String(a.recommendation||"review").replaceAll("_"," "))}</span></div><p class=adaptation-summary>${esc(a.reason)}</p><div class=adaptation-review><b>Review before applying</b><span>Nothing changes until you approve it.</span></div>${changes.length?`<section class=adaptation-section><div class=adaptation-section-head><div><p class=eyebrow>PROGRAM CHANGES</p><h3>What Forge recommends</h3></div><small>${changes.length} change${changes.length===1?"":"s"}</small></div><div class=adaptation-decisions>${changes.map(c=>`<article class=adaptation-decision><div><b>${esc(c.area)}</b><p>${esc(c.reason)}</p></div><span>${esc(c.proposed)}</span></article>`).join("")}</div></section>`:""}${exercise.length?`<section class=adaptation-section><div class=adaptation-section-head><div><p class=eyebrow>EXERCISE CHANGES</p><h3>Exercise-specific changes</h3></div><small>${exercise.length} reviewed</small></div><div class=adaptation-decisions>${exercise.slice(0,8).map(x=>`<article class=adaptation-decision><div><b>${esc(x.exercise)}</b><p>${esc(x.reason)}</p></div><span>${esc(String(x.action||"hold").replaceAll("_"," "))}</span></article>`).join("")}</div></section>`:""}<div class=adaptation-metrics><div><small>Week completed</small><b>${pct}%</b></div><div><small>Fatigue</small><b>${Number(a.fatigue_score||0).toFixed(1)}/10</b></div><div><small>Volume direction</small><b>${esc(a.volume_signal||"Use recent performance")}</b></div></div><section class=adaptation-section><div class=adaptation-section-head><div><p class=eyebrow>SESSION PLAN</p><h3>${esc(a.session_change||"Keep normal session length")}</h3></div></div></section><div class=adaptation-next><p class=eyebrow>NEXT STEP</p><h3>${remaining} workout${remaining===1?"":"s"} remaining</h3><p>${remaining>0?"Finish or skip the remaining workouts before Forge builds next week.":"Your week is ready for final review."}</p>${remaining===0?`<button class="btn primary adaptation-apply" data-a=apply-adaptation>Apply Next Week</button>`:""}</div></div>`;
 }
 function planScreen(){
 const workouts=[...(plan?.workouts||[])].sort((a,b)=>(a.scheduled_day??a.workout_index)-(b.scheduled_day??b.workout_index));
@@ -1898,13 +1903,13 @@ ${topMuscles.length?`<div class=focus-list>${topMuscles.map(([name,sets])=>{
 const max=topMuscles[0][1]||1;
 const pct=Math.max(8,Math.round(sets/max*100));
 return `<div class=focus-row><div class=row><span>${esc(name)}</span><small>${sets} sets</small></div><div class=focus-track><i style="width:${pct}%"></i></div></div>`;
-}).join("")}</div>`:`<div class=card><p class=muted>Training focus will appear after your plan is generated.</p></div>`}
+}).join("")}</div>`:`<div class=card><p class=muted>Training focus appears after plan generation.</p></div>`}
 ${plan?.mesocycle?`<div class=big-spacer></div><div class="card mesocycle-card"><p class=eyebrow>TRAINING BLOCK</p><div class=row><h3>Block ${plan.mesocycle.block_number} · Week ${plan.mesocycle.week_in_block}/${plan.mesocycle.block_length_weeks}</h3><b>${esc(String(plan.mesocycle.phase||"training").toUpperCase())}</b></div><p class=muted>${esc(plan.mesocycle.intensity_cue||"")}</p><small>${plan.mesocycle.deload_recommended?"Deload pressure is active this week.":"Forge is progressing this block without unnecessary exercise rotation."}</small></div>`:""}
 <div class=big-spacer></div>
 <div class=card>
 <p class=eyebrow>HOW YOUR PLAN ADAPTS</p>
 <h3>Built to progress with you</h3>
-<p class=muted>Forge uses your logged sets, effort, workout completion, strength progress, and recovery feedback to adjust future training.</p>
+<p class=muted>Forge uses your training and recovery data to adjust future weeks.</p>
 </div>
 <div class=spacer></div>
 <button class=btn data-a=adjust-plan>Adjust Plan</button><div class=spacer></div><button class=btn data-plan-tab=workouts>View Workouts</button><div class=spacer></div><button class="btn dark" data-a=edit-equipment-log>Manage Equipment Log</button><div class=spacer></div><button class="btn dark" data-a=open-exercise-directory>Browse Exercise Directory</button><div class=spacer></div><button class="btn dark" data-a=open-training-settings>Settings</button>
@@ -1920,10 +1925,10 @@ ${workouts.map(x=>`<button class="workout-row ${x.is_skipped?"skipped":""}" data
 function adjustplan(){
 const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
 if(!S.preferredDays.length){const current=(plan?.workouts||[]).map(x=>Number(x.scheduled_day)).filter(Number.isFinite);S.preferredDays=[...new Set(current)].slice(0,profile.days_per_week)}
-return `<p class=eyebrow>PLAN CUSTOMIZATION</p><h2>Adjust Your Plan</h2><p class=muted>Change your weekly availability without starting over manually. Forge will rebuild the plan around these constraints.</p><div class=big-spacer></div>
-<div class=card><h3>Workouts per week</h3><div class=chips>${[2,3,4,5,6].map(n=>`<button class="chip ${profile.days_per_week===n?"selected":""}" data-adjust-days=${n}>${n} days</button>`).join("")}</div><div class=spacer></div><h3>Session length</h3><div class=chips>${[20,30,45,60,75,90].map(n=>`<button class="chip ${profile.minutes_per_workout===n?"selected":""}" data-adjust-mins=${n}>${n} min</button>`).join("")}</div></div><div class=spacer></div><h3>Exercises per workout</h3><p class=muted>Forge targets this many strength exercises each training day.</p><div class=chips>${[3,4,5,6,7,8,9,10].map(n=>`<button class="chip ${Number(profile.exercises_per_day||6)===n?"selected":""}" data-adjust-exercises=${n}>${n}</button>`).join("")}</div>
-<div class=spacer></div><div class=card><h3>Exercises by workout</h3><p class=muted>Override the global target for individual training days.</p><div class=stack>${Array.from({length:profile.days_per_week},(_,i)=>`<div class=row><b>Day ${i+1}${plan?.workouts?.[i]?.name?` · ${esc(plan.workouts[i].name)}`:""}</b><select data-day-exercises=${i}>${[3,4,5,6,7,8,9,10].map(n=>`<option value=${n} ${Number((profile.exercises_per_workout||[])[i]||profile.exercises_per_day||6)===n?"selected":""}>${n}</option>`).join("")}</select></div>`).join("")}</div></div>${S.planPreview?`<div class=spacer></div><div class="card accent-card"><p class=eyebrow>PLAN PREVIEW + VALIDATION</p><h3>Review before replacing your plan</h3><p class=muted>${(S.planPreview.changes||[]).reduce((n,x)=>n+x.added.length,0)} exercises added · ${(S.planPreview.changes||[]).reduce((n,x)=>n+x.removed.length,0)} removed. Generator invariants: ${esc(S.planPreview.diagnostics?.generator_invariants||"passed")}.</p>${S.planPreview.diagnostics?.warnings?.length?`<div class=adaptation-lock><b>Plan warnings</b><span>${S.planPreview.diagnostics.warnings.map(esc).join(" • ")}</span></div>`:""}<div class=stack>${(S.planPreview.changes||[]).map(x=>`<div><b>${esc(x.name||`Day ${x.workout_index+1}`)} · ${x.exercise_count_before??0} → ${x.exercise_count_after??0} exercises</b><small class=muted style="display:block">+ ${x.added.map(esc).join(", ")||"None"}</small><small class=muted style="display:block">− ${x.removed.map(esc).join(", ")||"None"}</small>${x.set_changes?.length?`<small class=muted style="display:block">Sets: ${x.set_changes.map(c=>`${esc(c.exercise)} ${c.before}→${c.after}`).join(" • ")}</small>`:""}</div>`).join("")}</div><div class=row><button class=btn data-a=apply-plan-preview>Apply New Plan</button><button class="btn dark" data-a=cancel-plan-preview>Keep Current Plan</button></div></div>`:""}<div class=spacer></div><div class=card><h3>Preferred training days</h3><p class=muted>Choose ${profile.days_per_week} days. Forge will use these exact days when possible.</p><div class=day-picker>${days.map((d,i)=>`<button type=button class="${S.preferredDays.includes(i)?"selected":""}" data-preferred-day=${i}>${d.slice(0,3)}</button>`).join("")}</div></div>
-<div class=spacer></div><div class=card><p class=eyebrow>WHAT FORGE PRESERVES</p><p class=muted>Priority movements, muscle balance, recovery spacing, equipment compatibility, and useful weekly volume are considered when the plan is rebuilt.</p></div>
+return `<p class=eyebrow>PLAN CUSTOMIZATION</p><h2>Adjust Your Plan</h2><p class=muted>Update your availability and rebuild around it.</p><div class=big-spacer></div>
+<div class=card><h3>Workouts per week</h3><div class=chips>${[2,3,4,5,6].map(n=>`<button class="chip ${profile.days_per_week===n?"selected":""}" data-adjust-days=${n}>${n} days</button>`).join("")}</div><div class=spacer></div><h3>Session length</h3><div class=chips>${[20,30,45,60,75,90].map(n=>`<button class="chip ${profile.minutes_per_workout===n?"selected":""}" data-adjust-mins=${n}>${n} min</button>`).join("")}</div></div><div class=spacer></div><h3>Exercises per workout</h3><p class=muted>Target exercises per workout.</p><div class=chips>${[3,4,5,6,7,8,9,10].map(n=>`<button class="chip ${Number(profile.exercises_per_day||6)===n?"selected":""}" data-adjust-exercises=${n}>${n}</button>`).join("")}</div>
+<div class=spacer></div><div class=card><h3>Exercises by workout</h3><p class=muted>Override individual workout targets.</p><div class=stack>${Array.from({length:profile.days_per_week},(_,i)=>`<div class=row><b>Day ${i+1}${plan?.workouts?.[i]?.name?` · ${esc(plan.workouts[i].name)}`:""}</b><select data-day-exercises=${i}>${[3,4,5,6,7,8,9,10].map(n=>`<option value=${n} ${Number((profile.exercises_per_workout||[])[i]||profile.exercises_per_day||6)===n?"selected":""}>${n}</option>`).join("")}</select></div>`).join("")}</div></div>${S.planPreview?`<div class=spacer></div><div class="card accent-card"><p class=eyebrow>PLAN PREVIEW + VALIDATION</p><h3>Review before replacing the plan</h3><p class=muted>${(S.planPreview.changes||[]).reduce((n,x)=>n+x.added.length,0)} exercises added · ${(S.planPreview.changes||[]).reduce((n,x)=>n+x.removed.length,0)} removed. Generator invariants: ${esc(S.planPreview.diagnostics?.generator_invariants||"passed")}.</p>${S.planPreview.diagnostics?.warnings?.length?`<div class=adaptation-lock><b>Plan warnings</b><span>${S.planPreview.diagnostics.warnings.map(esc).join(" • ")}</span></div>`:""}<div class=stack>${(S.planPreview.changes||[]).map(x=>`<div><b>${esc(x.name||`Day ${x.workout_index+1}`)} · ${x.exercise_count_before??0} → ${x.exercise_count_after??0} exercises</b><small class=muted style="display:block">+ ${x.added.map(esc).join(", ")||"None"}</small><small class=muted style="display:block">− ${x.removed.map(esc).join(", ")||"None"}</small>${x.set_changes?.length?`<small class=muted style="display:block">Sets: ${x.set_changes.map(c=>`${esc(c.exercise)} ${c.before}→${c.after}`).join(" • ")}</small>`:""}</div>`).join("")}</div><div class=row><button class=btn data-a=apply-plan-preview>Apply New Plan</button><button class="btn dark" data-a=cancel-plan-preview>Keep Current Plan</button></div></div>`:""}<div class=spacer></div><div class=card><h3>Preferred training days</h3><p class=muted>Choose ${profile.days_per_week} days. Forge will use these exact days when possible.</p><div class=day-picker>${days.map((d,i)=>`<button type=button class="${S.preferredDays.includes(i)?"selected":""}" data-preferred-day=${i}>${d.slice(0,3)}</button>`).join("")}</div></div>
+<div class=spacer></div><div class=card><p class=eyebrow>WHAT FORGE PRESERVES</p><p class=muted>Forge preserves priorities, balance, recovery, equipment, and useful volume.</p></div>
 <div class=big-spacer></div><button class=btn data-a=save-plan-adjust ${S.planAdjusting?"disabled":""}>${S.planAdjusting?"Rebuilding…":"Rebuild Plan"}</button>`;
 }
 async function loadSystemHealth(){
@@ -1937,12 +1942,12 @@ function sessionDiagnosticsCard(){return ForgeHealthUI.session(S.sessionDiagnost
 function integrityCard(){return S.integrityReport?ForgeHealthUI.integrity(S.integrityReport,esc):ForgeMobile.loading("Checking data integrity")}
 async function loadIntegrity(){if(S.integrityLoading)return;S.integrityLoading=true;try{S.integrityReport=await api("/me/system/integrity");if(S.route==="trainingsettings")render()}catch(e){console.warn("Integrity check failed",e)}finally{S.integrityLoading=false}}
 
-function trainingsettings(){return `${integrityCard()}<div class=spacer></div>${sessionDiagnosticsCard()}<div class=spacer></div><p class=eyebrow>SETTINGS</p><h2>Settings</h2><p class=muted>Change how Forge builds future plans.</p><div class=big-spacer></div>${finalPolishSettingsCard()}<div class=spacer></div>${systemHealthCard()}<div class=spacer></div>${pwaInstallCard()}<div class=big-spacer></div><div class=preference-list><button class=pref-row data-a=adjust-plan><span><strong>Schedule & Workout Size</strong><small class=muted style="display:block">${profile.days_per_week} days • ${profile.minutes_per_workout} min • ${profile.exercises_per_day||6} exercises</small></span><span>›</span></button><button class=pref-row data-a=settings-split><span><strong>Split</strong><small class=muted style="display:block">${splitLabel(profile.workout_split)}</small></span><span>›</span></button><button class=pref-row data-a=settings-cardio-frequency><span><strong>Cardio</strong><small class=muted style="display:block">${cardioFrequencyLabel(profile.cardio_workouts_per_week)}</small></span><span>›</span></button><button class=pref-row data-a=settings-cardio-intensity><span><strong>Cardio effort</strong><small class=muted style="display:block">${cardioLabel(profile.cardio_preference)}</small></span><span>›</span></button><button class=pref-row data-a=settings-sport><span><strong>Sport</strong><small class=muted style="display:block">${sportLabel(profile.sport)}</small></span><span>›</span></button><button class=pref-row data-a=settings-core><span><strong>Core</strong><small class=muted style="display:block">${coreFrequencyLabel(profile.core_workouts_per_week)}</small></span><span>›</span></button><button class=pref-row data-a=settings-calendar><span><strong>Calendar</strong><small class=muted style="display:block">${S.calendarStatus?.connected?"Calendar connected":(S.calendarStatus?.configured?"Not connected":"Google OAuth not configured")}</small></span><span>›</span></button></div><div class=big-spacer></div><button class=btn data-a=settings-save>Save Settings</button>`}
+function trainingsettings(){return `${integrityCard()}<div class=spacer></div>${sessionDiagnosticsCard()}<div class=spacer></div><p class=eyebrow>SETTINGS</p><h2>Settings</h2><p class=muted>Change future plan settings.</p><div class=big-spacer></div>${finalPolishSettingsCard()}<div class=spacer></div>${systemHealthCard()}<div class=spacer></div>${pwaInstallCard()}<div class=big-spacer></div><div class=preference-list><button class=pref-row data-a=adjust-plan><span><strong>Schedule & Workout Size</strong><small class=muted style="display:block">${profile.days_per_week} days • ${profile.minutes_per_workout} min • ${profile.exercises_per_day||6} exercises</small></span><span>›</span></button><button class=pref-row data-a=settings-split><span><strong>Split</strong><small class=muted style="display:block">${splitLabel(profile.workout_split)}</small></span><span>›</span></button><button class=pref-row data-a=settings-cardio-frequency><span><strong>Cardio</strong><small class=muted style="display:block">${cardioFrequencyLabel(profile.cardio_workouts_per_week)}</small></span><span>›</span></button><button class=pref-row data-a=settings-cardio-intensity><span><strong>Cardio effort</strong><small class=muted style="display:block">${cardioLabel(profile.cardio_preference)}</small></span><span>›</span></button><button class=pref-row data-a=settings-sport><span><strong>Sport</strong><small class=muted style="display:block">${sportLabel(profile.sport)}</small></span><span>›</span></button><button class=pref-row data-a=settings-core><span><strong>Core</strong><small class=muted style="display:block">${coreFrequencyLabel(profile.core_workouts_per_week)}</small></span><span>›</span></button><button class=pref-row data-a=settings-calendar><span><strong>Calendar</strong><small class=muted style="display:block">${S.calendarStatus?.connected?"Calendar connected":(S.calendarStatus?.configured?"Not connected":"Google OAuth not configured")}</small></span><span>›</span></button></div><div class=big-spacer></div><button class=btn data-a=settings-save>Save Settings</button>`}
 function calendarsettings(){
 const ts=S.timeSettings||{},cs=S.calendarStatus||{};
 const connected=!!cs.connected,configured=!!cs.configured;
 return `<p class=eyebrow>CALENDAR & TIME</p><h2>Calendar</h2>
-<p class=muted>Forge uses your device timezone and can keep workout events synchronized with Google Calendar.</p>
+<p class=muted>Uses your device timezone and syncs workouts with Google Calendar.</p>
 <div class=big-spacer></div>
 <div class=calendar-clock-card><small>LOCAL TIME</small><b id=liveClock>${formatLocalClock()}</b><span>${esc(ts.timezone||deviceTimePayload().timezone)}</span></div>
 <div class=spacer></div>
@@ -1953,7 +1958,7 @@ return `<p class=eyebrow>CALENDAR & TIME</p><h2>Calendar</h2>
 <label class=field>Default workout time
 <input id=defaultWorkoutTime type=time value="${esc(ts.default_workout_time||"17:00")}"></label>
 <div class=spacer></div>
-<label class=calendar-toggle><span><strong>Sync workouts to Google Calendar</strong><small>Forge and Google can move workouts in either direction.</small></span>
+<label class=calendar-toggle><span><strong>Sync workouts with Google Calendar</strong><small>Workout changes can sync both ways.</small></span>
 <input id=calendarSyncToggle type=checkbox ${ts.calendar_sync_enabled!==false?"checked":""}></label>
 <div class=big-spacer></div>
 <div class="card google-calendar-card simplified-calendar-card">
@@ -1973,8 +1978,8 @@ ${connected
 <button class="btn dark" data-a=calendar-disconnect>Disconnect</button>`
 :configured
 ?`<button class="btn google-connect-btn" data-a=calendar-connect><span>G</span>Continue with Google</button>
-<p class=calendar-privacy-note>Forge only asks for Calendar access needed to schedule workouts and check availability.</p>`
-:`<div class=calendar-unavailable-note><b>No action needed</b><span>The Forge server owner needs to enable Google Calendar before accounts can connect.</span></div>`}
+<p class=calendar-privacy-note>Forge requests only the Calendar access it needs.</p>`
+:`<div class=calendar-unavailable-note><b>No action needed</b><span>Google Calendar must be enabled on the server first.</span></div>`}
 </div>
 <div class=big-spacer></div>${calendarIntelligenceCard()}
 <div class=big-spacer></div><button class=btn data-a=calendar-settings-save>Save Calendar Settings</button>`;
@@ -1984,7 +1989,7 @@ window.ForgeLegacyViews=Object.assign(window.ForgeLegacyViews||{},{workout:()=>w
 window.ForgeLegacyViews=Object.assign(window.ForgeLegacyViews||{},{planScreen:()=>planScreen(),adjustplan:()=>adjustplan(),trainingsettings:()=>trainingsettings(),calendarsettings:()=>calendarsettings()});
 window.ForgeLegacyViews=Object.assign(window.ForgeLegacyViews||{},{progress:()=>progress(),history:()=>history(),prs:()=>prs(),exercisehistory:()=>exercisehistory()});
 window.ForgeLegacyViews=Object.assign(window.ForgeLegacyViews||{},{coach:()=>coach(),notifications:()=>notificationCenter()});
-function render(){const map={welcome,register,login,goal,experience,schedule,equipment,preferences,preferencepicker,cardiopicker,cardiofrequencypicker,splitpicker,customsplit,sportpicker,corepicker,trainingsettings,adjustplan,calendarsettings,generating,yourplan,home,readiness:readinessCheckin,workout,exercise,timer,complete,progress,nutrition,nutritionadd,workoutbuilder,history,prs,exercisehistory,swapexercise,cardioswap,modulemove,coretracker,cardiotracker,coach,notifications:notificationCenter,equipmentlog,equipmentdetails,exercisedirectory,exercisedetail,formdemo,demoaudit,demoreview,plan:planScreen};V.innerHTML=networkBanner()+updateBanner()+(ForgeFeatures.has(S.route)?ForgeFeatures.view(S.route):map[S.route]())+floatingRestTimer()+moreSheet();V.setAttribute("aria-busy","false");const onboarding=["welcome","register","login","goal","experience","schedule","equipment","equipmentdetails","preferences","preferencepicker","cardiopicker","cardiofrequencypicker","splitpicker","sportpicker","corepicker","customsplit","generating","yourplan"].includes(S.route)&&!plan;nav.classList.toggle("hidden",onboarding);document.querySelector("#backBtn").style.visibility=["welcome","home","progress","nutrition","coach"].includes(S.route)?"hidden":"visible";document.querySelectorAll("[data-plan-tab]").forEach(b=>b.onclick=()=>{S.planTab=b.dataset.planTab;render()});document.querySelectorAll("[data-coach-route]").forEach(b=>b.onclick=()=>go(b.dataset.coachRoute));
+function render(){const map={welcome,register,login,goal,experience,schedule,equipment,preferences,preferencepicker,cardiopicker,cardiofrequencypicker,splitpicker,customsplit,sportpicker,corepicker,trainingsettings,adjustplan,calendarsettings,generating,yourplan,home,readiness:readinessCheckin,workout,exercise,exerciseinspect,timer,complete,progress,nutrition,nutritionadd,workoutbuilder,history,prs,exercisehistory,swapexercise,cardioswap,modulemove,coretracker,cardiotracker,coach,notifications:notificationCenter,equipmentlog,equipmentdetails,exercisedirectory,exercisedetail,formdemo,demoaudit,demoreview,plan:planScreen};V.innerHTML=networkBanner()+updateBanner()+(ForgeFeatures.has(S.route)?ForgeFeatures.view(S.route):map[S.route]())+floatingRestTimer()+moreSheet();V.setAttribute("aria-busy","false");const onboarding=["welcome","register","login","goal","experience","schedule","equipment","equipmentdetails","preferences","preferencepicker","cardiopicker","cardiofrequencypicker","splitpicker","sportpicker","corepicker","customsplit","generating","yourplan"].includes(S.route)&&!plan;nav.classList.toggle("hidden",onboarding);document.querySelector("#backBtn").style.visibility=["welcome","home","progress","nutrition","coach"].includes(S.route)?"hidden":"visible";document.querySelectorAll("[data-plan-tab]").forEach(b=>b.onclick=()=>{S.planTab=b.dataset.planTab;render()});document.querySelectorAll("[data-coach-route]").forEach(b=>b.onclick=()=>go(b.dataset.coachRoute));
 document.querySelectorAll("[data-readiness-key]").forEach(b=>b.onclick=()=>{S.readinessCheckin=S.readinessCheckin||{};S.readinessCheckin[b.dataset.readinessKey]=Number(b.dataset.readinessValue);render()});
 document.querySelectorAll("[data-readiness-minutes]").forEach(b=>b.onclick=()=>{S.readinessCheckin=S.readinessCheckin||{};S.readinessCheckin.minutes=Number(b.dataset.readinessMinutes);render()});
 document.querySelectorAll("[data-swap-reason]").forEach(b=>b.onclick=()=>{if(S.swapReason===b.dataset.swapReason)return;S.swapReason=b.dataset.swapReason;S.swapOptionsKey=null;S.swapOptionsLoaded=false;S.swapOptions=[];S.selectedSwap=null;render();loadSwapOptions()});document.querySelectorAll("[data-swap]").forEach(b=>b.onclick=()=>{S.selectedSwap=Number(b.dataset.swap);document.querySelectorAll("[data-swap]").forEach(x=>x.classList.toggle("selected",x===b))});document.querySelectorAll("[data-cardio-swap]").forEach(b=>b.onclick=()=>{S.selectedCardioSwap=Number(b.dataset.cardioSwap);document.querySelectorAll("[data-cardio-swap]").forEach(x=>x.classList.toggle("selected",x===b))});
@@ -2046,7 +2051,13 @@ document.querySelectorAll("[data-equipment-category]").forEach(b=>b.onclick=()=>
 document.querySelectorAll("[data-equipment-edit]").forEach(b=>b.onclick=()=>{S.equipmentReturn=S.route==="equipment"?"onboarding":(S.equipmentReturn||"plan");S.equipmentEditKey=b.dataset.equipmentEdit;go("equipmentdetails");});
 document.querySelectorAll("[data-equipment-key]").forEach(b=>b.onclick=()=>toggleEquipmentKey(b.dataset.equipmentKey));
 document.querySelectorAll("[data-equipment-preset]").forEach(b=>b.onclick=()=>setEquipmentPreset(b.dataset.equipmentPreset));
-document.querySelectorAll("[data-remove-custom]").forEach(b=>b.onclick=()=>{S.equipmentLog=S.equipmentLog.filter(x=>x.key!==b.dataset.removeCustom);render();});document.querySelectorAll("[data-pref]").forEach(b=>b.onclick=()=>toggleArr(profile.preferred_exercises,b.dataset.pref));document.querySelectorAll("[data-avoid]").forEach(b=>b.onclick=()=>toggleArr(profile.excluded_exercises,b.dataset.avoid));document.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{S.wi=+b.dataset.w;go("workout")});document.querySelectorAll("[data-ex]").forEach(b=>b.onclick=async()=>{stopExerciseTimer();S.exerciseElapsed=0;S.exerciseTimerTarget=0;S.ei=+b.dataset.ex;S.set=0;await persistPosition();go("exercise")});document.querySelectorAll("[data-feel]").forEach(b=>b.onclick=()=>{S.feel=b.dataset.feel;render()});
+document.querySelectorAll("[data-remove-custom]").forEach(b=>b.onclick=()=>{S.equipmentLog=S.equipmentLog.filter(x=>x.key!==b.dataset.removeCustom);render();});document.querySelectorAll("[data-pref]").forEach(b=>b.onclick=()=>toggleArr(profile.preferred_exercises,b.dataset.pref));document.querySelectorAll("[data-avoid]").forEach(b=>b.onclick=()=>toggleArr(profile.excluded_exercises,b.dataset.avoid));document.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{S.wi=+b.dataset.w;go("workout")});document.querySelectorAll("[data-ex]").forEach(b=>b.onclick=async()=>{
+const targetIndex=Number(b.dataset.ex);
+if(session&&targetIndex!==S.ei){S.inspectEi=targetIndex;go("exerciseinspect");return}
+stopExerciseTimer();S.exerciseElapsed=0;S.exerciseTimerTarget=0;
+if(!session){S.ei=targetIndex;S.set=0}
+go("exercise")
+});document.querySelectorAll("[data-feel]").forEach(b=>b.onclick=()=>{S.feel=b.dataset.feel;render()});
 document.querySelectorAll("[data-timer-target]").forEach(b=>b.onclick=()=>{S.exerciseTimerTarget=Math.max(5,Math.min(600,Number(S.exerciseTimerTarget||30)+Number(b.dataset.timerTarget)));render();});
 document.querySelectorAll("[data-core-timer-start]").forEach(b=>b.onclick=()=>startCoreTimer(b.dataset.coreTimerStart));
 document.querySelectorAll("[data-core-timer-reset]").forEach(b=>b.onclick=()=>resetCoreTimer(b.dataset.coreTimerReset));
@@ -2113,20 +2124,27 @@ if(S.calendarStatus?.connected&&S.calendarStatus?.sync_enabled)await syncCalenda
 setTimeout(()=>go("yourplan"),800)}catch(e){toast(e.message);go("preferences")}}
 async function startWorkout(){ForgeCache.invalidate("home");const ww=w();const s=await api(`/me/workout/${ww.workout_id}/start`,{method:"POST"});session={session_id:s.session_id};S.lastSessionId=s.session_id;S.sessionStartedAt=Date.now();S.completedWorkoutSummary=null;S.ei=0;S.set=0;S.workoutPRs=[];await persistPosition();await reconcileSession({silent:true});go("workout")}
 function setOverrideKey(e){return `forge-set-override:${session?.session_id||"plan"}:${w()?.workout_id||0}:${e?.exercise_id||0}`}
+function autoSetTargetKey(e){return `forge-auto-set-target:${session?.session_id||"plan"}:${w()?.workout_id||0}:${e?.exercise_id||0}`}
+function storedSetCount(key){try{const v=Number(sessionStorage.getItem(key));return Number.isFinite(v)&&v>0?v:null}catch{return null}}
+function effectiveSetCount(e){return storedSetCount(setOverrideKey(e))||storedSetCount(autoSetTargetKey(e))||Math.max(1,Number(e?.sets||1))}
+function saveAutoSetTarget(e,count){try{sessionStorage.setItem(autoSetTargetKey(e),String(Math.max(1,Math.min(12,Number(count||e.sets||1)))))}catch{}}
+function clearAutoSetTarget(e){try{sessionStorage.removeItem(autoSetTargetKey(e))}catch{}}
+function latestRestFor(e){const same=Number(S.sessionIntelligence?.exercise_id||0)===Number(e?.exercise_id||0);return same&&Number(S.sessionIntelligence?.recommended_rest_seconds)>0?Number(S.sessionIntelligence.recommended_rest_seconds):null}
+
 async function adjustCurrentSets(delta){
 const e=w()?.exercises?.[S.ei];if(!e)return;
-if(!S.online){toast("Reconnect to change programmed sets");return}
-const minSets=Math.max(1,session?S.set+1:1),next=Math.max(minSets,Math.min(12,Number(e.sets||1)+Number(delta||0)));
-if(next===Number(e.sets))return;
+if(!S.online){toast("Reconnect to change sets");return}
+const minSets=Math.max(1,session?S.set+1:1),current=effectiveSetCount(e),next=Math.max(minSets,Math.min(12,current+Number(delta||0)));
+if(next===current)return;
 await api(`/me/workouts/${w().workout_id}/exercise-sets`,{method:"PUT",body:JSON.stringify({exercise_id:e.exercise_id,sets:next})});
-e.sets=next;try{sessionStorage.setItem(setOverrideKey(e),String(next))}catch{}
+e.sets=next;clearAutoSetTarget(e);try{sessionStorage.setItem(setOverrideKey(e),String(next))}catch{}
 ForgeCache.invalidate("home");toast(`${next} sets planned`);render();
 }
 function hasManualSetOverride(e){try{return sessionStorage.getItem(setOverrideKey(e))!==null}catch{return false}}
 async function saveSet(){ForgeCache.invalidate("home");
 if(!session)await startWorkout();
 const sync=await reconcileSession({silent:true});
-if(!session||sync?.status==="plan_mismatch"||sync?.status==="none")throw Error("Workout resynced. Reopen it and retry the set.");
+if(!session||sync?.status==="plan_mismatch"||sync?.status==="none")throw Error("Workout resynced. Reopen and retry.");
 const e=w().exercises[S.ei],timed=isTimedExercise(e),rpe=+document.querySelector("#rpe").value;
 if(!Number.isFinite(rpe)||rpe<1||rpe>10)throw Error("RPE must be 1–10");
 let payload={request_id:requestId(),session_id:session.session_id,exercise_id:e.exercise_id,completed_sets:1,difficulty:rpe,skipped:false};
@@ -2162,18 +2180,19 @@ const si=S.sessionIntelligence;
 const rest=si.recommended_rest_seconds?` • Rest ${Math.round(si.recommended_rest_seconds)}s`:"";
 const volume=si.recommended_total_sets!==si.planned_sets?` • ${si.recommended_total_sets} sets today`:"";
 S.liveAdjustment={title:si.title||"Session adjustment",detail:`${si.why_changed||si.reason||"Adjusted from your latest set."}${rest}${volume}${si.estimated_remaining_minutes?` • ~${si.estimated_remaining_minutes} min left`:""}`};
-if(!hasManualSetOverride(e)&&Number.isFinite(Number(si.recommended_total_sets))&&Number(si.recommended_total_sets)>=Number(si.completed_sets||0))e.sets=Number(si.recommended_total_sets);
-}else if(result.next_target){const t=result.next_target;const target=t.load_mode==="timed"?`${t.suggested_duration_seconds}s`:t.load_mode==="bodyweight"?`${t.suggested_reps} reps`:`${Number(t.suggested_weight||0).toFixed(1).replace(/\.0$/,'')} lb × ${t.suggested_reps||e.min_reps}`;S.liveAdjustment={title:`Next target: ${target}`,detail:t.reason||"Adjusted from your latest set."};} else if(rpe>=9)S.liveAdjustment={title:"Protect the next sets",detail:"Very hard set. Hold load and stop before technique breaks."}; else if(rpe<=6)S.liveAdjustment={title:"You have room today",detail:"Easy set. Keep the target; another clean set supports progression."}; else S.liveAdjustment=null;
+if(!hasManualSetOverride(e)&&Number.isFinite(Number(si.recommended_total_sets))&&Number(si.recommended_total_sets)>=Number(si.completed_sets||0))saveAutoSetTarget(e,Number(si.recommended_total_sets));
+}else if(result.next_target){const t=result.next_target;const target=t.load_mode==="timed"?`${t.suggested_duration_seconds}s`:t.load_mode==="bodyweight"?`${t.suggested_reps} reps`:`${Number(t.suggested_weight||0).toFixed(1).replace(/\.0$/,'')} lb × ${t.suggested_reps||e.min_reps}`;S.liveAdjustment={title:`Target: ${target}`,detail:t.reason||"Adjusted from your latest set."};} else if(rpe>=9)S.liveAdjustment={title:"Protect next sets",detail:"Very hard set. Hold load and stop before technique breaks."}; else if(rpe<=6)S.liveAdjustment={title:"You have room today",detail:"Easy set. Keep the target; another clean set supports progression."}; else S.liveAdjustment=null;
 if(result.pr_events?.length){S.workoutPRs.push(...result.pr_events);toast(`🏆 ${result.pr_events[0].label}: ${result.pr_events[0].exercise_name}`)}
 S.exerciseElapsed=0;stopExerciseTimer();
 S.set++;
-if(S.set>=e.sets){
-S.set=0;S.ei++;
+const setGoal=effectiveSetCount(e);
+if(S.set>=setGoal){
+clearAutoSetTarget(e);S.set=0;S.ei++;S.sessionIntelligence=null;S.liveAdjustment=null;
 if(S.ei>=w().exercises.length){
 await persistPosition();await api("/me/workout/complete",{method:"POST",queueable:true,body:JSON.stringify({session_id:session.session_id,completed:true})});
 S.lastSessionId=session.session_id;plan=await api("/me/plan/current");session=null;S.ei=0;S.set=0;go("complete");loadCompletedWorkoutSummary();
-}else{await persistPosition();await beginPersistentRest(Number(S.sessionIntelligence?.recommended_rest_seconds||e.rest_seconds||60))}
-}else{await persistPosition();await beginPersistentRest(Number(S.sessionIntelligence?.recommended_rest_seconds||e.rest_seconds||60))}
+}else{await persistPosition();await beginPersistentRest(Number(S.sessionIntelligence?.recommended_rest_seconds||e.rest_seconds||60),{exercise:e.name,base:Number(e.rest_seconds||60),recommended:Number(S.sessionIntelligence?.recommended_rest_seconds||e.rest_seconds||60)})}
+}else{await persistPosition();await beginPersistentRest(Number(S.sessionIntelligence?.recommended_rest_seconds||e.rest_seconds||60),{exercise:e.name,base:Number(e.rest_seconds||60),recommended:Number(S.sessionIntelligence?.recommended_rest_seconds||e.rest_seconds||60)})}
 }
 function stopTimer(){if(S.timer){clearInterval(S.timer);S.timer=null}}function startTimer(){stopTimer();const update=()=>{const mm=String(Math.floor(S.restRemaining/60)).padStart(2,"0"),ss=String(S.restRemaining%60).padStart(2,"0");const el=document.querySelector("#restClock");if(el)el.textContent=`${mm}:${ss}`;const floating=document.querySelector("#floatingRestClock");if(floating)floating.textContent=`${mm}:${ss}`;const ring=document.querySelector(".ring");if(ring&&S.restTotal)ring.style.setProperty("--rest-pct",`${S.restRemaining/S.restTotal*100}%`)};update();S.timer=setInterval(()=>{S.restRemaining=Math.max(0,S.restRemaining-1);update();if(S.restRemaining<=0){stopTimer();clearPersistentRest();toast("Rest complete");if(S.route==="timer")go("exercise");else render()}},1000)}
 function saveEquipmentDetailForm(){
@@ -2379,6 +2398,13 @@ plan=await api("/me/plan/current");S.moduleSession=null;S.moduleSummary=await ap
 if(a==="swap-cardio")go("cardioswap");
 if(a==="cancel-cardio-swap")go("workout");
 if(a==="apply-cardio-swap")await applyCardioSwap();if(a==="back-exercise")go("exercise");if(a==="swap-selected"){if(S.selectedSwap)await applySwap(S.selectedSwap);else toast("Select an exercise first");}if(a==="abandon"){if(session&&confirm("Abandon this workout? Logged sets will remain in history.")){await api("/me/workout/abandon",{method:"POST",body:JSON.stringify({session_id:session.session_id})});session=null;S.ei=0;S.set=0;S.restRemaining=0;plan=await api("/me/plan/current");go("home");toast("Workout abandoned")}}
+if(a==="finish-exercise"){
+if(!session)return;
+const e=w()?.exercises?.[S.ei];if(!e)return;
+clearAutoSetTarget(e);S.set=0;S.ei++;S.sessionIntelligence=null;S.liveAdjustment=null;
+if(S.ei>=w().exercises.length){await persistPosition();await api("/me/workout/complete",{method:"POST",queueable:true,body:JSON.stringify({session_id:session.session_id,completed:true})});S.lastSessionId=session.session_id;plan=await api("/me/plan/current");session=null;S.ei=0;go("complete");loadCompletedWorkoutSummary();return}
+await persistPosition();go("exercise");return
+}
 if(a==="nutrition-favorites-only"){S.nutritionFavoritesOnly=!S.nutritionFavoritesOnly;render();return}
 if(a==="completeset")await saveSet();if(a==="skip-set"){S.set++;await persistPosition();toast("Set skipped");render();}
 if(a==="open-rest"){go("timer");}

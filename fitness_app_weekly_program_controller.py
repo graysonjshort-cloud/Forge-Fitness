@@ -238,11 +238,14 @@ class PlanGenerator:
         available = {self._normalize(x) for x in equipment}
         if "full_gym" in available:
             return True
-        requirements = [self._normalize(x) for x in exercise_equipment.split(",")]
+        # Exact log keys remain available; these are only true capability aliases.
+        if "adjustable_bench" in available: available.add("bench")
+        if "power_rack" in available:
+            available.update({"squat_rack","pull_up_bar"})
+        requirements = [self._normalize(x) for x in exercise_equipment.split(",") if x.strip()]
         aliases = {
             "dumbbell": "dumbbells",
             "cable": "cable_machine",
-            "machine": "machine",
             "barbell": "barbell",
             "bench": "bench",
             "squat_rack": "squat_rack",
@@ -255,6 +258,65 @@ class PlanGenerator:
         }
         return all(aliases.get(req, req) in available for req in requirements)
 
+    def _exercise_equipment_available(self, exercise: dict, equipment: Iterable[str]) -> bool:
+        """Strict v15.10.4 compatibility check using exact Equipment Log keys.
+
+        Generic `Machine` rows in the exercise library are resolved from the exercise
+        name so owning one selectorized machine does not unlock every machine exercise.
+        Bar variants also no longer impersonate an Olympic barbell.
+        """
+        available={self._normalize(x) for x in equipment}
+        if "full_gym" in available:
+            return True
+        if not self._equipment_available(str(exercise.get("equipment") or ""),available):
+            # A generic Machine requirement gets a second, name-aware check below.
+            reqs=[self._normalize(x) for x in str(exercise.get("equipment") or "").split(",") if x.strip()]
+            if "machine" not in reqs:
+                return False
+        name=self._normalize(str(exercise.get("name") or ""))
+        reqs={self._normalize(x) for x in str(exercise.get("equipment") or "").split(",") if x.strip()}
+        if "machine" not in reqs:
+            return self._equipment_available(str(exercise.get("equipment") or ""),available)
+        other_reqs=[x for x in reqs if x!="machine"]
+        if other_reqs and not self._equipment_available(",".join(sorted(other_reqs)),available):
+            return False
+
+        machine_rules=[
+            (("hack_squat",),{"hack_squat_machine"}),
+            (("pendulum_squat",),{"pendulum_squat"}),
+            (("belt_squat",),{"belt_squat_machine"}),
+            (("v_squat",),{"v_squat_machine"}),
+            (("leg_press",),{"leg_press_machine"}),
+            (("leg_extension",),{"leg_extension_machine"}),
+            (("leg_curl","hamstring_curl"),{"leg_curl_machine","standing_leg_curl","lying_leg_curl","seated_leg_curl"}),
+            (("hip_thrust",),{"hip_thrust_machine"}),
+            (("hip_abductor","abduction"),{"hip_abductor_machine"}),
+            (("hip_adductor","adduction"),{"hip_adductor_machine"}),
+            (("calf_raise",),{"calf_raise_machine","donkey_calf_machine"}),
+            (("tibialis",),{"tibialis_machine"}),
+            (("incline_press",),{"incline_press_machine","chest_press_machine"}),
+            (("decline_press",),{"decline_press_machine","chest_press_machine"}),
+            (("chest_press",),{"chest_press_machine"}),
+            (("shoulder_press",),{"shoulder_press_machine"}),
+            (("pec_deck","rear_delt_fly"),{"pec_deck","rear_delt_machine"}),
+            (("lateral_raise",),{"lateral_raise_machine"}),
+            (("biceps_curl","curl_machine"),{"biceps_curl_machine"}),
+            (("triceps_extension",),{"triceps_extension_machine"}),
+            (("pullover",),{"pullover_machine"}),
+            (("high_row",),{"high_row_machine","seated_row_machine"}),
+            (("chest_supported_row",),{"chest_supported_row_machine","seated_row_machine"}),
+            (("seated_row",),{"seated_row_machine"}),
+            (("lat_pulldown",),{"lat_pulldown","cable_machine"}),
+            (("smith",),{"smith_machine"}),
+            (("assisted",),{"assisted_dip_pullup"}),
+        ]
+        for patterns,keys in machine_rules:
+            if any(p in name for p in patterns):
+                return bool(available & keys)
+        # Unknown generic-machine exercise requires the intentionally broad
+        # "Other Strength Machines" capability rather than any specific machine.
+        return "machine" in available
+
     def _eligible(self, profile: UserProfile):
         excluded = {x.strip().lower() for x in profile.excluded_exercises}
         exercises = []
@@ -263,7 +325,7 @@ class PlanGenerator:
                 continue
             if profile.experience == "beginner" and not e["beginner_suitable"]:
                 continue
-            if not self._equipment_available(e["equipment"], profile.equipment):
+            if not self._exercise_equipment_available(e, profile.equipment):
                 continue
             exercises.append(e)
         return exercises

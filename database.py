@@ -3408,16 +3408,12 @@ def _legacy_equipment_from_log(items: list[dict[str, Any]]) -> list[str]:
     if {"power_rack"} & keys:
         out.add("squat_rack")
         out.add("pull_up_bar")
-    if {"lat_pulldown","seated_row_machine","chest_press_machine","shoulder_press_machine",
-        "leg_press_machine","leg_extension_machine","leg_curl_machine","pec_deck",
-        "calf_raise_machine","smith_machine"} & keys:
-        out.add("machine")
+    # Specific machines remain specific. Owning a leg press, for example, must
+    # not unlock every exercise whose legacy requirement is simply "Machine".
     if {"rope_attachment","straight_bar_attachment","lat_bar_attachment","ankle_strap"} & keys and "cable_machine" in keys:
         out.add("cable_machine")
 
-    # Bar variations still give Forge a useful barbell capability for compatible movements.
-    if {"ez_curl_bar","trap_bar"} & keys:
-        out.add("barbell")
+    # EZ/trap bars are not treated as a general Olympic barbell capability.
 
     return sorted(out)
 

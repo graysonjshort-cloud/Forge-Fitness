@@ -57,8 +57,8 @@ subprocess.run(["node","--check",str(ROOT/"app.js")],check=True,capture_output=T
 for module in sorted((ROOT/"js").glob("*.js")):
     subprocess.run(["node","--check",str(module)],check=True,capture_output=True,text=True)
 for name in ["forge_core.js","forge_api.js","forge_equipment.js","forge_pwa.js"]:
-    assert f'/js/{name}?v=15.10.2' in index, f"Missing module script: {name}"
-assert '/app.js?v=15.10.2' in index
+    assert f'/js/{name}?v=15.10.4' in index, f"Missing module script: {name}"
+assert '/app.js?v=15.10.4' in index
 assert len(app) < 250000, "app.js modularization regression"
 assert 'function normalizedExerciseTargets()' in app, "Sparse exercise target normalization missing"
 assert 'exercises_per_workout:normalizedExerciseTargets()' in app, "Rebuild payload must normalize per-workout targets"
@@ -84,7 +84,7 @@ assert 'completion-metrics' in app, "Completion metrics UI missing"
 assert "readiness:readinessCheckin" in app
 assert "Adjust Today’s Workout" in app
 assert "todayAdjustmentBanner" in app
-assert "AUTO-REGULATION 3.0" in app
+assert "FORGE ADJUSTMENT" in app
 
 # v14.42 smart substitution regression guards
 assert "SMART SUBSTITUTION" in app

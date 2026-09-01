@@ -1536,3 +1536,96 @@ p{line-height:1.52}
 .adaptation-card{padding:17px}.adaptation-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.adaptation-head h2{margin:3px 0 0;font-size:20px}.adaptation-summary{margin:10px 0 14px;color:#b7c0c9;font-size:12px;line-height:1.55}.adaptation-review{display:grid;gap:4px;padding:11px 12px;border-radius:11px;background:#191519;border-left:3px solid #ff334f;margin-bottom:18px}.adaptation-review b{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#ff536a}.adaptation-review span{font-size:10px;color:#aeb7c0;line-height:1.45}.adaptation-section{margin-top:18px}.adaptation-section+.adaptation-section{padding-top:18px;border-top:1px solid #293039}.adaptation-section-head{display:flex;justify-content:space-between;gap:12px;align-items:end;margin-bottom:10px}.adaptation-section-head h3{margin:2px 0 0;font-size:14px}.adaptation-section-head>small{color:#8e99a4;font-size:9px;white-space:nowrap}.adaptation-decisions{display:grid;gap:8px}.adaptation-decision{display:grid;grid-template-columns:minmax(0,1fr) minmax(70px,110px);gap:14px;align-items:center;padding:11px 12px;background:#11161b;border:1px solid #293039;border-radius:11px}.adaptation-decision b{display:block;font-size:11px;line-height:1.3}.adaptation-decision p{margin:4px 0 0;color:#929da8;font-size:9.5px;line-height:1.5}.adaptation-decision>span{padding:6px 7px;border-radius:7px;background:#20272e;color:#fff;font-size:8px;font-weight:900;text-transform:uppercase;text-align:center;line-height:1.25}.adaptation-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}.adaptation-metrics>div{padding:11px;border:1px solid #293039;border-radius:11px;background:#0e1317;display:grid;gap:5px}.adaptation-metrics small{color:#8e99a4;font-size:8px}.adaptation-metrics b{font-size:10px;line-height:1.35;overflow-wrap:anywhere}.adaptation-next{margin-top:18px;padding:13px;border:1px dashed #3a4650;border-radius:11px}.adaptation-next h3{margin:2px 0 5px;font-size:13px}.adaptation-next p{margin:0;color:#929da8;font-size:9.5px;line-height:1.5}
 @media(max-width:390px){.workout-context{font-size:8px;line-height:1.35}.adaptation-card{padding:14px}.adaptation-head{display:grid;gap:8px}.adaptation-badge{justify-self:start}.adaptation-decision{grid-template-columns:1fr;gap:8px}.adaptation-decision>span{justify-self:start}.adaptation-section-head{align-items:start}.adaptation-metrics{grid-template-columns:1fr}}
 .adaptation-apply{margin-top:12px;width:100%}
+
+/* v15.10.3 — concise copy + spacing polish */
+:root{
+  --ui-gap-xs:6px;
+  --ui-gap-sm:10px;
+  --ui-gap-md:14px;
+  --ui-gap-lg:20px;
+  --ui-copy:#b8c1ca;
+  --ui-copy-dim:#8f99a4;
+}
+#view{letter-spacing:0}
+#view h1,#view h2,#view h3,#view p,#view small{overflow-wrap:break-word}
+#view h1{margin-top:0;margin-bottom:7px}
+#view h2{margin-top:0;margin-bottom:7px}
+#view h3{margin-top:0;margin-bottom:5px}
+#view p{margin-top:0}
+#view .muted{color:var(--ui-copy);font-size:11px;line-height:1.55}
+#view small.muted{font-size:9.5px}
+#view .eyebrow{margin-bottom:4px;font-size:9px;line-height:1.35}
+.row{align-items:center}
+.row>*{min-width:0}
+.row>div{min-width:0}
+.card>.row:first-child{margin-bottom:8px}
+.card>.row:first-child:last-child{margin-bottom:0}
+.card h3+.muted,.card h2+.muted{margin-top:4px}
+.card .muted:last-child{margin-bottom:0}
+.card small{line-height:1.4}
+.btn,button{line-height:1.2}
+.btn{white-space:normal;text-wrap:balance}
+.btn.compact{min-height:38px;padding:8px 11px}
+.text-action{line-height:1.35}
+label{line-height:1.35}
+label>small{display:block;margin-top:3px}
+input,select,textarea{line-height:1.25}
+input::placeholder,textarea::placeholder{opacity:.72}
+.section-heading,.section-title{display:flex;align-items:end;justify-content:space-between;gap:12px}
+.section-heading>*,.section-title>*{min-width:0}
+.health-row,.notification-toggle{gap:12px}
+.health-row b,.notification-toggle span{line-height:1.35}
+.notification-card{display:grid;gap:10px}
+.notification-card .muted{margin-top:5px}
+.plan-week-calendar b{line-height:1.3}
+.plan-week-calendar span{line-height:1.4}
+.exercise-item-copy{gap:6px}
+.exercise-meta{row-gap:5px}
+.exercise-meta small{white-space:normal}
+.focus-set{line-height:1.35}
+.focus-target strong{line-height:1.1}
+.focus-target span{line-height:1.4}
+.focus-effort>div:first-child{gap:10px}
+.focus-effort>div:first-child small{text-align:right;line-height:1.25}
+.forge-adjustment summary{align-items:flex-start}
+.forge-adjustment summary span{min-width:0}
+.forge-adjustment summary b{display:block}
+.adaptation-summary{max-width:38rem}
+.adaptation-decision>div{min-width:0}
+.adaptation-decision>span{overflow-wrap:anywhere}
+.adaptation-section-head>div{min-width:0}
+.adaptation-review span{max-width:34rem}
+.workout-context{margin-bottom:4px;align-items:flex-start}
+.workout-context-name{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%}
+.workout-context-count{white-space:nowrap;color:#aeb7c0}
+.nutrition-saved-strip{gap:9px}
+.nutrition-saved-card{min-width:0}
+.nutrition-saved-card h3,.nutrition-saved-card b{line-height:1.3}
+.more-sheet button{gap:12px}
+.more-sheet button>span{min-width:0}
+.more-sheet button small{display:block;margin-top:2px}
+@media(max-width:390px){
+  #view .muted{font-size:10.5px}
+  .row{gap:9px}
+  .card>.row:first-child{align-items:flex-start}
+  .card>.row:first-child .btn.compact{flex:0 0 auto}
+  .section-heading,.section-title{align-items:flex-start}
+  .adaptation-section-head{display:grid;grid-template-columns:minmax(0,1fr) auto}
+  .adaptation-section-head>small{padding-top:2px}
+  .workout-context{display:grid;gap:3px}
+  .workout-context-count{white-space:normal}
+  .focus-effort>div:first-child{align-items:flex-start}
+}
+@media(max-width:340px){
+  .row{gap:7px}
+  .card{padding:13px}
+  .btn.compact{padding-inline:9px}
+  .adaptation-section-head{grid-template-columns:1fr}
+  .adaptation-section-head>small{justify-self:start}
+}
+
+/* v15.10.4 workout reliability */
+.finish-exercise{width:100%;margin-top:8px}
+.optional-set-note{display:block;text-align:center;margin-top:6px;color:#8f99a4}
+.rest-explanation{margin:8px auto 4px;max-width:260px;color:#aeb7c0;font-size:10px;line-height:1.45}
+.inspect-note{text-align:center;margin-top:10px}

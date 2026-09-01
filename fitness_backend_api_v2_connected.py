@@ -732,9 +732,12 @@ def _profile_from_db(user_id: int) -> UserProfile:
         weekly_fatigue=s.get("fatigue_score", 0.0),
         missed_workouts=s.get("missed_workouts", 0),
     )
+    equipment_log=database.get_equipment_log(user_id,DB_PATH)
+    exact_equipment=[str(x.get("key") or "").strip().lower() for x in equipment_log.get("items",[]) if x.get("key")]
+    generator_equipment=tuple(dict.fromkeys(exact_equipment+list(equipment_log.get("legacy_equipment") or p.get("equipment") or [])))
     return UserProfile(
         goal=p["goal"], experience=p["experience"], days_per_week=p["days_per_week"],
-        minutes_per_workout=p["minutes_per_workout"], equipment=tuple(p["equipment"]),
+        minutes_per_workout=p["minutes_per_workout"], equipment=generator_equipment,
         preferred_exercises=tuple(p["preferred_exercises"]),
         excluded_exercises=tuple(p["excluded_exercises"]), seed=p["seed"],
         training_state=state, priority_muscles=tuple(p["priority_muscles"]),
@@ -1010,13 +1013,13 @@ def _current_account(authorization: Optional[str]) -> dict:
 def release_info():
     return {
         "app":"Forge Fitness",
-        "version":"15.10.2",
+        "version":"15.10.4",
         "channel":"production-candidate",
         "feature_freeze":True,
         "schema_policy":"migration-safe",
         "workout_write_policy":"idempotent-and-session-reconciled",
         "automatic_programming_policy":"user-authority-gated",
-        "pwa_cache":"forge-v15-10-2-progression-ui-v1",
+        "pwa_cache":"forge-v15-10-4-workout-reliability-v1",
     }
 
 @app.get("/health")
@@ -2311,7 +2314,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"15.10.2"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"15.10.4"}
 
 
 @app.get("/me/coach/briefing")

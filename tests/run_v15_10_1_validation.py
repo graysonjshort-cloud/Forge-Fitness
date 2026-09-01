@@ -38,4 +38,4 @@ assert "v14.61.0" not in app
 assert "Forge Fitness v15.10." in app
 assert "15.10." in idx
 assert (r/"app.js").stat().st_size < 250000
-print("v15.10.1 UI/pathway cleanup validation passed")
+print("v15.10.4 UI/pathway cleanup validation passed")
