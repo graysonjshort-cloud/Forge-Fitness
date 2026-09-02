@@ -71,7 +71,8 @@ def main():
             css=(runtime/'app'/'styles.css').read_text(encoding='utf-8')
             html=html.replace('</head>',f'<style>{css}</style></head>')
             page.set_content(html,wait_until='domcontentloaded')
-            for module in ['forge_core.js', 'forge_api.js', 'forge_equipment.js', 'forge_pwa.js', 'forge_features.js', 'forge_offline.js', 'forge_nutrition.js', 'forge_workout.js', 'forge_plan.js', 'forge_progress.js']:
+            module_scripts=re.findall(r'<script src="/js/([^"?]+)(?:\?[^"]*)?"></script>',(runtime/'app'/'index.html').read_text(encoding='utf-8'))
+            for module in module_scripts:
                 page.add_script_tag(content=(runtime/'app'/'js'/module).read_text(encoding='utf-8'))
             assert page.evaluate("typeof ForgeCore==='object' && typeof ForgeApi.request==='function' && typeof ForgeEquipment.icon==='function' && typeof ForgePWA.create==='function'")
             js=(runtime/'app'/'app.js').read_text(encoding='utf-8')

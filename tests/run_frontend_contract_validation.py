@@ -3,6 +3,8 @@ import ast, json, re, sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 APP=(ROOT/'app.js').read_text(encoding='utf-8')
+MODULES={p.name:p.read_text(encoding='utf-8') for p in (ROOT/'js').glob('*.js')}
+FRONTEND=APP+'\n'+'\n'.join(MODULES.values())
 API=(ROOT/'fitness_backend_api_v2_connected.py').read_text(encoding='utf-8')
 
 # Backend route contracts from FastAPI decorators.
@@ -23,7 +25,7 @@ def compatible(front,back):
 # Find api("/path", {...}) and api(`/path/${id}`, {...}) calls. Method defaults GET.
 call_re=re.compile(r'\bapi\(\s*(["\'`])(/[^"\'`]+)\1\s*(?:,\s*\{([^}]{0,500})\})?',re.S)
 calls=[]
-for q,path,opt in call_re.findall(APP):
+for q,path,opt in call_re.findall(FRONTEND):
     mm=re.search(r'\bmethod\s*:\s*["\'](GET|POST|PUT|DELETE|PATCH)["\']',opt or '',re.I)
     method=(mm.group(1).upper() if mm else 'GET')
     calls.append((method,path))
@@ -35,12 +37,14 @@ for method,path in calls:
 
 # Detect likely raw fetches that bypass Forge's shared authenticated api() helper.
 raw_fetch=[]
-for m in re.finditer(r'\bfetch\s*\(([^\n;]{1,240})',APP):
-    snippet=m.group(0)
-    # The one fetch inside api() itself is intentional.
-    before=APP[max(0,m.start()-220):m.start()]
-    if 'async function api(' not in before:
-        raw_fetch.append(snippet[:220])
+for name,text in {'app.js':APP,**MODULES}.items():
+    if name=='forge_api.js':
+        continue
+    for m in re.finditer(r'\bfetch\s*\(([^\n;]{1,240})',text):
+        snippet=m.group(0)
+        before=text[max(0,m.start()-220):m.start()]
+        if 'async function api(' not in before:
+            raw_fetch.append(f"{name}: {snippet[:200]}")
 
 report={'status':'passed' if not missing and not raw_fetch else 'failed','frontend_api_calls_checked':len(calls),'backend_routes_found':len(routes),'missing_contracts':missing,'raw_fetch_bypasses':raw_fetch}
 (ROOT/'V14_38_2_FRONTEND_CONTRACT_REPORT.json').write_text(json.dumps(report,indent=2),encoding='utf-8')

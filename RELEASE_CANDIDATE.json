@@ -1,7 +1,7 @@
 {
-  "version": "15.10.1",
-  "channel": "production-candidate-patch",
-  "feature_freeze": true,
+  "version": "15.11.0",
+  "channel": "architecture-hardening",
+  "feature_freeze": false,
   "required_flows": [
     "generate-edit-start-log-swap-reload-resume-finish",
     "custom-split",
@@ -31,5 +31,18 @@
     "pathway integrity",
     "rest timer override fix",
     "restore active-workout set controls"
-  ]
+  ],
+  "architecture": {
+    "app_js_target_bytes": "<100000",
+    "app_js_actual_bytes": 72692,
+    "extracted_runtime_modules": [
+      "forge_onboarding_ui.js",
+      "forge_home_ui.js",
+      "forge_workout_runtime.js",
+      "forge_nutrition_ui.js",
+      "forge_progress_runtime.js",
+      "forge_coach_runtime.js",
+      "forge_plan_runtime.js"
+    ]
+  }
 }

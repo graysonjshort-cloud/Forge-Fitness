@@ -49,19 +49,19 @@ for rule in ["@media(max-width:390px)","@media(max-width:340px)",":focus-visible
 # Runtime-regression guards for known browser-only failures.
 assert "API_BASE" not in all_frontend, "Undefined API_BASE reference reintroduced"
 assert 'if(token&&plan)' not in all_frontend, "Undefined token reference reintroduced"
-assert 'api("/nutrition/providers/status")' in app, "Nutrition provider status must use shared API helper"
-assert 'if(authToken&&plan)cacheCurrentPlanDemos(true)' in app, "Online demo warmup must use authToken"
+assert 'api("/nutrition/providers/status")' in all_frontend, "Nutrition provider status must use shared API helper"
+assert 'if(authToken&&plan)cacheCurrentPlanDemos(true)' in all_frontend, "Online demo warmup must use authToken"
 
 # JS parser validation.
 subprocess.run(["node","--check",str(ROOT/"app.js")],check=True,capture_output=True,text=True)
 for module in sorted((ROOT/"js").glob("*.js")):
     subprocess.run(["node","--check",str(module)],check=True,capture_output=True,text=True)
 for name in ["forge_core.js","forge_api.js","forge_equipment.js","forge_pwa.js"]:
-    assert f'/js/{name}?v=15.10.4' in index, f"Missing module script: {name}"
-assert '/app.js?v=15.10.4' in index
+    assert f'/js/{name}?v=15.11.0' in index, f"Missing module script: {name}"
+assert '/app.js?v=15.11.0' in index
 assert len(app) < 250000, "app.js modularization regression"
-assert 'function normalizedExerciseTargets()' in app, "Sparse exercise target normalization missing"
-assert 'exercises_per_workout:normalizedExerciseTargets()' in app, "Rebuild payload must normalize per-workout targets"
+assert 'function normalizedExerciseTargets()' in all_frontend, "Sparse exercise target normalization missing"
+assert 'exercises_per_workout:normalizedExerciseTargets()' in all_frontend, "Rebuild payload must normalize per-workout targets"
 assert 'Array.isArray(detail)' in modules.get("forge_api.js",""), "Structured API validation errors must be readable"
 print(json.dumps({
   "status":"passed",
@@ -74,56 +74,56 @@ print(json.dumps({
 },indent=2))
 
 # v14.40 daily workout intelligence regression guards
-assert 'data-a=repeat-last-set' in app, "Repeat Last Set action missing"
-assert 'data-a=current-exercise-history' in app, "In-workout exercise history action missing"
-assert 'Why this target?' in app, "Progression explanation missing"
-assert 'loadCompletedWorkoutSummary' in app, "Completion summary loader missing"
-assert 'completion-metrics' in app, "Completion metrics UI missing"
+assert 'data-a=repeat-last-set' in all_frontend, "Repeat Last Set action missing"
+assert 'data-a=current-exercise-history' in all_frontend, "In-workout exercise history action missing"
+assert 'Why this target?' in all_frontend, "Progression explanation missing"
+assert 'loadCompletedWorkoutSummary' in all_frontend, "Completion summary loader missing"
+assert 'completion-metrics' in all_frontend, "Completion metrics UI missing"
 
 # v14.41 readiness/live adjustment regression guards
-assert "readiness:readinessCheckin" in app
-assert "Adjust Today’s Workout" in app
-assert "todayAdjustmentBanner" in app
-assert "FORGE ADJUSTMENT" in app
+assert "readiness:readinessCheckin" in all_frontend
+assert "Adjust Today’s Workout" in all_frontend
+assert "todayAdjustmentBanner" in all_frontend
+assert "FORGE ADJUSTMENT" in all_frontend
 
 # v14.42 smart substitution regression guards
-assert "SMART SUBSTITUTION" in app
-assert "data-swap-reason" in app
-assert "Marked during workout substitution due to discomfort" in app
-assert "smart_reason" in app
+assert "SMART SUBSTITUTION" in all_frontend
+assert "data-swap-reason" in all_frontend
+assert "Marked during workout substitution due to discomfort" in all_frontend
+assert "smart_reason" in all_frontend
 
 # v14.43 dashboard/weekly insights regression guards
-assert "THIS WEEK" in app
-assert "homeQuickActions" in app
-assert "api(\"/me/history\")" in app
-assert "NEXT BEST ACTION" in app
+assert "THIS WEEK" in all_frontend
+assert "homeQuickActions" in all_frontend
+assert "api(\"/me/history\")" in all_frontend
+assert "NEXT BEST ACTION" in all_frontend
 
 # v14.57 adaptive set target regression guards
-assert "ADAPTIVE TARGET" in app
-assert "suggested_reps" in app
-assert "suggested_duration_seconds" in app
+assert "ADAPTIVE TARGET" in all_frontend
+assert "suggested_reps" in all_frontend
+assert "suggested_duration_seconds" in all_frontend
 assert "next_target" in (ROOT/"fitness_backend_api_v2_connected.py").read_text(encoding="utf-8")
 assert "confidence" in (ROOT/"database.py").read_text(encoding="utf-8")
 
 # v14.60 custom split frequency/priority intelligence regression guards
-assert 'WEEKLY MUSCLE TARGETS' in app, "Custom split weekly muscle targets UI missing"
-assert 'data-custom-frequency' in app, "Custom split frequency controls missing"
-assert 'data-custom-priority' in app, "Custom split priority controls missing"
-assert 'customSplitInsights' in app, "Custom split warning intelligence missing"
+assert 'WEEKLY MUSCLE TARGETS' in all_frontend, "Custom split weekly muscle targets UI missing"
+assert 'data-custom-frequency' in all_frontend, "Custom split frequency controls missing"
+assert 'data-custom-priority' in all_frontend, "Custom split priority controls missing"
+assert 'customSplitInsights' in all_frontend, "Custom split warning intelligence missing"
 
 # v14.61 precision plan generation regression guards
-assert 'EXERCISES PER WORKOUT' in app, 'Exercises-per-day onboarding control missing'
-assert 'data-adjust-exercises' in app, 'Exercises-per-day plan adjustment control missing'
-assert 'CUSTOM SPLIT 3.0' in app, 'Precision custom split UI missing'
-assert 'data-custom-submuscle' in app, 'Sub-muscle selection controls missing'
-assert 'MUSCLE_SUBSECTIONS' in app, 'Muscle subsection taxonomy missing from UI'
+assert 'EXERCISES PER WORKOUT' in all_frontend, 'Exercises-per-day onboarding control missing'
+assert 'data-adjust-exercises' in all_frontend, 'Exercises-per-day plan adjustment control missing'
+assert 'CUSTOM SPLIT 3.0' in all_frontend, 'Precision custom split UI missing'
+assert 'data-custom-submuscle' in all_frontend, 'Sub-muscle selection controls missing'
+assert 'MUSCLE_SUBSECTIONS' in all_frontend, 'Muscle subsection taxonomy missing from UI'
 generator=(ROOT/'fitness_app_plan_generator_upgraded.py').read_text(encoding='utf-8')
 assert 'return "Push"' in generator and 'return "Pull"' in generator and 'return "Legs"' in generator, 'PPL workout naming regression'
 assert 'exercises_per_day' in generator, 'Generator exercise-count setting missing'
 assert 'exercise_muscles' in (ROOT/'database.py').read_text(encoding='utf-8'), 'Exercise-muscle link persistence missing'
 
 # v14.62 sequence integrity regression guards
-assert 'customSplitWeekday' in app
+assert 'customSplitWeekday' in all_frontend
 assert 'exercise_quota_message' in (ROOT/'fitness_app_plan_generator_upgraded.py').read_text(encoding='utf-8')
 assert 'days=sorted(days)' in (ROOT/'fitness_backend_api_v2_connected.py').read_text(encoding='utf-8')
 assert 'EXERCISE_CANONICAL_ALIASES' in (ROOT/'database.py').read_text(encoding='utf-8')
@@ -135,5 +135,5 @@ assert '_generated_plan_invariants' in backend, 'Generated-plan invariant checks
 assert '_plan_diff' in backend, 'Detailed plan diff missing'
 assert '_exercise_adaptation_decisions' in backend, 'Exercise-level adaptive decisions missing'
 assert 'adaptive_programming_version' in backend, 'Adaptive Programming 2.0 preview metadata missing'
-assert 'EXERCISE CHANGES' in app, 'Exercise-level adaptive UI missing'
-assert 'PLAN PREVIEW + VALIDATION' in app, 'Rebuild diagnostics preview missing'
+assert 'EXERCISE CHANGES' in all_frontend, 'Exercise-level adaptive UI missing'
+assert 'PLAN PREVIEW + VALIDATION' in all_frontend, 'Rebuild diagnostics preview missing'
