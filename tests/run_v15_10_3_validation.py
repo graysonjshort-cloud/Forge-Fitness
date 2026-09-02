@@ -5,7 +5,7 @@ app=(r/"app.js").read_text(); css=(r/"styles.css").read_text(); idx=(r/"index.ht
 runtime_modules="\n".join((r/"js"/x).read_text() for x in ['forge_onboarding_ui.js','forge_home_ui.js','forge_workout_runtime.js','forge_nutrition_ui.js','forge_progress_runtime.js','forge_coach_runtime.js','forge_plan_runtime.js']); modules="\n".join(x.read_text() for x in (r/"js").glob("*.js")); all_frontend=app+"\n"+modules; duplicate_scope=app+"\n"+runtime_modules
 
 # Release and size guard.
-assert "15.11.0" in idx
+assert "16.0.0" in idx
 assert (r/"app.js").stat().st_size < 250000
 
 # Concise copy / readable adaptation language.

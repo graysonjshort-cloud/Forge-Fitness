@@ -373,7 +373,8 @@ def training_response_engine(user_id,db_path):
     for e in exercises:
         try: ps=progression_strategy(user_id,e["exercise_id"],db_path)
         except Exception: ps={}
-        hist=database.get_exercise_history(user_id,e["exercise_id"],12,db_path) or []
+        history_data=database.get_exercise_history(user_id,e["exercise_id"],12,db_path) or {}
+        hist=history_data.get("sets",[]) if isinstance(history_data,dict) else history_data
         completed=len(hist); avg_rpe=round(sum(float(x.get("rpe") or 0) for x in hist)/completed,1) if completed else None
         success=(ps.get("status")=="progressing")
         rows.append({"exercise_id":e["exercise_id"],"name":e.get("name"),"exposures":completed,
@@ -414,6 +415,7 @@ def exercise_effectiveness_engine(user_id,db_path):
         rows.append({"exercise_id":x["exercise_id"],"name":x["name"],"effectiveness_score":score,
                      "tier":"excellent" if score>=80 else "productive" if score>=65 else "learning" if score>=45 else "review",
                      "response":x["response"],"fatigue_efficiency":x["fatigue_efficiency"],
+                     "exposures":int(x.get("exposures") or 0),
                      "rotation":rr.get("recommendation","retain")})
     rows.sort(key=lambda z:z["effectiveness_score"],reverse=True)
     return {"version":"1.0","exercises":rows,"formula":"progress + consistency + fatigue efficiency + retention evidence"}
@@ -454,6 +456,96 @@ def adaptive_training_system(user_id,db_path):
             "optimizer":adaptive_program_optimizer(user_id,db_path),"program_review":program_review(user_id,db_path),
             "authority":database.get_programming_authority(user_id,db_path),
             "principles":["backend-authoritative session state","evidence before persistent adaptation","user authority gates every automatic programming domain","all meaningful changes remain explainable"]}
+
+def adaptive_directives_v5(user_id,db_path):
+    """v16.0 evidence-weighted programming directives.
+
+    This layer coordinates response, muscle response, recovery, strategy and user
+    authority. It deliberately proposes the smallest effective change and does not
+    bypass the existing mutation/authority paths.
+    """
+    response=training_response_engine(user_id,db_path)
+    muscles=muscle_response_model(user_id,db_path)
+    effectiveness=exercise_effectiveness_engine(user_id,db_path)
+    forecast=recovery_forecast(user_id,db_path)
+    strategy=database.get_training_strategy_state(user_id,db_path)
+    authority=database.get_programming_authority(user_id,db_path)
+    directives=[]
+
+    for e in effectiveness.get("exercises",[]):
+        exposures=int(e.get("exposures") or 0)
+        tier=e.get("tier","learning")
+        if tier=="review" and exposures>=3:
+            domain="exercise_substitutions"; mode=authority.get(domain,"recommend_only")
+            directives.append({
+                "scope":"exercise","target_id":e.get("exercise_id"),"target":e.get("name"),
+                "action":"review_exercise","change":"Consider a more productive variation",
+                "domain":domain,"authority":mode,"confidence":"high" if exposures>=6 else "medium",
+                "evidence":[f"{exposures} recent exposures",f"effectiveness score {e.get('effectiveness_score','—')}"],
+                "principle":"Rotate only after repeated evidence."
+            })
+        elif tier in {"excellent","productive"} and exposures>=3:
+            directives.append({
+                "scope":"exercise","target_id":e.get("exercise_id"),"target":e.get("name"),
+                "action":"preserve_exercise","change":"Keep this exercise",
+                "domain":"exercise_substitutions","authority":"preserve","confidence":"high" if exposures>=6 else "medium",
+                "evidence":[f"{exposures} recent exposures",f"effectiveness tier {tier}"],
+                "principle":"Do not replace what is working."
+            })
+
+    for m in muscles.get("muscles",[]):
+        observed=int(m.get("observed_exercises") or 0)
+        if observed<1: continue
+        state=m.get("state")
+        if state=="stalled" and m.get("confidence") in {"medium","high"}:
+            domain="weekly_volume"; mode=authority.get(domain,"recommend_only")
+            directives.append({
+                "scope":"muscle","target":m.get("muscle"),"action":"review_stimulus",
+                "change":"Review volume, frequency, or exercise quality before adding work",
+                "domain":domain,"authority":mode,"confidence":m.get("confidence"),
+                "evidence":[f"{m.get('negative_signals',0)} negative response signals",f"{observed} observed exercises",f"volume status {m.get('volume_status') or 'unknown'}"],
+                "principle":"Do not blindly add sets to a stalled muscle."
+            })
+        elif state=="responding" and m.get("confidence") in {"medium","high"}:
+            directives.append({
+                "scope":"muscle","target":m.get("muscle"),"action":"preserve_dose",
+                "change":"Keep current weekly stimulus",
+                "domain":"weekly_volume","authority":"preserve","confidence":m.get("confidence"),
+                "evidence":[f"{m.get('positive_signals',0)} positive response signals",f"{observed} observed exercises"],
+                "principle":"Preserve a dose that is producing progress."
+            })
+
+    mode=forecast.get("next_session_mode")
+    if mode in {"recovery","controlled"}:
+        domain="set_count"; auth=authority.get(domain,"recommend_only")
+        directives.insert(0,{
+            "scope":"session","target":"next session","action":"reduce_session_demand",
+            "change":"Use a lower-fatigue session" if mode=="recovery" else "Keep the session controlled",
+            "domain":domain,"authority":auth,"confidence":"high" if mode=="recovery" else "medium",
+            "evidence":[forecast.get("reason") or "Recovery forecast is elevated"],
+            "principle":"Recovery outranks progression."
+        })
+
+    # Stable ordering: safety/recovery, preserve wins, then review signals.
+    priority={"reduce_session_demand":0,"preserve_exercise":1,"preserve_dose":1,"review_stimulus":2,"review_exercise":3}
+    directives=sorted(directives,key=lambda x:(priority.get(x["action"],9),str(x.get("target") or "")))
+    actionable=[x for x in directives if x.get("authority")!="preserve" and x.get("action") not in {"preserve_exercise","preserve_dose"}]
+    return {
+        "version":"5.0",
+        "strategy":strategy,
+        "recovery_mode":mode or "normal",
+        "directives":directives[:18],
+        "actionable_count":len(actionable),
+        "rules":[
+            "recovery outranks progression",
+            "preserve successful exercises and muscle doses",
+            "persistent changes require repeated evidence",
+            "prefer the smallest effective change",
+            "never exceed the user's programming authority"
+        ],
+        "execution_policy":"Directives coordinate existing authority-gated mutation paths; this endpoint does not silently rewrite the plan."
+    }
+
 
 def persistent_adaptation_candidates(user_id,db_path):
     """v15.1: evidence-gated persistent progression proposals for the active plan."""

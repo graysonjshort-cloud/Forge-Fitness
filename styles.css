@@ -1629,3 +1629,74 @@ input::placeholder,textarea::placeholder{opacity:.72}
 .optional-set-note{display:block;text-align:center;margin-top:6px;color:#8f99a4}
 .rest-explanation{margin:8px auto 4px;max-width:260px;color:#aeb7c0;font-size:10px;line-height:1.45}
 .inspect-note{text-align:center;margin-top:10px}
+
+/* v15.13.0 — Forge Unified UI System */
+:root{
+ --forge-space-1:4px;--forge-space-2:8px;--forge-space-3:12px;--forge-space-4:16px;
+ --forge-space-5:20px;--forge-space-6:24px;--forge-space-8:32px;
+ --forge-radius-sm:9px;--forge-radius-md:13px;--forge-radius-lg:17px;
+ --forge-border:#29313a;--forge-panel:#11161b;--forge-panel-2:#171d23;
+ --forge-text:#f5f7f9;--forge-text-2:#b5bec7;--forge-text-3:#89949f;
+ --forge-accent:#ef334f;--forge-touch:44px;
+}
+#view{font-size:14px;line-height:1.5}
+.ui-heading{text-wrap:balance;max-width:100%}
+h1.ui-heading{font-size:clamp(24px,7vw,32px);line-height:1.08}
+h2.ui-heading{font-size:clamp(19px,5.5vw,24px);line-height:1.12}
+h3.ui-heading{font-size:14px;line-height:1.25}
+.ui-eyebrow{font-size:9px!important;line-height:1.35!important;letter-spacing:.1em!important;margin:0 0 5px!important}
+.ui-muted{color:var(--forge-text-2)!important;line-height:1.5!important}
+.ui-card{border-radius:var(--forge-radius-md)!important;border-color:var(--forge-border)!important}
+.ui-card+.ui-card{margin-top:var(--forge-space-3)}
+.ui-btn{min-height:var(--forge-touch);border-radius:11px!important;padding:10px 14px!important;font-weight:800;letter-spacing:0}
+.ui-control{min-height:var(--forge-touch);border-radius:10px!important;padding:10px 12px!important}
+.stack{gap:var(--forge-space-3)}
+.chips{gap:var(--forge-space-2)}
+.choice-grid{gap:var(--forge-space-3)}
+.spacer{height:var(--forge-space-3)}
+.big-spacer{height:var(--forge-space-5)}
+.section-heading{margin:var(--forge-space-6) 0 var(--forge-space-3)}
+.section-heading:first-child{margin-top:0}
+.row{gap:var(--forge-space-3)}
+.card{margin-bottom:0}
+.card p+button,.card .muted+button{margin-top:var(--forge-space-3)}
+.focus-workout-top{gap:var(--forge-space-3)}
+.focus-prescription{gap:var(--forge-space-3)}
+.focus-secondary{display:grid;gap:var(--forge-space-3)}
+.focus-secondary>.card,.focus-secondary>details,.focus-secondary>button{margin:0!important}
+.exercise-list{gap:var(--forge-space-2)}
+.exercise-item{min-height:58px;border-radius:12px}
+.exercise-meta{gap:5px}
+.exercise-meta small{padding:4px 7px}
+.adaptation-card section{scroll-margin-top:80px}
+.adaptation-decision{min-height:62px}
+.notification-card,.training-module-card,.nutrition-saved-card{overflow:hidden}
+.more-sheet{border-radius:18px 18px 0 0}
+.more-sheet button{min-height:52px}
+@media(max-width:390px){
+ #view{font-size:13px}
+ .section-heading{margin-top:var(--forge-space-5)}
+ .ui-card{padding:14px!important}
+ .ui-btn{padding-inline:12px!important}
+ .row{gap:10px}
+}
+@media(min-width:700px){
+ #view{max-width:720px;margin-inline:auto}
+ .ui-card{padding:18px!important}
+ .adaptation-decisions{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* v16.0 Adaptive Programming 5.0 */
+.adaptive-v16-card{display:grid;gap:12px}
+.adaptive-mode{padding:5px 8px;border:1px solid var(--forge-border);border-radius:999px;font-size:8px;font-weight:900;text-transform:uppercase}
+.adaptive-directive-list{display:grid;gap:8px}
+.adaptive-directive{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 11px;border:1px solid var(--forge-border);border-radius:11px;background:var(--forge-panel)}
+.adaptive-directive>div{display:grid;gap:3px;min-width:0}
+.adaptive-directive b{font-size:11px;line-height:1.3}
+.adaptive-directive small{font-size:9px;color:var(--forge-text-2);line-height:1.45}
+.adaptive-directive>span{font-size:8px;text-transform:uppercase;color:var(--forge-text-3)}
+.adaptive-directive.preserve{border-left:3px solid #607080}
+.adaptive-directive.review{border-left:3px solid var(--forge-accent)}
+.adaptive-rules summary{font-size:10px;font-weight:800;cursor:pointer}
+.adaptive-rules ul{margin:10px 0 0;padding-left:18px;color:var(--forge-text-2);font-size:9.5px;line-height:1.55}
+@media(max-width:390px){.adaptive-directive{grid-template-columns:1fr}.adaptive-directive>span{justify-self:start}}

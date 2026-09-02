@@ -109,25 +109,37 @@ S.wi=wi;
 const list=plan.workouts[wi]?.exercises||[];
 let ei=list.findIndex(x=>Number(x.exercise_id)===Number(sync.current_exercise_id));
 if(ei<0)ei=Math.max(0,Math.min(Number(sync.current_exercise_index||0),list.length-1));
-S.ei=ei;S.set=Math.max(0,Number(sync.current_set_index||0));
+S.ei=ei;
+const activeExercise=list[S.ei],goal=activeExercise?effectiveSetCount(activeExercise):1;
+S.set=ForgeWorkoutState?.clampSet?ForgeWorkoutState.clampSet(Number(sync.current_set_index||0),goal):Math.max(0,Number(sync.current_set_index||0));
+const local=ForgeWorkoutState?.recoverContext?.({sessionId:sync.session_id,workoutId:sync.workout_id,exerciseId:activeExercise?.exercise_id});
+if(local?.rest_context&&!S.restContext)S.restContext=local.rest_context;
+persistWorkoutSnapshot();
 }
 if(!silent&&sync?.stale_sessions_closed)toast("Recovered workout session");
 return sync;
 }catch(e){console.warn("Session reconciliation failed",e);if(!silent)toast("Could not verify workout");return null}
 finally{S.sessionSyncLoading=false}
 }
+function persistWorkoutSnapshot(){
+if(!session||!w()||!window.ForgeWorkoutState)return;
+const e=w().exercises?.[S.ei];
+ForgeWorkoutState.snapshot({sessionId:session.session_id,workoutId:w().workout_id,exerciseId:e?.exercise_id,exerciseIndex:S.ei,setIndex:S.set,setGoal:e?effectiveSetCount(e):1,restRemaining:S.restRemaining,restTotal:S.restTotal,restContext:S.restContext});
+}
 async function persistPosition(){
 if(!session)return;
+persistWorkoutSnapshot();
 try{await api("/me/session/position",{method:"POST",queueable:true,body:JSON.stringify({session_id:session.session_id,exercise_index:S.ei,set_index:S.set})})}catch(e){console.warn(e)}
+persistWorkoutSnapshot();
 }
 async function beginPersistentRest(seconds,context=null){
-S.restRemaining=seconds;S.restTotal=seconds;S.restContext=context||S.restContext||null;
+S.restRemaining=seconds;S.restTotal=seconds;S.restContext=context||S.restContext||null;persistWorkoutSnapshot();
 if(session){try{await api("/me/session/rest/start",{method:"POST",queueable:true,body:JSON.stringify({session_id:session.session_id,duration_seconds:seconds})})}catch(e){console.warn(e)}}
 go("timer");
 }
 async function clearPersistentRest(){
 if(session){try{await api("/me/session/rest/clear",{method:"POST",queueable:true,body:JSON.stringify({session_id:session.session_id})})}catch{}}
-S.restRemaining=0;S.restContext=null;
+S.restRemaining=0;S.restContext=null;persistWorkoutSnapshot();
 }
 function deviceTimePayload(){
 const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC";
@@ -348,7 +360,7 @@ document.querySelectorAll("[data-rpe]").forEach(x=>x.classList.toggle("selected"
 });
 document.querySelectorAll("[data-addrest]").forEach(b=>b.onclick=()=>{S.restRemaining+=Number(b.dataset.addrest);S.restTotal=Math.max(S.restTotal,S.restRemaining);render()});
 document.querySelectorAll("[data-prefpick]").forEach(b=>b.onclick=()=>{const arr=S.prefMode==="avoid"?profile.excluded_exercises:profile.priority_muscles,v=b.dataset.prefpick,i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else arr.push(v);render()});
-const rf=document.querySelector("#registerForm");if(rf)rf.onsubmit=submitRegister;const lf=document.querySelector("#loginForm");if(lf)lf.onsubmit=submitLogin;if(S.route==="progress"&&!S.strengthTrend)loadStrengthTrend();if(S.route==="progress"&&!S.progressHub)loadProgressHub();if(S.route==="progress"&&!S.trainingRecords)loadTrainingRecords();if(["home","progress"].includes(S.route)&&!S.trainingDashboard)loadTrainingDashboard();if(S.route==="plan"&&!S.adaptationPreview)loadAdaptationPreview();if(S.route==="plan"&&!S.recoveryIntelligence)loadRecoveryIntelligence();if(["equipment","equipmentlog"].includes(S.route)&&!S.equipmentLoaded)loadEquipmentLog();if(["exercisedirectory","preferences","preferencepicker"].includes(S.route)&&!S.exerciseDirectory)loadExerciseDirectory();if(S.route==="coach"&&!S.coachLoaded)loadCoach();if(S.route==="coach"&&!S.coachBriefing)loadCoachBriefing();if(S.route==="coach"&&!S.coach4)loadCoach4();if(S.route==="exercise"){loadExerciseRecall();loadExerciseProgression();}if(S.route==="swapexercise"){loadSwapOptions();loadSubstitutionIntelligence();}if(S.route==="cardioswap")loadCardioSwapOptions();if(S.route==="timer")startTimer();if(S.route==="history")loadHistory();if(S.route==="prs")loadPRs();if(S.route==="nutrition"&&!S.nutrition)loadNutrition();
+const rf=document.querySelector("#registerForm");if(rf)rf.onsubmit=submitRegister;const lf=document.querySelector("#loginForm");if(lf)lf.onsubmit=submitLogin;if(S.route==="progress"&&!S.strengthTrend)loadStrengthTrend();if(S.route==="progress"&&!S.progressHub)loadProgressHub();if(S.route==="progress"&&!S.adaptiveDirectives)loadAdaptiveDirectives();if(S.route==="progress"&&!S.trainingRecords)loadTrainingRecords();if(["home","progress"].includes(S.route)&&!S.trainingDashboard)loadTrainingDashboard();if(S.route==="plan"&&!S.adaptationPreview)loadAdaptationPreview();if(S.route==="plan"&&!S.recoveryIntelligence)loadRecoveryIntelligence();if(["equipment","equipmentlog"].includes(S.route)&&!S.equipmentLoaded)loadEquipmentLog();if(["exercisedirectory","preferences","preferencepicker"].includes(S.route)&&!S.exerciseDirectory)loadExerciseDirectory();if(S.route==="coach"&&!S.coachLoaded)loadCoach();if(S.route==="coach"&&!S.coachBriefing)loadCoachBriefing();if(S.route==="coach"&&!S.coach4)loadCoach4();if(S.route==="exercise"){loadExerciseRecall();loadExerciseProgression();}if(S.route==="swapexercise"){loadSwapOptions();loadSubstitutionIntelligence();}if(S.route==="cardioswap")loadCardioSwapOptions();if(S.route==="timer")startTimer();if(S.route==="history")loadHistory();if(S.route==="prs")loadPRs();if(S.route==="nutrition"&&!S.nutrition)loadNutrition();
 if(["home","progress","coach"].includes(S.route)&&!S.strategyDashboard)loadStrategyDashboard();document.querySelectorAll("[data-authority]").forEach(x=>x.onchange=()=>saveAuthority(x.dataset.authority,x.value));
 if(S.route==="exercisehistory")loadExerciseHistory();
 if(S.route==="trainingsettings"){if(!S.sessionDiagnostics)loadSessionDiagnostics();if(!S.integrityReport)loadIntegrity();}
@@ -357,7 +369,8 @@ function toggleArr(arr,v){const i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else ar
 function go(r){
 if(!S.restRemaining)stopTimer();S.route=r;render();scrollTo(0,0);
 if(r==="workoutbuilder")loadPlanEditorSnapshot();
-if(r==="progress"){loadIntelligenceCore();loadExplainableProgramming();loadTrainingDashboard();loadMuscleDevelopment();loadTrainingRecords();loadProgressIntelligence();loadBodyMetrics();api("/me/modules/summary").then(x=>{S.moduleSummary=x;render()}).catch(()=>{});}
+if(r==="progress"){loadAdaptiveDirectives();loadIntelligenceCore();loadExplainableProgramming();loadTrainingDashboard();loadMuscleDevelopment();loadTrainingRecords();loadProgressIntelligence();loadBodyMetrics();api("/me/modules/summary").then(x=>{S.moduleSummary=x;render()}).catch(()=>{});}
+if(r==="coach")loadAdaptiveDirectives();
 if(r==="home"){loadHomeDashboard();loadNotifications();}
 if(r==="notifications")loadNotifications(true);
 if((r==="home"||r==="plan")&&S.calendarStatus?.connected&&S.calendarStatus?.sync_enabled){
@@ -367,7 +380,7 @@ syncCalendar({silent:true});
 async function generatePlan(){go("generating");try{if(!authToken)throw Error("Sign in first");await api("/me/profile",{method:"POST",body:JSON.stringify(profile)});plan=await api("/me/plan/generate",{method:"POST"});
 if(S.calendarStatus?.connected&&S.calendarStatus?.sync_enabled)await syncCalendar({silent:true});
 setTimeout(()=>go("yourplan"),800)}catch(e){toast(e.message);go("preferences")}}
-async function startWorkout(){ForgeCache.invalidate("home");const ww=w();const s=await api(`/me/workout/${ww.workout_id}/start`,{method:"POST"});session={session_id:s.session_id};S.lastSessionId=s.session_id;S.sessionStartedAt=Date.now();S.completedWorkoutSummary=null;S.ei=0;S.set=0;S.workoutPRs=[];await persistPosition();await reconcileSession({silent:true});go("workout")}
+async function startWorkout(){ForgeCache.invalidate("home");ForgeWorkoutState?.clear?.();const ww=w();const s=await api(`/me/workout/${ww.workout_id}/start`,{method:"POST"});session={session_id:s.session_id};S.lastSessionId=s.session_id;S.sessionStartedAt=Date.now();S.completedWorkoutSummary=null;S.ei=0;S.set=0;S.workoutPRs=[];await persistPosition();await reconcileSession({silent:true});go("workout")}
 function setOverrideKey(e){return `forge-set-override:${session?.session_id||"plan"}:${w()?.workout_id||0}:${e?.exercise_id||0}`}
 function autoSetTargetKey(e){return `forge-auto-set-target:${session?.session_id||"plan"}:${w()?.workout_id||0}:${e?.exercise_id||0}`}
 function storedSetCount(key){try{const v=Number(sessionStorage.getItem(key));return Number.isFinite(v)&&v>0?v:null}catch{return null}}
@@ -435,7 +448,7 @@ if(S.set>=setGoal){
 clearAutoSetTarget(e);S.set=0;S.ei++;S.sessionIntelligence=null;S.liveAdjustment=null;
 if(S.ei>=w().exercises.length){
 await persistPosition();await api("/me/workout/complete",{method:"POST",queueable:true,body:JSON.stringify({session_id:session.session_id,completed:true})});
-S.lastSessionId=session.session_id;plan=await api("/me/plan/current");session=null;S.ei=0;S.set=0;go("complete");loadCompletedWorkoutSummary();
+S.lastSessionId=session.session_id;plan=await api("/me/plan/current");session=null;ForgeWorkoutState?.clear?.();S.ei=0;S.set=0;go("complete");loadCompletedWorkoutSummary();
 }else{await persistPosition();await beginPersistentRest(Number(S.sessionIntelligence?.recommended_rest_seconds||e.rest_seconds||60),{exercise:e.name,base:Number(e.rest_seconds||60),recommended:Number(S.sessionIntelligence?.recommended_rest_seconds||e.rest_seconds||60)})}
 }else{await persistPosition();await beginPersistentRest(Number(S.sessionIntelligence?.recommended_rest_seconds||e.rest_seconds||60),{exercise:e.name,base:Number(e.rest_seconds||60),recommended:Number(S.sessionIntelligence?.recommended_rest_seconds||e.rest_seconds||60)})}
 }
@@ -642,16 +655,21 @@ plan=await api("/me/plan/current");S.moduleSession=null;S.moduleSummary=await ap
 }
 if(a==="swap-cardio")go("cardioswap");
 if(a==="cancel-cardio-swap")go("workout");
-if(a==="apply-cardio-swap")await applyCardioSwap();if(a==="back-exercise")go("exercise");if(a==="swap-selected"){if(S.selectedSwap)await applySwap(S.selectedSwap);else toast("Select an exercise first");}if(a==="abandon"){if(session&&confirm("Abandon this workout? Logged sets will remain in history.")){await api("/me/workout/abandon",{method:"POST",body:JSON.stringify({session_id:session.session_id})});session=null;S.ei=0;S.set=0;S.restRemaining=0;plan=await api("/me/plan/current");go("home");toast("Workout abandoned")}}
+if(a==="apply-cardio-swap")await applyCardioSwap();if(a==="back-exercise")go("exercise");if(a==="swap-selected"){if(S.selectedSwap)await applySwap(S.selectedSwap);else toast("Select an exercise first");}if(a==="abandon"){if(session&&confirm("Abandon this workout? Logged sets will remain in history.")){await api("/me/workout/abandon",{method:"POST",body:JSON.stringify({session_id:session.session_id})});session=null;S.ei=0;S.set=0;S.restRemaining=0;ForgeWorkoutState?.clear?.();plan=await api("/me/plan/current");go("home");toast("Workout abandoned")}}
 if(a==="finish-exercise"){
 if(!session)return;
 const e=w()?.exercises?.[S.ei];if(!e)return;
 clearAutoSetTarget(e);S.set=0;S.ei++;S.sessionIntelligence=null;S.liveAdjustment=null;
-if(S.ei>=w().exercises.length){await persistPosition();await api("/me/workout/complete",{method:"POST",queueable:true,body:JSON.stringify({session_id:session.session_id,completed:true})});S.lastSessionId=session.session_id;plan=await api("/me/plan/current");session=null;S.ei=0;go("complete");loadCompletedWorkoutSummary();return}
+if(S.ei>=w().exercises.length){await persistPosition();await api("/me/workout/complete",{method:"POST",queueable:true,body:JSON.stringify({session_id:session.session_id,completed:true})});S.lastSessionId=session.session_id;plan=await api("/me/plan/current");session=null;ForgeWorkoutState?.clear?.();S.ei=0;go("complete");loadCompletedWorkoutSummary();return}
 await persistPosition();go("exercise");return
 }
 if(a==="nutrition-favorites-only"){S.nutritionFavoritesOnly=!S.nutritionFavoritesOnly;render();return}
-if(a==="completeset")await saveSet();if(a==="skip-set"){S.set++;await persistPosition();toast("Set skipped");render();}
+if(a==="completeset")await saveSet();if(a==="skip-set"){
+const e=w()?.exercises?.[S.ei];if(!e)return;
+S.set++;
+if(S.set>=effectiveSetCount(e)){clearAutoSetTarget(e);S.set=0;S.ei++;S.sessionIntelligence=null;S.liveAdjustment=null;if(S.ei>=w().exercises.length){S.ei=w().exercises.length-1;S.set=Math.max(0,effectiveSetCount(w().exercises[S.ei])-1);toast("Use End Workout when you are done");render();return}}
+await persistPosition();toast("Set skipped");render();
+}
 if(a==="open-rest"){go("timer");}
 if(a==="view-workout-rest"){go("workout");startTimer();}
 if(a==="skiprest"){await clearPersistentRest();go("exercise");}
@@ -668,7 +686,7 @@ if(a==="open-calendar-settings"){loadCalendarIntelligence();S.moreOpen=false;go(
 if(a==="signout"){
 if(confirm("Sign out of Forge? Your saved data will remain on your account.")){
 try{await api("/auth/logout",{method:"POST"})}catch{}
-localStorage.removeItem("forge_auth_token");authToken="";account=null;plan=null;session=null;stopCalendarPolling();S.moreOpen=false;S.route="welcome";render();toast("Signed out");
+localStorage.removeItem("forge_auth_token");ForgeWorkoutState?.clear?.();authToken="";account=null;plan=null;session=null;stopCalendarPolling();S.moreOpen=false;S.route="welcome";render();toast("Signed out");
 }
 }
 if(a==="history")go("history");if(a==="prs")go("prs");if(a==="sendcoach")await sendCoach();

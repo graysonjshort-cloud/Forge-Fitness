@@ -1,5 +1,5 @@
 window.ForgeProduction=(()=>{
-const VERSION="15.11.0";
+const VERSION="16.0.0";
 function boot(){
  document.documentElement.dataset.forgeVersion=VERSION;
  addEventListener("error",e=>console.error("Forge runtime error",e.error||e.message));

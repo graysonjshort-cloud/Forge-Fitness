@@ -1013,13 +1013,13 @@ def _current_account(authorization: Optional[str]) -> dict:
 def release_info():
     return {
         "app":"Forge Fitness",
-        "version":"15.11.0",
+        "version":"16.0.0",
         "channel":"architecture-hardening",
         "feature_freeze":False,
         "schema_policy":"migration-safe",
         "workout_write_policy":"idempotent-and-session-reconciled",
         "automatic_programming_policy":"user-authority-gated",
-        "pwa_cache":"forge-v15-11-modularization-v1",
+        "pwa_cache":"forge-v15-12-modularization-v1",
     }
 
 @app.get("/health")
@@ -2314,7 +2314,7 @@ def me_system_health(authorization: Optional[str]=Header(None)):
         database.get_current_plan(uid,DB_PATH); checks["plan_read"]=True
     except Exception: pass
     critical=checks["api"] and checks["database"] and checks["plan_read"]
-    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"15.11.0"}
+    return {"status":"ok" if critical else "degraded","checks":checks,"persistence":"supabase" if database.SUPABASE_DB_URL else "local-sqlite","version":"16.0.0"}
 
 
 @app.get("/me/coach/briefing")
@@ -3142,6 +3142,12 @@ def me_program_optimizer(authorization: Optional[str]=Header(None)):
 @app.get("/me/training/program-review")
 def me_program_review(authorization: Optional[str]=Header(None)):
     user=_current_account(authorization); return training_intelligence_v14.program_review(user["user_id"],DB_PATH)
+
+@app.get("/me/training/adaptive-directives")
+def me_adaptive_directives(authorization: Optional[str]=Header(None)):
+    user=_current_account(authorization)
+    return training_intelligence_v14.adaptive_directives_v5(user["user_id"],DB_PATH)
+
 
 @app.get("/me/training/adaptive-system")
 def me_adaptive_system(authorization: Optional[str]=Header(None)):

@@ -247,7 +247,7 @@ const t=S.strengthTrend;
 const summary=t?.summary||{};
 const change=Number(summary.change_percent||0);
 const changeText=(change>0?"+":"")+change.toFixed(1)+"%";
-return `${strategyDashboardCard()}<div class=big-spacer></div>${explainableProgrammingCard()}<div class=big-spacer></div>${intelligenceCoreCard()}<div class=big-spacer></div>${trainingRecordsCard()}<div class=big-spacer></div>${muscleDevelopmentCard()}<div class=big-spacer></div>${trainingDashboardCard()}<div class=big-spacer></div><p class=eyebrow>PROGRESS</p><h2>Your Progress</h2>
+return `${adaptiveDirectivesCard()}<div class=big-spacer></div>${strategyDashboardCard()}<div class=big-spacer></div>${explainableProgrammingCard()}<div class=big-spacer></div>${intelligenceCoreCard()}<div class=big-spacer></div>${trainingRecordsCard()}<div class=big-spacer></div>${muscleDevelopmentCard()}<div class=big-spacer></div>${trainingDashboardCard()}<div class=big-spacer></div><p class=eyebrow>PROGRESS</p><h2>Your Progress</h2>
 <div class=spacer></div><div class=progress-cards>
 <div class=progress-card><b>${done}</b><small>Workouts</small></div>
 <div class=progress-card><b>${summary.data_points||0}</b><small>Trend Points</small></div>
