@@ -1,0 +1,20 @@
+{
+  "version": "v12-ai-coach",
+  "engine": "forge_coach_v2",
+  "tests_run": 13,
+  "tests_passed": 13,
+  "features": [
+    "persistent coach chat history",
+    "real account/training context summary",
+    "today's workout guidance",
+    "fatigue/recovery guidance",
+    "progress and PR guidance",
+    "exercise-specific load advice when named",
+    "swap guidance",
+    "25-minute/actionable workout shortening",
+    "pain-language safety response",
+    "quick prompt chips",
+    "clear-chat action"
+  ],
+  "note": "Forge Coach v2 is deterministic and grounded in the app's own data; it is not yet connected to an external generative AI provider."
+}

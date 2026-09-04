@@ -1,0 +1,15 @@
+{
+  "version": "17.3.0",
+  "release": "Cloud Backend Migration",
+  "android_runtime": "native-capacitor",
+  "frontend_delivery": "bundled-in-apk",
+  "backend_delivery": "oci-container",
+  "primary_cloud_target": "google-cloud-run",
+  "render_dependency": false,
+  "api_only_default": true,
+  "local_first_workouts": true,
+  "production_persistence": "supabase-sqlite-snapshot-bridge",
+  "cloud_instance_policy": "single-instance-until-native-postgres",
+  "api_url_configured": false,
+  "external_deployment_required": true
+}

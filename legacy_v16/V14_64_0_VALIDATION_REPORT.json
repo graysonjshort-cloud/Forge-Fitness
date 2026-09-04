@@ -1,0 +1,13 @@
+{
+  "version": "14.64.0",
+  "status": "passed",
+  "features": ["plan preview before replacement", "exercise locks", "per-workout exercise counts", "plan-level exclusions", "sub-muscle volume audit", "redundancy intelligence", "exercise database 4.0 metadata"],
+  "static_validation": "passed",
+  "frontend_contract": {"status":"passed","frontend_api_calls":124,"backend_routes":118,"missing_contracts":0},
+  "precision_validation": {"status":"passed","canonical_exercises":215,"muscle_links":743,"taxonomy_subsections":33},
+  "e2e": "passed",
+  "database_v4_rows": 215,
+  "per_workout_count_test": [4,7,5],
+  "locked_exercise_preservation": "passed",
+  "plan_audit": "passed"
+}

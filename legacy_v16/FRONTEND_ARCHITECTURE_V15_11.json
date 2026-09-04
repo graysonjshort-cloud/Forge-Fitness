@@ -1,0 +1,58 @@
+{
+  "version": "15.11.0",
+  "goal": "Keep app.js focused on boot, routing, coordination, shared state, and event dispatch.",
+  "app_js_bytes": 72692,
+  "app_js_ceiling_bytes": 250000,
+  "architecture_target_bytes": 100000,
+  "modules": [
+    {
+      "file": "forge_onboarding_ui.js",
+      "bytes": 49675,
+      "functions": 50,
+      "first_function": "welcome",
+      "last_function": "yourplan"
+    },
+    {
+      "file": "forge_home_ui.js",
+      "bytes": 21846,
+      "functions": 21,
+      "first_function": "loadNotifications",
+      "last_function": "home"
+    },
+    {
+      "file": "forge_workout_runtime.js",
+      "bytes": 34743,
+      "functions": 39,
+      "first_function": "moduleExerciseTarget",
+      "last_function": "loadCompletedWorkoutSummary"
+    },
+    {
+      "file": "forge_nutrition_ui.js",
+      "bytes": 7802,
+      "functions": 6,
+      "first_function": "nutritionDateValue",
+      "last_function": "workoutbuilder"
+    },
+    {
+      "file": "forge_progress_runtime.js",
+      "bytes": 32845,
+      "functions": 38,
+      "first_function": "historyRowsMarkup",
+      "last_function": "loadStrengthTrend"
+    },
+    {
+      "file": "forge_coach_runtime.js",
+      "bytes": 14274,
+      "functions": 14,
+      "first_function": "loadCoachBriefing",
+      "last_function": "adaptationCard"
+    },
+    {
+      "file": "forge_plan_runtime.js",
+      "bytes": 16682,
+      "functions": 10,
+      "first_function": "planScreen",
+      "last_function": "calendarsettings"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": "v13-real-llm-coach",
+  "provider": "OpenAI Responses API",
+  "default_model": "gpt-5.6-luna",
+  "tests_run": 10,
+  "tests_passed": 10,
+  "architecture": [
+    "server-side API key",
+    "real /responses HTTP integration",
+    "Forge data grounding",
+    "deterministic safety/action layer",
+    "automatic fallback",
+    "user approval for mutations"
+  ]
+}

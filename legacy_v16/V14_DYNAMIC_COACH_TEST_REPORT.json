@@ -1,0 +1,21 @@
+{
+  "version": "v14-dynamic-coach",
+  "tests_run": 17,
+  "tests_passed": 17,
+  "dynamic_actions": [
+    "move_workout",
+    "swap_workouts",
+    "skip_workout",
+    "restore_workout",
+    "shorten_workout"
+  ],
+  "validation": [
+    "weekly schedule persistence",
+    "target-day conflict detection",
+    "swap suggestion on conflict",
+    "active/completed move protection",
+    "back-to-back recovery warning",
+    "explicit Apply Change"
+  ],
+  "llm": "v13 OpenAI Responses API integration retained; weekly_schedule is included in LLM grounding context"
+}

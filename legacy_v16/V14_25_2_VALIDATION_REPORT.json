@@ -1,0 +1,12 @@
+{
+  "version": "v14.25.2",
+  "change": "actual UI header brand mark changed from F to anvil",
+  "implementation": "inline SVG",
+  "validation": [
+    "old F mark removed",
+    "anvil SVG present",
+    "Python syntax",
+    "JavaScript syntax"
+  ],
+  "status": "passed"
+}

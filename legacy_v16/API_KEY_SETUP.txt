@@ -1,0 +1,15 @@
+Forge Fitness v14.27.1 — API Key Setup
+
+Open START_BACKEND.bat in Notepad and replace:
+- PASTE_OPENAI_API_KEY_HERE
+- PASTE_GOOGLE_CLIENT_ID_HERE
+- PASTE_GOOGLE_CLIENT_SECRET_HERE
+- PASTE_USDA_FOODDATA_CENTRAL_API_KEY_HERE
+
+Open Food Facts does not require a private API key in this build.
+
+After adding the credentials, save START_BACKEND.bat and double-click it
+to start the backend.
+
+IMPORTANT: the BAT file will contain your credentials in plain text.
+Keep your edited copy private and do not upload or share it.

@@ -1,0 +1,13 @@
+{
+  "version": "v14.2-strength-progress",
+  "tests_run": 10,
+  "tests_passed": 10,
+  "changes": [
+    "Strength Index renamed/replaced with Strength Progress percentage",
+    "overall baseline is permanently 0% relative to first-ever valid sets",
+    "30D/90D/1Y/ALL filters only change visible history",
+    "individual exercises retain estimated 1RM in pounds",
+    "individual exercises also show percent stronger/weaker since first logged set",
+    "chart tooltips and summaries use audience-friendly language"
+  ]
+}

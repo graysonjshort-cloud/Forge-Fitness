@@ -1,0 +1,29 @@
+Forge Fitness v14.27.2 — Google Calendar Quick Setup
+
+1. Open START_BACKEND.bat in Notepad.
+
+2. Replace:
+   PASTE_GOOGLE_CLIENT_ID_HERE
+   PASTE_GOOGLE_CLIENT_SECRET_HERE
+
+3. Keep this redirect URI exactly as written:
+   http://127.0.0.1:8000/me/calendar/google/callback
+
+4. In Google Cloud Console, add the same value under:
+   OAuth Client -> Authorized redirect URIs
+
+5. Save START_BACKEND.bat.
+
+6. Close the currently running Forge backend CMD window and start
+   START_BACKEND.bat again.
+
+7. In Forge:
+   Settings -> Training Settings -> Calendar & Time
+
+8. The Google Calendar card should say "Ready to connect".
+   Press "Connect Google Calendar".
+
+9. Sign into the Google account you want Forge to use and approve access.
+
+If the card still says "Google setup needed", press "Recheck Google Setup".
+The card will list the exact missing environment variable(s).

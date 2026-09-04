@@ -1,0 +1,26 @@
+{
+  "version": "v14.26",
+  "feature": "Comprehensive UI/UX polish",
+  "implemented": [
+    "Home dashboard hierarchy with primary workout CTA",
+    "Readiness/recovery card",
+    "Home nutrition snapshot and upcoming workouts",
+    "Active-workout progress and current-exercise card",
+    "Larger set logging controls with previous-performance context",
+    "Persistent floating rest timer while browsing other workout screens",
+    "Nutrition remaining-calorie dashboard and meal grouping",
+    "Progress consistency and weekly muscle-volume visuals",
+    "Rich AI Coach response action chips",
+    "Expanded weekly Plan calendar view",
+    "Fixed-width Equipment Log artwork column to prevent label collisions",
+    "Unified interaction feedback and button press states",
+    "Improved empty states",
+    "Improved supporting-text readability",
+    "More selective Forge-red usage"
+  ],
+  "validation": [
+    "JavaScript syntax",
+    "Python syntax"
+  ],
+  "status": "passed"
+}

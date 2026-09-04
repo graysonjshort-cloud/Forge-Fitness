@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" role="img" aria-label="Hanging Knee Raise form demonstration">
+<rect width="360" height="360" rx="28" fill="#0f1419"/>
+<circle cx="180" cy="164" r="132" fill="none" stroke="#202832" stroke-width="2"/>
+<path d="M72 55 H288" stroke="#ef233c" stroke-width="9"/><g stroke="#edf1f5" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="180" cy="122" r="17" stroke-width="7"/><path d="M180 140 V205"/><path d="M180 150 L145 68 M180 150 L215 68"/>
+<path d="M180 205 L151 273 M180 205 L209 273"/><animateTransform attributeName="transform" type="rotate" values="0 180 205;-24 180 205;-24 180 205;0 180 205;0 180 205" keyTimes="0;.3;.48;.82;1" dur="2.6s" repeatCount="indefinite"/></g>
+<text x="180" y="334" text-anchor="middle" fill="#c4ccd4" font-family="system-ui,sans-serif" font-size="14" font-weight="700">Hanging Knee Raise</text>
+<text x="180" y="350" text-anchor="middle" fill="#76818c" font-family="system-ui,sans-serif" font-size="9">FORGE FORM DEMO • LOOPING SIDE/FRONT DIAGRAM</text>
+</svg>

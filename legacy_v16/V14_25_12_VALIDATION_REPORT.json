@@ -1,0 +1,13 @@
+{
+  "version": "v14.25.12",
+  "changes": [
+    "clearer chest anvil",
+    "platform lines moved below feet",
+    "barbell plates ordered biggest-to-smallest"
+  ],
+  "status": "passed",
+  "validation": [
+    "JavaScript syntax",
+    "Python syntax"
+  ]
+}

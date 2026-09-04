@@ -1,0 +1,22 @@
+{
+  "version": "v14.25.4",
+  "change": "Removed Conditioning and Recovery & Mobility equipment from actual app",
+  "removed_keys": [
+    "battle_ropes",
+    "agility_ladder",
+    "cones",
+    "massage_gun",
+    "massage_ball",
+    "mobility_stick",
+    "stretch_strap",
+    "slant_board"
+  ],
+  "validation": [
+    "removed categories absent from equipment catalog",
+    "removed equipment absent from Full Gym/Home Gym presets",
+    "existing saved removed equipment hidden",
+    "Python syntax",
+    "JavaScript syntax"
+  ],
+  "status": "passed"
+}

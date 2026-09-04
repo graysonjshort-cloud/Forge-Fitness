@@ -1,0 +1,21 @@
+{
+  "version": "v14.23",
+  "features": [
+    "morning brief",
+    "workout reminders",
+    "nutrition reminders",
+    "calendar conflict alerts",
+    "notification settings",
+    "dismissals",
+    "AI daily brief"
+  ],
+  "validation": [
+    "Python syntax",
+    "JavaScript syntax",
+    "notification settings API",
+    "daily brief API",
+    "AI daily brief intent",
+    "dismissal persistence"
+  ],
+  "status": "passed"
+}

@@ -1,0 +1,2 @@
+// Forge Fitness feature registry
+window.ForgeFeatures=(()=>{const features=new Map();return {register(name,spec){features.set(name,spec);},view(route){for(const spec of features.values()){if(spec.views&&spec.views[route])return spec.views[route]();}return null;},has(route){for(const spec of features.values())if(spec.views&&spec.views[route])return true;return false;},names(){return [...features.keys()]}}})();

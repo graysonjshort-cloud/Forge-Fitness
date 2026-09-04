@@ -1,0 +1,11 @@
+{
+  "version": "v14.19",
+  "checks": [
+    "Python syntax",
+    "JavaScript syntax",
+    "provider error classification",
+    "provider health endpoint",
+    "Coach provider-status UI"
+  ],
+  "live_check": "Run /nutrition/providers/status on the user's machine to test actual USDA/Open Food Facts connectivity."
+}

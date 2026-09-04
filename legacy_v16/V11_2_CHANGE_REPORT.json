@@ -1,0 +1,23 @@
+{
+  "version": "v11.2",
+  "change": "Workout logging Weight, Reps, and RPE controls changed from +/- steppers to direct fill-in numeric fields.",
+  "fields": {
+    "weight": {
+      "type": "number",
+      "step": 2.5,
+      "min": 0
+    },
+    "reps": {
+      "type": "number",
+      "step": 1,
+      "min": 0
+    },
+    "rpe": {
+      "type": "number",
+      "step": 0.5,
+      "min": 1,
+      "max": 10
+    }
+  },
+  "backend_contract_changed": false
+}

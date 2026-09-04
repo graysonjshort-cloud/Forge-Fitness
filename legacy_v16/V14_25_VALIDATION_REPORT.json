@@ -1,0 +1,14 @@
+{
+  "version": "v14.25",
+  "feature": "Bodyweight + Measurement Tracking",
+  "validated": [
+    "body metric create/update/delete",
+    "one entry per date upsert",
+    "bodyweight trend",
+    "circumference trend",
+    "AI body-progress intent",
+    "Python syntax",
+    "JavaScript syntax"
+  ],
+  "status": "passed"
+}

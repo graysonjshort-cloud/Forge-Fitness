@@ -1,0 +1,22 @@
+{
+  "version": "v8-auth-mvp",
+  "tests_run": 11,
+  "tests_passed": 11,
+  "features": [
+    "email/password registration",
+    "login/logout",
+    "30-day bearer sessions",
+    "PBKDF2-SHA256 password hashing",
+    "hashed session-token storage",
+    "authenticated /me routes",
+    "account-owned profile/program/history"
+  ],
+  "production_followups": [
+    "HTTPS",
+    "rate limiting",
+    "email verification",
+    "password reset",
+    "session management UI",
+    "hosted database"
+  ]
+}

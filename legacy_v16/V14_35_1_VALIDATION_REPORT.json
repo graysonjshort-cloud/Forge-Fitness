@@ -1,0 +1,19 @@
+{
+  "version": "v14.35.1",
+  "status": "passed",
+  "tests": {
+    "health": "passed",
+    "plank_detected_as_timed": "passed",
+    "timed_set_duration_storage": "passed",
+    "duration_pr": "passed",
+    "bodyweight_default_metadata": "passed",
+    "bodyweight_set_without_weight": "passed",
+    "weighted_prs_suppressed_for_bodyweight": "passed",
+    "legacy_not_null_weight_compatibility": "passed",
+    "pwa_update_delivery": "passed",
+    "javascript_syntax": "passed",
+    "python_syntax": "passed"
+  },
+  "sample_timed_exercise": "Plank",
+  "sample_bodyweight_exercise": "Reverse Crunch"
+}

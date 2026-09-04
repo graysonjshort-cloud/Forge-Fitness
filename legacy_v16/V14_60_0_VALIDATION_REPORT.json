@@ -1,0 +1,25 @@
+{
+  "version": "14.61.0",
+  "status": "passed",
+  "release": "Muscle Frequency & Priority Intelligence",
+  "validation": {
+    "static_validation": "passed",
+    "routes_checked": 29,
+    "equipment_assets_checked": 107,
+    "frontend_modules_checked": 10,
+    "app_js_bytes": 216789,
+    "frontend_contract_validation": "passed",
+    "frontend_api_calls_checked": 119,
+    "backend_routes_found": 113,
+    "missing_contracts": [],
+    "e2e_flow": "passed"
+  },
+  "regression_coverage": [
+    "PPL remains available for compatible schedules",
+    "custom muscle-day plans regenerate fully",
+    "custom weekly muscle frequency is reported in generated plan intelligence",
+    "high-priority muscle state is preserved in generated plan intelligence",
+    "priority/frequency warnings are generated for under-covered priority muscles",
+    "training-setting changes replace the full active plan"
+  ]
+}

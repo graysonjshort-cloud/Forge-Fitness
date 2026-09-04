@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "version": "14.84.0",
+  "static_validation": "passed",
+  "frontend_contract": "passed",
+  "plan_precision": "passed",
+  "full_e2e": "passed",
+  "browser_smoke": "passed",
+  "frontend_api_calls": 132,
+  "backend_routes": 128,
+  "missing_contracts": 0,
+  "exercise_directory_count": 215,
+  "exercise_muscle_links": 743,
+  "session_reconciliation": "passed",
+  "stale_session_cleanup": "passed",
+  "wrong_exercise_guard": "passed",
+  "live_workout_intelligence_2": "passed",
+  "mesocycle_progression_2": "passed",
+  "production_diagnostics": "passed",
+  "browser_viewport": "390x844",
+  "browser_errors": 0
+}

@@ -1,0 +1,24 @@
+{
+  "version": "v14.13-cardio-frequency",
+  "tests": [
+    "cardio frequency persists to profile",
+    "2 cardio add-ons created on 4-day plan",
+    "2 core add-ons remain functional",
+    "cardio add-ons contain name and duration",
+    "0 cardio frequency produces no cardio add-ons",
+    "Python syntax",
+    "JavaScript syntax"
+  ],
+  "example": [
+    {
+      "workout": "Upper Body",
+      "cardio": "Incline Treadmill Walk",
+      "minutes": 15
+    },
+    {
+      "workout": "Upper Body",
+      "cardio": "Stationary Bike",
+      "minutes": 15
+    }
+  ]
+}

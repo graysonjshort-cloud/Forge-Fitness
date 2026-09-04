@@ -1,0 +1,14 @@
+{
+  "version": "v14.29",
+  "status": "passed",
+  "deployment_target": "Render HTTPS Web Service",
+  "architecture": "single origin FastAPI + PWA",
+  "validation": [
+    "JavaScript syntax",
+    "Python syntax",
+    "FastAPI /health served",
+    "PWA index served from FastAPI",
+    "manifest served from FastAPI",
+    "same-origin production API selection"
+  ]
+}

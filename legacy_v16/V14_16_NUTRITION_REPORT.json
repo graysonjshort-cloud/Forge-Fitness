@@ -1,0 +1,13 @@
+{
+  "version": "v14.16-nutrition",
+  "tests": [
+    "nutrition default targets",
+    "target editing",
+    "food entry persistence",
+    "daily macro/calorie totals",
+    "remaining calorie calculation",
+    "food deletion",
+    "Python syntax",
+    "JavaScript syntax"
+  ]
+}

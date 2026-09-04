@@ -1,0 +1,13 @@
+{
+  "version": "v14.25.9",
+  "active_equipment_items": 107,
+  "dedicated_illustration_entries": 107,
+  "missing": [],
+  "old_icon_system": "removed",
+  "status": "passed",
+  "validation": [
+    "JavaScript syntax",
+    "Python syntax",
+    "100% active catalog illustration coverage"
+  ]
+}

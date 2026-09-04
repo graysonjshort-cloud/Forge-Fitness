@@ -1,0 +1,29 @@
+{
+  "version": "v14.35.3",
+  "status": "passed",
+  "tests": {
+    "health": "passed",
+    "smart_core_generation": "passed",
+    "smart_cardio_generation": "passed",
+    "core_independent_session": "passed",
+    "core_exercise_logging": "passed",
+    "core_independent_completion": "passed",
+    "cardio_independent_session": "passed",
+    "cardio_minutes_distance_pace_rpe": "passed",
+    "module_progress_summary": "passed",
+    "strength_completion_independent": "passed",
+    "plan_reconfigure": "passed",
+    "frontend_core_tracker": "passed",
+    "frontend_cardio_tracker": "passed",
+    "pwa_update_delivery": "passed",
+    "javascript_syntax": "passed",
+    "python_syntax": "passed"
+  },
+  "sample_core_reason": "Lower-body fatigue protection: lower-spinal-load core choices were prioritized.",
+  "sample_cardio_reason": "Higher-intensity cardio fits better after an upper-body strength session.",
+  "tracked_summary": {
+    "core_sessions_completed": 1,
+    "cardio_sessions_completed": 1,
+    "cardio_minutes_completed": 18.0
+  }
+}

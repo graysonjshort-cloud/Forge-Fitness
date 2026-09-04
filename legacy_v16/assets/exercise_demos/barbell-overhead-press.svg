@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" role="img" aria-label="Barbell Overhead Press high fidelity form demonstration">
+<defs>
+<linearGradient id="skin"><stop offset="0" stop-color="#f2f5f7"/><stop offset="1" stop-color="#aab4be"/></linearGradient>
+<linearGradient id="body"><stop offset="0" stop-color="#dce3e8"/><stop offset="1" stop-color="#76828e"/></linearGradient>
+</defs>
+<rect width="480" height="480" rx="34" fill="#0b1015"/><circle cx="240" cy="220" r="185" fill="none" stroke="#1d2630" stroke-width="2"/>
+
+<path d="M82 374H398" stroke="#7c8792" stroke-width="6"/><ellipse cx="240" cy="105" rx="24" ry="28" fill="#202831" stroke="#eef2f5" stroke-width="5"/><path d="M204 137Q240 121 276 137L284 240Q240 257 196 240Z" fill="url(#body)" stroke="#eef2f5" stroke-width="4"/><path d="M216 240L198 362M264 240L282 362" stroke="url(#skin)" stroke-width="24" stroke-linecap="round"/>
+<path d="M206 150L185 112" stroke="url(#skin)" stroke-width="22" stroke-linecap="round"><animate attributeName="d" values="M206 150L185 112;M206 150L180 70;M206 150L180 70;M206 150L185 112" dur="3.1s" repeatCount="indefinite"/></path>
+<path d="M185 112L175 90" stroke="url(#skin)" stroke-width="18" stroke-linecap="round"><animate attributeName="d" values="M185 112L175 90;M180 70L174 30;M180 70L174 30;M185 112L175 90" dur="3.1s" repeatCount="indefinite"/></path>
+<path d="M274 150L295 112" stroke="url(#skin)" stroke-width="22" stroke-linecap="round"><animate attributeName="d" values="M274 150L295 112;M274 150L300 70;M274 150L300 70;M274 150L295 112" dur="3.1s" repeatCount="indefinite"/></path>
+<path d="M295 112L305 90" stroke="url(#skin)" stroke-width="18" stroke-linecap="round"><animate attributeName="d" values="M295 112L305 90;M300 70L306 30;M300 70L306 30;M295 112L305 90" dur="3.1s" repeatCount="indefinite"/></path>
+<g><line x1="122" y1="87" x2="358" y2="87" stroke="#ff2747" stroke-width="10"/><rect x="96" y="67" width="24" height="40" rx="5" fill="#ff2747"/><rect x="360" y="67" width="24" height="40" rx="5" fill="#ff2747"/><animateTransform attributeName="transform" type="translate" values="0 0;0 -58;0 -58;0 0" keyTimes="0;.34;.54;1" dur="3.1s" repeatCount="indefinite"/></g>
+<text x="240" y="417" text-anchor="middle" fill="#a9b4be" font-family="system-ui,sans-serif" font-size="11">Keep ribs stacked • press vertically • avoid excessive back arch</text>
+<text x="240" y="444" text-anchor="middle" fill="#f2f5f7" font-family="system-ui,sans-serif" font-size="17" font-weight="800">Barbell Overhead Press</text>
+<text x="240" y="464" text-anchor="middle" fill="#73808b" font-family="system-ui,sans-serif" font-size="10">HIGH-FIDELITY VECTOR DEMO • V3</text>
+</svg>

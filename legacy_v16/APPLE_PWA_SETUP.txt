@@ -1,0 +1,13 @@
+Forge Fitness v14.31 — Apple PWA
+
+iPhone / iPad:
+1. Open the live Forge HTTPS URL in Safari.
+2. Tap Share.
+3. Tap Add to Home Screen.
+4. Turn on Open as Web App.
+5. Tap Add.
+6. Launch Forge from the Home Screen icon.
+
+The same Render HTTPS deployment serves Android and Apple. No second server is required.
+The Android PWA configuration from v14.30 is retained.
+Render environment variables remain the source for OpenAI, Google Calendar, and nutrition-provider configuration.

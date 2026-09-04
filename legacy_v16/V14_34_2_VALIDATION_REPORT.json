@@ -1,0 +1,98 @@
+{
+  "version": "v14.34.2",
+  "status": "passed",
+  "plan_rebuild": {
+    "duplicate_week_1": "fixed",
+    "old_program_history": "preserved as replaced",
+    "single_active_program": "verified",
+    "cases": [
+      {
+        "days": 2,
+        "minutes": 20,
+        "status": 200,
+        "scheduled_days": [
+          0,
+          3
+        ]
+      },
+      {
+        "days": 3,
+        "minutes": 30,
+        "status": 200,
+        "scheduled_days": [
+          0,
+          2,
+          4
+        ]
+      },
+      {
+        "days": 4,
+        "minutes": 45,
+        "status": 200,
+        "scheduled_days": [
+          0,
+          1,
+          3,
+          5
+        ]
+      },
+      {
+        "days": 5,
+        "minutes": 60,
+        "status": 200,
+        "scheduled_days": [
+          0,
+          1,
+          2,
+          4,
+          5
+        ]
+      },
+      {
+        "days": 6,
+        "minutes": 90,
+        "status": 200,
+        "scheduled_days": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "days": 4,
+        "minutes": 20,
+        "status": 200,
+        "scheduled_days": [
+          0,
+          2,
+          4,
+          6
+        ]
+      },
+      {
+        "days": 6,
+        "minutes": 20,
+        "status": 200,
+        "scheduled_days": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    ],
+    "invalid_preferred_day_count": "returns 400"
+  },
+  "phone_update": {
+    "service_worker_cache": "forge-v14-34-2-final-v1",
+    "app_js": "/app.js?v=14.34.2",
+    "styles_css": "/styles.css?v=14.34.2",
+    "old_caches_deleted_on_activate": true
+  },
+  "health": "ok"
+}

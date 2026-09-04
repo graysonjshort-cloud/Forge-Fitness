@@ -1,0 +1,18 @@
+{
+  "version": "v14.31",
+  "status": "passed",
+  "platforms": [
+    "Android",
+    "iPhone",
+    "iPad"
+  ],
+  "apple_pwa": {
+    "standalone": true,
+    "apple_touch_icon": true,
+    "safe_areas": true,
+    "status_bar_metadata": true,
+    "install_guidance": true
+  },
+  "android_v14_30_retained": true,
+  "render_environment_configuration_retained": true
+}

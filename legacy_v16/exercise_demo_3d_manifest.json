@@ -1,0 +1,79 @@
+{
+  "version": "14.37.4",
+  "pipeline": "forge_3d_v1",
+  "delivery_format": "webm",
+  "review_requires_dual_view": true,
+  "assets": [
+    {
+      "exercise_name": "Back Squat",
+      "slug": "back-squat",
+      "primary_view": "side",
+      "secondary_view": "front",
+      "primary_webm": "/assets/exercise_demos_3d/back-squat-side.webm",
+      "secondary_webm": "/assets/exercise_demos_3d/back-squat-front.webm",
+      "poster_asset": "/assets/exercise_demos_3d/back-squat-poster.webp",
+      "status": "production_queued",
+      "source_kind": "original_3d",
+      "render_version": "forge_3d_v1",
+      "reviewed": false
+    },
+    {
+      "exercise_name": "Barbell Bench Press",
+      "slug": "barbell-bench-press",
+      "primary_view": "side",
+      "secondary_view": "front",
+      "primary_webm": "/assets/exercise_demos_3d/barbell-bench-press-side.webm",
+      "secondary_webm": "/assets/exercise_demos_3d/barbell-bench-press-front.webm",
+      "poster_asset": "/assets/exercise_demos_3d/barbell-bench-press-poster.webp",
+      "status": "mpfb_review_ready",
+      "source_kind": "original_3d",
+      "render_version": "forge_3d_v1",
+      "reviewed": false,
+      "source_scene_builder": "/3d_pipeline/blender/build_bench_press_mpfb.py",
+      "source_validation": "/3d_pipeline/blender/validate_mpfb_bench_press.py"
+    },
+    {
+      "exercise_name": "Romanian Deadlift",
+      "slug": "romanian-deadlift",
+      "primary_view": "side",
+      "secondary_view": "front",
+      "primary_webm": "/assets/exercise_demos_3d/romanian-deadlift-side.webm",
+      "secondary_webm": "/assets/exercise_demos_3d/romanian-deadlift-front.webm",
+      "poster_asset": "/assets/exercise_demos_3d/romanian-deadlift-poster.webp",
+      "status": "production_queued",
+      "source_kind": "original_3d",
+      "render_version": "forge_3d_v1",
+      "reviewed": false
+    },
+    {
+      "exercise_name": "Barbell Overhead Press",
+      "slug": "barbell-overhead-press",
+      "primary_view": "side",
+      "secondary_view": "front",
+      "primary_webm": "/assets/exercise_demos_3d/barbell-overhead-press-side.webm",
+      "secondary_webm": "/assets/exercise_demos_3d/barbell-overhead-press-front.webm",
+      "poster_asset": "/assets/exercise_demos_3d/barbell-overhead-press-poster.webp",
+      "status": "production_queued",
+      "source_kind": "original_3d",
+      "render_version": "forge_3d_v1",
+      "reviewed": false
+    },
+    {
+      "exercise_name": "Pull-Up",
+      "slug": "pull-up",
+      "primary_view": "side",
+      "secondary_view": "front",
+      "primary_webm": "/assets/exercise_demos_3d/pull-up-side.webm",
+      "secondary_webm": "/assets/exercise_demos_3d/pull-up-front.webm",
+      "poster_asset": "/assets/exercise_demos_3d/pull-up-poster.webp",
+      "status": "production_queued",
+      "source_kind": "original_3d",
+      "render_version": "forge_3d_v1",
+      "reviewed": false
+    }
+  ],
+  "production_standard": "forge_3d_v1",
+  "delivery_resolution": "720x720",
+  "delivery_fps": 30,
+  "source_pipeline": "mpfb_standard_rig_review_v1"
+}

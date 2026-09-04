@@ -1,0 +1,17 @@
+{
+  "version": "v14.35",
+  "status": "passed",
+  "tests": {
+    "health": "passed",
+    "exercise_intelligence_metadata": "passed",
+    "favorite_preference_persistence": "passed",
+    "painful_syncs_to_plan_exclusion": "passed",
+    "smart_substitution_ranking": "passed",
+    "generator_avoids_painful_exercise": "passed",
+    "planner_version": "2.1-exercise-intelligence",
+    "pwa_update_delivery": "passed",
+    "javascript_syntax": "passed",
+    "python_syntax": "passed"
+  },
+  "exercise_directory_count": 142
+}

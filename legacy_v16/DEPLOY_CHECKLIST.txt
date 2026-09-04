@@ -1,0 +1,19 @@
+FORGE FITNESS v14.29 HTTPS DEPLOY CHECKLIST
+
+[ ] Push this folder to a private GitHub repository
+[ ] Create Render Web Service / Blueprint
+[ ] Add OPENAI_API_KEY in Render Environment
+[ ] Add FDC_API_KEY in Render Environment
+[ ] Add GOOGLE_CLIENT_ID in Render Environment
+[ ] Add GOOGLE_CLIENT_SECRET in Render Environment
+[ ] Deploy once and copy the Render HTTPS URL
+[ ] Set FORGE_APP_URL to that HTTPS URL
+[ ] Set GOOGLE_REDIRECT_URI to:
+    https://YOUR-DOMAIN/me/calendar/google/callback
+[ ] Add the exact production callback to Google Cloud OAuth Authorized redirect URIs
+[ ] Redeploy
+[ ] Open https://YOUR-DOMAIN/health and confirm {"status":"ok"}
+[ ] Open https://YOUR-DOMAIN and sign into Forge
+[ ] Test Continue with Google
+[ ] Install Forge on phone home screen
+[ ] Run a test workout, nutrition log, and Coach request

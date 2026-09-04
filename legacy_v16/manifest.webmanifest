@@ -1,0 +1,88 @@
+{
+  "name": "Forge Fitness",
+  "short_name": "Forge",
+  "description": "Personalized training, nutrition, progress tracking, and AI coaching.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone"
+  ],
+  "orientation": "portrait-primary",
+  "background_color": "#0a0c0f",
+  "theme_color": "#ef233c",
+  "categories": [
+    "fitness",
+    "health",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "/assets/pwa/forge-icon-192-v14343.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/pwa/forge-icon-512-v14343.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/pwa/forge-icon-maskable-192-v14343.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/pwa/forge-icon-maskable-512-v14343.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Workout",
+      "short_name": "Workout",
+      "url": "/?pwa_route=workout",
+      "icons": [
+        {
+          "src": "/assets/pwa/forge-icon-192-v14343.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Nutrition",
+      "short_name": "Nutrition",
+      "url": "/?pwa_route=nutrition",
+      "icons": [
+        {
+          "src": "/assets/pwa/forge-icon-192-v14343.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Coach",
+      "short_name": "Coach",
+      "url": "/?pwa_route=coach",
+      "icons": [
+        {
+          "src": "/assets/pwa/forge-icon-192-v14343.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "id": "/",
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "version": "v14.5-expanded-equipment-log",
+  "tests_run": 9,
+  "tests_passed": 9,
+  "catalog_size": 46,
+  "features": [
+    "40+ equipment catalog",
+    "search",
+    "category filters",
+    "show-added-only filter",
+    "richer Full Gym/Home Gym/Bodyweight presets",
+    "per-equipment detail editor",
+    "weight limits and capability flags",
+    "notes",
+    "custom equipment",
+    "specific-machine to generic-generator compatibility mapping",
+    "detailed equipment included in AI Coach context"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "version": "v14.33.1",
+  "status": "passed",
+  "tests": {
+    "all_python_syntax": "passed",
+    "javascript_syntax": "passed",
+    "startup_with_unreachable_supabase": "passed",
+    "local_sqlite_fallback": "passed",
+    "health_endpoint_during_supabase_failure": "passed",
+    "diagnostic_password_redaction": "passed"
+  }
+}

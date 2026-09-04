@@ -1,0 +1,14 @@
+{
+  "version": "v9.1-smart-training",
+  "tests_run": 8,
+  "tests_passed": 8,
+  "features": [
+    "previous-set recall/prefill",
+    "next-target card",
+    "real PR detection",
+    "PR toast notifications",
+    "real PR summary on Workout Complete",
+    "estimated 1RM trend chart",
+    "weight/reps/RPE validation"
+  ]
+}

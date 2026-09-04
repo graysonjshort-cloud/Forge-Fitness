@@ -1,0 +1,36 @@
+{
+  "version": "v11.1-rendered-ui",
+  "screens": [
+    "welcome",
+    "register",
+    "login",
+    "goal",
+    "experience",
+    "schedule",
+    "equipment",
+    "preferences",
+    "preferencepicker",
+    "generating",
+    "yourplan",
+    "home",
+    "workout",
+    "exercise",
+    "swapexercise",
+    "timer",
+    "complete",
+    "history",
+    "prs",
+    "exercisehistory",
+    "progress",
+    "coach",
+    "planScreen"
+  ],
+  "screen_count": 23,
+  "backend": "v11 preserved",
+  "unhandled_actions": [],
+  "notes": [
+    "Google sign-in remains UI-only",
+    "Preference sub-screen maps to existing profile fields",
+    "All v11 session reliability code retained"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "version": "v14.17-ai-nutrition",
+  "features": [
+    "AI Coach goal-based calorie and macro target recommendations",
+    "confirmation before changing nutrition targets",
+    "online USDA FoodData Central meal lookup",
+    "meal portion parsing for grams, ounces, pounds, cups, tablespoons, teaspoons, slices, servings and counts",
+    "internet-derived calorie/protein/carbs/fat estimate",
+    "source and estimate warning in coach preview",
+    "confirmation before logging meals",
+    "logged meals appear in Nutrition tab",
+    "nutrition data added to AI Coach context"
+  ],
+  "tests": [
+    "goal-based build-muscle target action",
+    "nutrition target apply/persistence",
+    "mock internet USDA lookup",
+    "multi-item meal macro aggregation",
+    "meal log confirmation action",
+    "nutrition entry persistence",
+    "coach status exposes nutrition provider",
+    "Python syntax",
+    "JavaScript syntax"
+  ],
+  "example_test_estimate": "2 eggs + 2 slices toast + 1 banana -> 392 kcal, 18.7 g protein, 51.3 g carbs, 12.7 g fat using deterministic mock USDA data"
+}

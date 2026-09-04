@@ -1,0 +1,30 @@
+{
+  "version": "v14.35.2",
+  "status": "passed",
+  "features": {
+    "strength_core_cardio_separation": "implemented",
+    "balanced_core_circuits": "implemented",
+    "core_regions": [
+      "Lower Abs / Hip Flexion",
+      "Anti-Extension",
+      "Obliques",
+      "Trunk Flexion"
+    ],
+    "bodyweight_exercise_coverage": "26/26 directory exercises detected as Bodyweight",
+    "timed_exercise_coverage": "3/3 current timed directory exercises detected",
+    "adjustable_timed_targets": "5-second increments, 5\u2013600 sec",
+    "cardio_module_swap": "implemented",
+    "pwa_update_delivery": "implemented"
+  },
+  "validation": {
+    "fastapi_health": "passed",
+    "plan_generation": "passed",
+    "plan_reconfigure": "passed",
+    "bodyweight_metadata": "passed",
+    "timed_metadata": "passed",
+    "cardio_swap": "passed",
+    "javascript_syntax": "passed",
+    "python_syntax": "passed",
+    "pwa_cache_version": "passed"
+  }
+}

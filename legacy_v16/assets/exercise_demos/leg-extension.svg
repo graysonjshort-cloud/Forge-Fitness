@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" role="img" aria-label="Leg Extension form demonstration">
+<rect width="360" height="360" rx="28" fill="#0f1419"/>
+<circle cx="180" cy="164" r="132" fill="none" stroke="#202832" stroke-width="2"/>
+<path d="M105 130 V270 H250" stroke="#909aa4" stroke-width="8"/><path d="M105 200 H195" stroke="#909aa4" stroke-width="8"/><g stroke="#edf1f5" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="125" cy="115" r="16" stroke-width="7"/><path d="M138 130 L165 198"/><path d="M165 198 L225 218"/><path d="M225 218 L274 259" stroke="#ef233c"/><animateTransform attributeName="transform" type="rotate" values="0 225 218;-72 225 218;-72 225 218;0 225 218;0 225 218" keyTimes="0;.3;.48;.82;1" dur="2.6s" repeatCount="indefinite"/></g>
+<text x="180" y="334" text-anchor="middle" fill="#c4ccd4" font-family="system-ui,sans-serif" font-size="14" font-weight="700">Leg Extension</text>
+<text x="180" y="350" text-anchor="middle" fill="#76818c" font-family="system-ui,sans-serif" font-size="9">FORGE FORM DEMO • LOOPING SIDE/FRONT DIAGRAM</text>
+</svg>

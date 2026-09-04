@@ -1,0 +1,17 @@
+{
+  "version": "v14.34.1",
+  "status": "passed",
+  "fixes": [
+    "service worker cache bumped to v14.34",
+    "app.js cache bust updated to v14.34",
+    "styles.css cache bust updated to v14.34",
+    "index.html asset references updated"
+  ],
+  "tests": [
+    "JavaScript syntax",
+    "Python syntax",
+    "FastAPI startup",
+    "live index cache-bust refs",
+    "live service worker cache version"
+  ]
+}

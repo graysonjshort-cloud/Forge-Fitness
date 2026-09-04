@@ -1,0 +1,15 @@
+{
+  "version": "v14.1-functional-strength-trend",
+  "tests_run": 11,
+  "tests_passed": 11,
+  "features": [
+    "chart uses real logged workout data",
+    "overall normalized strength index",
+    "per-exercise estimated 1RM trend",
+    "exercise selector",
+    "30-day / 90-day / 1-year / all-time filters",
+    "tap/click chart points for details",
+    "current/best/change summary",
+    "responsive empty state"
+  ]
+}

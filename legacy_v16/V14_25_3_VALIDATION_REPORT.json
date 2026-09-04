@@ -1,0 +1,14 @@
+{
+  "version": "v14.25.3",
+  "status": "passed",
+  "changes": [
+    "actual Equipment Log SVG icons",
+    "actual bottom navigation SVG icons"
+  ],
+  "validation": [
+    "Python syntax",
+    "JavaScript syntax",
+    "equipment renderer active",
+    "old bottom-nav Unicode removed"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": "v14.4-equipment-log",
+  "tests_run": 11,
+  "tests_passed": 11,
+  "features": [
+    "persistent equipment log",
+    "Full Gym/Home Gym/Bodyweight quick presets",
+    "catalog equipment selection",
+    "custom equipment",
+    "legacy profile synchronization",
+    "plan-generator compatibility",
+    "editable after onboarding from Plan Overview"
+  ],
+  "compatibility": "Existing profile equipment migrates automatically on first Equipment Log read."
+}

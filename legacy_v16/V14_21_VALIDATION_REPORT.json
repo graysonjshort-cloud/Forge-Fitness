@@ -1,0 +1,14 @@
+{
+  "version": "v14.21",
+  "name": "AI Daily Nutrition Coaching",
+  "tests": {
+    "daily_summary_endpoint": "passed",
+    "remaining_macro_math": "passed",
+    "coach_nutrition_status_intent": "passed",
+    "coach_meal_suggestion_intent": "passed",
+    "goal_target_adjustment_preserved": "passed",
+    "saved_food_reuse_preserved": "passed",
+    "python_syntax": "passed",
+    "javascript_syntax": "passed"
+  }
+}

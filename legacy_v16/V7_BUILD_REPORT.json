@@ -1,0 +1,32 @@
+{
+  "version": "v7-original-ui-restoration",
+  "screens_implemented": [
+    "welcome",
+    "goal",
+    "experience",
+    "schedule",
+    "equipment",
+    "preferences",
+    "generating",
+    "yourplan",
+    "home",
+    "complete",
+    "coach"
+  ],
+  "backend_connected": [
+    "profile creation",
+    "plan generation",
+    "current plan",
+    "workout start",
+    "performance logging",
+    "workout completion"
+  ],
+  "ui_only": [
+    "AI Coach chat/adapted workout action"
+  ],
+  "validation": [
+    "JavaScript syntax",
+    "Python syntax",
+    "11-screen function coverage"
+  ]
+}

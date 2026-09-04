@@ -1,0 +1,18 @@
+{
+  "version": "v14.14-cardio-swap-intensity",
+  "tests": [
+    "high intensity persists and generates 20-minute cardio",
+    "light intensity generates 10-minute cardio",
+    "high intensity favors interval cardio",
+    "light intensity favors steady-state cardio",
+    "cardio options endpoint returns compatible choices",
+    "cardio swap persists in current plan",
+    "cardio exercise ID persists",
+    "Python syntax",
+    "JavaScript syntax"
+  ],
+  "swapped_example": {
+    "from": "Mountain Climber",
+    "to": "Bike Intervals"
+  }
+}

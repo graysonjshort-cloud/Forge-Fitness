@@ -1,0 +1,45 @@
+Forge Fitness v14.28 — Phone/PWA Setup
+
+WHAT CHANGED
+Forge is now a Progressive Web App (PWA):
+- Web App Manifest
+- Android/Chrome install prompt support
+- iPhone/iPad Add to Home Screen support
+- Home-screen icons
+- Standalone app display mode
+- Service worker/app-shell caching
+- iPhone safe-area support
+- PWA shortcuts for Workout, Nutrition, and Coach
+- Install Forge card inside Training Settings
+
+IMPORTANT: HTTPS
+Browsers require a secure context (HTTPS) for a production-installable PWA.
+`localhost` is a development exception, but a phone opening your PC through a LAN IP
+such as http://192.168.x.x:5500 is not normally treated as secure.
+
+For a real phone installation, host Forge at an HTTPS address/domain, for example:
+https://forge.example.com
+
+Then set the backend/API and Google OAuth URLs to the hosted HTTPS addresses.
+
+ANDROID / CHROME
+Open the HTTPS Forge URL. Forge's Training Settings will show an Install Forge button
+when Chrome makes the install prompt available. Chrome may also show Install App in its menu.
+
+IPHONE / SAFARI
+Open the HTTPS Forge URL in Safari.
+Tap Share -> Add to Home Screen -> Add.
+iOS does not expose the same install prompt API as Chromium, so Forge shows these instructions
+inside Training Settings.
+
+LOCAL PHONE TESTING
+1. Run START_BACKEND.bat.
+2. Run START_PHONE_UI.bat.
+3. Run `ipconfig` and find your PC's IPv4 address.
+4. On the same Wi-Fi, browse to:
+   http://YOUR-PC-IP:5500
+5. Forge already derives the backend as:
+   http://YOUR-PC-IP:8000
+
+This is useful for UI testing. For reliable PWA installation and Google OAuth on a phone,
+use HTTPS hosting.

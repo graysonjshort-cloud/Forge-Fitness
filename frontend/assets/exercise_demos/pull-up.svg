@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" role="img" aria-label="Pull-Up high fidelity form demonstration">
+<defs>
+<linearGradient id="skin"><stop offset="0" stop-color="#f2f5f7"/><stop offset="1" stop-color="#aab4be"/></linearGradient>
+<linearGradient id="body"><stop offset="0" stop-color="#dce3e8"/><stop offset="1" stop-color="#76828e"/></linearGradient>
+</defs>
+<rect width="480" height="480" rx="34" fill="#0b1015"/><circle cx="240" cy="220" r="185" fill="none" stroke="#1d2630" stroke-width="2"/>
+
+<path d="M82 54H398" stroke="#ff2747" stroke-width="12" stroke-linecap="round"/>
+<ellipse cx="240" cy="155" rx="24" ry="28" fill="#202831" stroke="#eef2f5" stroke-width="5"><animate attributeName="cy" values="155;98;98;155" dur="3.2s" repeatCount="indefinite"/></ellipse>
+<path d="M206 188Q240 172 274 188L281 282Q240 300 199 282Z" fill="url(#body)" stroke="#eef2f5" stroke-width="4"><animate attributeName="d" values="M206 188Q240 172 274 188L281 282Q240 300 199 282Z;M206 131Q240 115 274 131L281 225Q240 243 199 225Z;M206 131Q240 115 274 131L281 225Q240 243 199 225Z;M206 188Q240 172 274 188L281 282Q240 300 199 282Z" dur="3.2s" repeatCount="indefinite"/></path>
+<path d="M208 198L160 118M272 198L320 118" stroke="url(#skin)" stroke-width="22" stroke-linecap="round"><animateTransform attributeName="transform" type="translate" values="0 0;0 -28;0 -28;0 0" dur="3.2s" repeatCount="indefinite"/></path>
+<path d="M160 118L142 63M320 118L338 63" stroke="url(#skin)" stroke-width="18" stroke-linecap="round"/>
+<path d="M220 282L195 382M260 282L285 382" stroke="url(#skin)" stroke-width="22" stroke-linecap="round"><animateTransform attributeName="transform" type="translate" values="0 0;0 -57;0 -57;0 0" dur="3.2s" repeatCount="indefinite"/></path>
+<text x="240" y="417" text-anchor="middle" fill="#a9b4be" font-family="system-ui,sans-serif" font-size="11">Drive elbows toward ribs • bring upper chest toward bar • lower under control</text>
+<text x="240" y="444" text-anchor="middle" fill="#f2f5f7" font-family="system-ui,sans-serif" font-size="17" font-weight="800">Pull-Up</text>
+<text x="240" y="464" text-anchor="middle" fill="#73808b" font-family="system-ui,sans-serif" font-size="10">HIGH-FIDELITY VECTOR DEMO • V3</text>
+</svg>

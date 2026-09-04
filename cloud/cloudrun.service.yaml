@@ -1,0 +1,35 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: forge-api
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "1"
+    spec:
+      containerConcurrency: 40
+      timeoutSeconds: 300
+      containers:
+        - image: IMAGE_PLACEHOLDER
+          ports:
+            - containerPort: 8080
+          env:
+            - name: FORGE_SERVE_FRONTEND
+              value: "0"
+            - name: FORGE_DB_PATH
+              value: "/tmp/forge/fitness_app.sqlite"
+            - name: FORGE_ALLOWED_ORIGINS
+              value: "https://localhost,capacitor://localhost,http://localhost"
+          startupProbe:
+            httpGet:
+              path: /healthz
+            initialDelaySeconds: 1
+            timeoutSeconds: 2
+            periodSeconds: 3
+            failureThreshold: 20
+          livenessProbe:
+            httpGet:
+              path: /healthz
+            timeoutSeconds: 2
+            periodSeconds: 30

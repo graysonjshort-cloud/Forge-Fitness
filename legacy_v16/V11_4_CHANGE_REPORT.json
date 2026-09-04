@@ -1,0 +1,8 @@
+{
+  "version": "v11.4",
+  "change": "Added a colon and visible space between exercise names and their set/rep prescription.",
+  "example_before": "Barbell Bench Press3 sets \u2022 6-10 reps",
+  "example_after": "Barbell Bench Press: 3 sets \u2022 6-10 reps",
+  "occurrences_updated": 1,
+  "backend_changed": false
+}

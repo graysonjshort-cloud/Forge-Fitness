@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.env
+.env.*
+tests/
+*.zip
+*.bat
+*.ps1
+README_*.md

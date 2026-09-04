@@ -1,0 +1,35 @@
+{
+  "version": "14.66.0",
+  "status": "passed",
+  "release": "Reliable Adaptive Programming",
+  "validation": {
+    "static_validation": "passed",
+    "frontend_api_calls_checked": 125,
+    "backend_routes_found": 119,
+    "missing_contracts": [],
+    "precision_plan_validation": "passed",
+    "exercise_directory_count": 215,
+    "exercise_muscle_links": 743,
+    "full_e2e_flow": "passed",
+    "targeted_v14_66_validation": "passed"
+  },
+  "reliability_guards": [
+    "preflight rebuild validation",
+    "custom split sequence invariant",
+    "duplicate exercise ID/name invariant",
+    "locked exercise preservation invariant",
+    "sparse exercise target normalization",
+    "detailed plan diff with set changes",
+    "readable structured API errors"
+  ],
+  "adaptive_programming_2": [
+    "exercise-level progress decisions",
+    "exercise-level hold decisions",
+    "exercise-level reduce decisions",
+    "exercise-level rotate decisions",
+    "history-aware exercise selection",
+    "history-aware set targets",
+    "history-aware rep targets",
+    "recovery-aware weekly programming"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "version": "v14.3-plan-overview",
+  "fix": "Overview tab is now functional.",
+  "overview_sections": [
+    "current program summary",
+    "days/exercises/weekly sets/estimated minutes",
+    "7-day weekly schedule",
+    "training focus by muscle group",
+    "adaptive programming explanation",
+    "button to switch to Workouts"
+  ],
+  "tabs_functional": true
+}

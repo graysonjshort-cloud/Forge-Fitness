@@ -1,0 +1,12 @@
+{
+  "version": "v14.22",
+  "feature": "Training + Nutrition Integration",
+  "validation": {
+    "python_syntax": "passed",
+    "javascript_syntax": "passed",
+    "training_day_context": "passed",
+    "rest_day_context": "passed",
+    "training_nutrition_intent": "passed",
+    "remaining_macro_usage": "passed"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "version": "v14.26.1",
+  "change": "Equipment Log structural layout fix",
+  "status": "passed",
+  "validation": [
+    "JavaScript syntax",
+    "Python syntax"
+  ]
+}
